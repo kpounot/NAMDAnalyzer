@@ -6,7 +6,7 @@ New files can be loaded using the _importFile method.
 
 Start the interpreter:
 Initialization of the ipython console can be done using the following command:
-ipython <path to NAMDAnalyzer.py> <list of files to be loaded>
+ipython {path to NAMDAnalyzer.py} {list of files to be loaded}
 
 Usage:
 Each class in dataParser contains an __init__ routine, in which the file is read and data extracted.
