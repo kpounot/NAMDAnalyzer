@@ -17,16 +17,22 @@ import IPython
 class NAMDAnalyzer:
     """ This class act as the main controller, allowing the user to import different data types,
         namely trajectories, NAMD log file or velocities. Each datafile is used to initialize a 
-        corresponding class, from which the different methods can be called. """
+        corresponding class, from which the different methods can be called. 
+        
+        A selection dict (selList) is used to store the user custom atom selections. Methods are available 
+        to add or remove selections (newSelection and delSelection). Both of them needs a psf file
+        to be loaded so that it can call the getSelection method in self.psfData instance. """
 
 
     def __init__(self, fileList):
 
         if isinstance(fileList, str): #_Single call to importFile of fileList is a string
-            self._importFile(fileList)
+            self.importFile(fileList)
         elif isinstance(fileList, list): #_If fileList is an actual list, call importFile for each entry
             for f in fileList:
-                self._importFile(f)
+                self.importFile(f)
+
+        self.selList = dict()
 
         #_Defines some constants and formulas
         self.kB_kcal = 0.00198720
@@ -37,7 +43,7 @@ class NAMDAnalyzer:
         self.fgaussianModel = lambda x, a, b, c: a * np.exp(-(x-b)**2/c**2)
                 
 
-    def _importFile(self, dataFile):
+    def importFile(self, dataFile):
         """ Method used to import one file.
             The method automatically stores the corresponding class in NAMDAnalyzer variables like
             self.logData. If something already exists, it will be overridden.
@@ -64,6 +70,19 @@ class NAMDAnalyzer:
         except Exception as inst:
             print(type(inst))
             print(inst.args)
+
+
+    def newSelection(self, selName, selText="all", segList=None, resList=None, nameList=None, index=None):
+        """ Calls the self.psfData.getSelection method and store the list of selected indices 
+            in the self.selList attribute. """
+
+        self.selList[selName] = self.psfData.getSelection(selText, segList, resList, nameList, index) 
+
+
+    def delSelection(self, selName):
+        """ Remove the selection from self.selList at the given index. """
+
+        self.selList.pop(selName)
 
 
 

@@ -61,21 +61,91 @@ class NAMDPSF:
         self.dataSet = dataTuple( atomList, bondList, thetaList, phiList, imprpList, 
                                 donorsList, acceptorsList, nonBondedList, xTermsList)
 
+        #_Defining some useful attributes
+        self.protSel        = ["GLY", "ALA", "VAL", "LEU", "ILE", "MET", "PHE", "TRP", "TRY", "PRO"
+                              "SER", "THR", "CYS", "TYR", "ASN", "GLN", "ASP", "GLU", "LYS", "ARG", "HIS"]
 
-    #_____________________________________________
+        self.backboneSel    = ["C", "O", "N", "HN", "CA", "HA"]
+
+
+    #---------------------------------------------
     #_Data accession methods
-    #_____________________________________________
-    def getAtomsMasses(self, begin=0, end=None):
+    #---------------------------------------------
+    def getAtomsMasses(self, selection):
         """ Return the column corresponding to atoms masses as an 1D array of float.
 
-            Input:  begin   -> starting index
-                    end     -> last index """ 
+            Input:  firstAtom   -> starting index
+                    lastAtom    -> last index """ 
 
-        return self.dataSet.atoms[begin:end,7].astype(float)
+        return self.dataSet.atoms[selection,7].astype(float)
 
- 
 
-    #_____________________________________________
-    #_Plotting methods
-    #_____________________________________________
+    def getSelection(self, selText="all", segList=None, resList=None, nameList=None, index=None):
+        """ This method returns an list of index corresponding to the ones that have been selected 
+            using the 'selText' argument and the indices list.
 
+            Possible selText are:   - all
+                                    - protein
+                                    - backbone
+                                    - water
+
+            For segList, resList, nameList: - segment id, or list of segment id
+                                            - any residue number, or list of residue number
+                                            - any atom name, or list of atom names 
+
+            Argument index should be a list, which can be generated with range in case of a range.
+                                    
+            In case the user wants to the protein and a given segment id, the following argument can
+            be entered ['protein', 'segID_name']. Then, for every selection, the index lists are 
+            compared and only the indices that appear in all lists are kept. """
+
+
+        #_Converting to lists on case of single string
+        if type(segList) == str:
+            segList = [segList]
+        if type(resList) == str:
+            resList = [resList]
+        if type(nameList) == str:
+            nameList = [nameList]
+
+        keepIdxList = []
+
+        #_Getting the different index lists corresponding to the given selection(s)
+        if selText == "all":
+            keepIdxList.append( np.ones_like(self.dataSet.atoms[:,0]).astype(bool) )
+        if selText == "protein":
+            keepIdxList.append( np.isin(self.dataSet.atoms[:,3], self.protSel) )
+        if selText == "backbone":
+            keepIdxList.append( np.isin(self.dataSet.atoms[:,4], self.backboneSel) )
+        if selText == "water":
+            keepIdxList.append( np.isin(self.dataSet.atoms[:,3], "TIP3") )
+
+        #_Parsing the segment list if not None
+        if segList:
+            segList = np.array(segList).astype(str)
+            keepIdxList.append( np.isin(self.dataSet.atoms[:,1], segList) )
+
+        #_Parsing the residue list if not None
+        if resList:
+            resList = np.array(resList).astype(str)
+            keepIdxList.append( np.isin(self.dataSet.atoms[:,2], resList) )
+
+        #_Parsing the name list if not None
+        if nameList:
+            keepIdxList.append( np.isin(self.dataSet.atoms[:,4], nameList) )
+
+        #_Parsing the index list if not None
+        if index:
+            index   = np.array(index).astype(str)
+            keepIdxList.append( np.isin(self.dataSet.atoms[:,0], index) )
+
+
+        #_Using bitwise AND to keep only the indices that are true everywhere
+        if len(keepIdxList) > 1:
+            for i in range(1, len(keepIdxList)):
+                keepIdxList[0] = np.bitwise_and(keepIdxList[0], keepIdxList[i])
+
+        #_Using argwhere to return the indices corresponding to the True values
+        return np.argwhere(keepIdxList[0])
+
+            

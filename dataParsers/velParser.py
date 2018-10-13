@@ -30,9 +30,9 @@ class NAMDVel:
 
         
         
-    #_____________________________________________
+    #---------------------------------------------
     #_Data accession methods
-    #_____________________________________________
+    #---------------------------------------------
 
     def getKineticEnergyDistribution(self, binSize=0.2, begin=0, end=None):
         """ This method can be used to compute the kinetic energy distribution without plotting it.
@@ -83,9 +83,9 @@ class NAMDVel:
 
  
 
-    #_____________________________________________
+    #---------------------------------------------
     #_Plotting methods
-    #_____________________________________________
+    #---------------------------------------------
 
     def plotKineticEnergyDistribution(self, binSize=0.1, begin=0, end=None, fit=False, model=None, p0=None):
         """ This method calls pylab's hist method is used to plot the distribution.
