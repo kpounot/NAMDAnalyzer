@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import os, sys
 import re
 
@@ -250,4 +251,3 @@ class NAMDLog:
         else:
             plt.tight_layout()
             plt.show(block=False)
-

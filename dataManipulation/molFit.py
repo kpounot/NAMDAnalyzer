@@ -70,9 +70,3 @@ def alignAllMol(dataSet, centerOfMass):
 
     return dataSet
             
-
-            
-
-    
-
-

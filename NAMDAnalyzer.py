@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import os, sys
 import re
 
@@ -99,4 +100,3 @@ if __name__ == '__main__':
     shell()
 
         
-

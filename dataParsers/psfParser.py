@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import os, sys
 import numpy as np
 import re
@@ -148,4 +149,3 @@ class NAMDPSF:
         #_Using argwhere to return the indices corresponding to the True values
         return np.argwhere(keepIdxList[0])
 
-            
