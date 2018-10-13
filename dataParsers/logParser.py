@@ -76,15 +76,15 @@ class NAMDLog:
         self.dataSet = dataTuple(*[ data[:,col] for col, val in enumerate(data[0]) ]) 
 
 
-    #_____________________________________________
+    #---------------------------------------------
     #_Data accession methods
-    #_____________________________________________
+    #---------------------------------------------
     def getDataSeries(self, keywordsStr, begin=0, end=None):
         """ This method is used to extract on or several columns from the full dataSet.
 
             Input:  keywords string (example: "ELECT MISC TOTAL")
                     begin   -> first timestep used as start of data series
-                    end     -> last timestep to be used  
+                    end     -> last timestep to be used + 1 
 
             Output: numpy 2D array containing the selected columns within given range """
 
@@ -105,8 +105,8 @@ class NAMDLog:
 
             Input:  keyword -> the column to be used to compute the distribution
                     binSize -> the size of the bin. Determine the width of each rectangle of the histogram 
-                    begin   -> start index for data
-                    end     -> end index for data
+                    begin   -> first frame to be used
+                    end     -> last frame to be used + 1
                     fit     -> if set to True, use the given model in scipy's curve_fit method and plot it
                     model   -> model to be used for the fit 
 
@@ -141,9 +141,9 @@ class NAMDLog:
 
         return np.column_stack((xBins, density))
 
-    #_____________________________________________
+    #---------------------------------------------
     #_Plotting methods
-    #_____________________________________________
+    #---------------------------------------------
     def plotDataSeries(self, keywordsStr, xaxis='TS', timeScale=0.001, timeUnit='ps', 
                         begin=0, end=None, fit=False, fitIndex=0, model=None, p0=None):
         """ This method can be used to quickly plot one or several data series.
@@ -215,8 +215,8 @@ class NAMDLog:
 
             Input:  keyword -> the column to be used to compute the distribution
                     binSize -> the size of the bin. Determine the width of each rectangle of the histogram 
-                    begin   -> start index for data
-                    end     -> end index for data
+                    begin   -> first frame to be used
+                    end     -> last frame to be used + 1
                     fit     -> if set to True, use the given model in scipy's curve_fit method and plot it
                     model   -> model to be used for the fit """
 
