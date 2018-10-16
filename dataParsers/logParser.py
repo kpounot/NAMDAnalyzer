@@ -6,7 +6,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm, colors
 
-from scipy.io import FortranFile
 from scipy.optimize import curve_fit
 
 from collections import namedtuple
@@ -19,61 +18,43 @@ class NAMDLog:
         self.parent = parent
 
         #_Open the file and get the lines
-        with open(logFile, 'r', encoding='utf-16') as fileToRead:
-            try:
+        try:
+            with open(logFile, 'r') as fileToRead:
                 raw_data = fileToRead.read().splitlines()
-            except:
-                print("Error while reading the file.\n"
-                      + "Please check the file path given in argument.")
-                return 
-            
-        #_Create a namedtuple so that data are stored in a secured way and can be retrieved using keywords
-        dataTuple = namedtuple('dataTuple', 'TS BOND ANGLE DIHED IMPRP ELECT VDW BOUNDARY MISC ' 
-                                                  + 'KINETIC TOTAL TEMP POTENTIAL TOTAL3 TEMPAVG')
 
-        #_This dictionary is meant to be used to easily retrieve data series and column labels
-        self.keywordsDict = {   
-                                'TS':           0,
-                                'BOND':         1,
-                                'ANGLE':        2,
-                                'DIHED':        3,
-                                'IMPRP':        4,
-                                'ELECT':        5,
-                                'VDW':          6,
-                                'BOUNDARY':     7,
-                                'MISC':         8,
-                                'KINETIC':      9,
-                                'TOTAL':        10,
-                                'TEMP':         11,
-                                'POTENTIAL':    12,
-                                'TOTAL3':       13,
-                                'TAMPAVG':      14
-                            }
+        except UnicodeError:
+            with open(logFile, 'r', encoding='utf-16') as fileToRead:
+                raw_data = fileToRead.read().splitlines()
+
+        except:    
+            print("Error while reading the file.\nPlease check the file path given in argument.")
+            return 
 
         #_Store each lines corresponding to energies output to a list
-        #_Raise AssertionError in case no energy entries were found in the log file
-        data = []
-        pattern = re.compile('^ENERGY:')
-        try:
-            for line in raw_data:
-                if pattern.search(line) is not None:
-                    data.append(line.split()[1:])
-                elif re.search('Info: TIMESTEP', line):
-                    self.timestep = float(line.split()[2])
+        entries = []
+        for line in raw_data:
+            if re.search('ENERGY:', line):
+                entries.append(line.split()[1:])
+            elif re.search('Info: TIMESTEP', line):
+                self.timestep = float(line.split()[2])
+            elif re.search('ETITLE:', line):
+                self.etitle = line.split()[1:]
 
-            assert(data != [])
 
-        except AssertionError:
-                print("Log file does not seem to contain any energy entry. \n"
-                      + "Please check for any error in your simulation and/or log file...")
-                return 
+        #_Create a namedtuple so that data are stored in a secured way and can be retrieved using keywords
+        dataTuple = namedtuple('dataTuple', " ".join(self.etitle)) 
+
+        #_This dictionary is meant to be used to easily retrieve data series and column labels
+        self.keywordsDict = {}
+        for i, title in enumerate(self.etitle):
+            self.keywordsDict[title] = i   
 
         
         #_Convert the python list to numpy array for easier manipulation
-        data = np.array(data).astype(float)
+        entries = np.array(entries).astype(float)
 
         #_Store the data in the namedtuple according to their column/keyword
-        self.dataSet = dataTuple(*[ data[:,col] for col, val in enumerate(data[0]) ]) 
+        self.dataSet = dataTuple(*[ entries[:,col] for col, val in enumerate(entries[0]) ]) 
 
 
     #---------------------------------------------
@@ -100,7 +81,7 @@ class NAMDLog:
         return np.array(dataSeries).transpose()[begin:end]
 
     
-    def getDataDistribution(self, keyword, binSize=5, begin=0, end=None):
+    def getDataDistribution(self, keyword, binSize=50, begin=0, end=None):
         """ This method can be used to compute the distribution of a data series without plotting it.
 
             Input:  keyword -> the column to be used to compute the distribution
@@ -209,7 +190,7 @@ class NAMDLog:
             plt.show(block=False)
 
 
-    def plotDataDistribution(self, keyword, binSize=1, begin=0, end=None, fit=False, model=None, p0=None):
+    def plotDataDistribution(self, keyword, binSize=50, begin=0, end=None, fit=False, model=None, p0=None):
         """ This method takes one data series as argument, and computes the number occurences of 
             each value within a range determined by the binSize parameter.
 

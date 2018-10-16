@@ -58,7 +58,7 @@ def alignAllMol(dataSet, centerOfMass):
     for i in range(1, dataSet.shape[1]):
 
         params = minimize(  costFunc, 
-                            [5, 5, 5],
+                            [1, 1, 1],
                             args=(dataSet[:,0,:], dataSet[:,i,:]) )
 
         #_Apply the rotation using the fitted parameters

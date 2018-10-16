@@ -52,7 +52,7 @@ class NAMDAnalyzer:
 
         print("Trying to import file: " + dataFile)
         try: #_Trying to guess the file type. Raise an exception if not found.
-            if re.search('.log', dataFile):
+            if re.search('.log|.out', dataFile):
                 self.logData = logParser.NAMDLog(dataFile, parent=self)
             elif re.search('.dcd', dataFile):
                 self.dcdData = dcdParser.NAMDDCD(dataFile, parent=self)
@@ -65,18 +65,21 @@ class NAMDAnalyzer:
             else:
                 raise Exception("File extension not recognized.")
 
-            print("File successfully loaded\n")
-
         except Exception as inst:
             print(type(inst))
             print(inst.args)
+            return
+
+        print("Done\n")
 
 
-    def newSelection(self, selName, selText="all", segList=None, resList=None, nameList=None, index=None):
+    def newSelection(self, selName, selText="all", segName=None, NOTsegName=None, resNbr=None, NOTresNbr=None,
+                        resName=None, NOTresName=None, atom=None, NOTatom=None, index=None):
         """ Calls the self.psfData.getSelection method and store the list of selected indices 
             in the self.selList attribute. """
 
-        self.selList[selName] = self.psfData.getSelection(selText, segList, resList, nameList, index) 
+        self.selList[selName] = self.psfData.getSelection(selText, segName, NOTsegName, resNbr, NOTresNbr, 
+                        resName, NOTresName, atom, NOTatom, index) 
 
 
     def delSelection(self, selName):

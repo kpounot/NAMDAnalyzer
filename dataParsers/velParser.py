@@ -36,7 +36,7 @@ class NAMDVel:
 
     def getKineticEnergyDistribution(self, binSize=0.2, begin=0, end=None):
         """ This method can be used to compute the kinetic energy distribution without plotting it.
-            !!! This method requires a .psf to be loaded to have access to atom masses !!!
+            This method requires a .psf to be loaded to have access to atom masses
 
             Input:  binSize -> the size of the bin
                     begin   -> start index for the data series
@@ -129,9 +129,9 @@ class NAMDVel:
             plt.legend(framealpha=0.5)
 
             plt.tight_layout()
-            plt.show(block=False)
+            return plt.show(block=False)
 
         else:
             plt.tight_layout()
-            plt.show(block=False)
+            return plt.show(block=False)
 

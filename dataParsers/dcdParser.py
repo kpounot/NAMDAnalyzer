@@ -6,11 +6,13 @@ import matplotlib.pyplot as plt
 from matplotlib import cm, colors
 
 from scipy.io import FortranFile
+from struct import *
 
 from collections import namedtuple
 
 sys.path.append('../')
 import dataManipulation.molFit as molFit
+import dataManipulation.molFit_quaternions as molFit_q
 
 
 class NAMDDCD:
@@ -31,6 +33,7 @@ class NAMDDCD:
         self.nbrFrames  = header[1]
         self.dcdFreq    = header[3]
         self.nbrSteps   = header[4]
+        self.timestep   = unpack('f', pack('i', header[10]))[0] * 0.04888e-12 
 
         #_Skip the next record
         dcdFile.read_record(dtype='i4')
@@ -71,7 +74,8 @@ class NAMDDCD:
 
     def getSTDperAtom(self, selection="all", align=False, begin=0, end=None, mergeXYZ=True):
         """ Computes the standard deviation for each atom in selection and for frames between
-            begin and end.
+            begin and end. 
+            Returns the standard deviation averaged over time.
 
             Input: selection -> selected atom, can be a single string or a member of parent's selList
                    align     -> if True, will try to align all atoms to the ones on the first frame
@@ -85,10 +89,7 @@ class NAMDDCD:
 
         #_Align selected atoms for each selected frames
         if align:
-            centerOfMass = self.getCenterOfMass(selection, begin, end)
-            data         = np.copy(self.dataSet[selection, begin:end])   
-            data         = molFit.alignAllMol(data, centerOfMass)
-
+            data = self.getAlignedData(selection, begin, end)
         else:
             data = self.dataSet[selection, begin:end]
 
@@ -102,6 +103,68 @@ class NAMDDCD:
 
         return std
 
+
+    def getRMSDperAtom(self, selection="all", align=False, begin=0, end=None, mergeXYZ=True):
+        """ Computes the RMSD for each atom in selection and for frames between begin and end.
+            Returns the RMSD averaged over time.
+
+            Input: selection -> selected atom, can be a single string or a member of parent's selList
+                   align     -> if True, will try to align all atoms to the ones on the first frame
+                   begin     -> first frame to be used
+                   end       -> last frame to be used + 1
+                   mergeXYZ  -> if True, uses the vector from the origin instead of each projections """
+
+        #_Get the indices corresponding to the selection
+        if type(selection) == str:
+            selection = self.parent.psfData.getSelection(selection)
+
+        #_Align selected atoms for each selected frames
+        if align:
+            data = self.getAlignedData(selection, begin, end)
+        else:
+            data = self.dataSet[selection, begin:end]
+
+        #_Computes the standard deviation
+        if mergeXYZ:
+            rmsd = np.sqrt(np.sum(data**2, axis=2))
+
+        
+        rmsd = np.apply_along_axis(lambda arr: (arr - rmsd[:,0])**2, 0, rmsd)
+        rmsd = np.mean(rmsd, axis=1)
+
+        return rmsd
+
+
+    def getRMSDperFrame(self, selection="all", align=False, begin=0, end=None, mergeXYZ=True):
+        """ Computes the RMSD for each atom in selection and for frames between begin and end.
+            Returns the RMSD averaged over all selected atoms.
+
+            Input: selection -> selected atom, can be a single string or a member of parent's selList
+                   align     -> if True, will try to align all atoms to the ones on the first frame
+                   begin     -> first frame to be used
+                   end       -> last frame to be used + 1
+                   mergeXYZ  -> if True, uses the vector from the origin instead of each projections """
+
+        #_Get the indices corresponding to the selection
+        if type(selection) == str:
+            selection = self.parent.psfData.getSelection(selection)
+
+        #_Align selected atoms for each selected frames
+        if align:
+            data = self.getAlignedData(selection, begin, end)
+        else:
+            data = self.dataSet[selection, begin:end]
+
+        #_Computes the standard deviation
+        if mergeXYZ:
+            rmsd = np.sqrt(np.sum(data**2, axis=2))
+
+        
+        rmsd = np.apply_along_axis(lambda arr: (arr - rmsd[:,0])**2, 0, rmsd)
+        rmsd = np.mean(rmsd, axis=0)
+
+        return rmsd
+ 
 
     def getCenterOfMass(self, selection="all", begin=0, end=None):
         """ Computes the center of mass of the system for atoms between firstAtom and lastATom,
@@ -139,7 +202,7 @@ class NAMDDCD:
         centerOfMass = self.getCenterOfMass(selection, begin, end)
         alignData    = np.copy(self.dataSet[selection,begin:end,:])   
 
-        alignData = molFit.alignAllMol(alignData, centerOfMass)
+        alignData = molFit_q.alignAllMol(alignData, centerOfMass)
         
         return alignData
 
@@ -149,13 +212,45 @@ class NAMDDCD:
     #_Plotting methods
     #---------------------------------------------
 
-    def plotSTDperAtom(self, selection, align=False, begin=0, end=None, mergeXYZ=True):
-        """ Plot the standard deviation along the axis 1 of dataSet.
+    def plotSTDperAtom(self, selection="all", align=False, begin=0, end=None, mergeXYZ=True):
+        """ Plot the standard deviation along the axis 0 of dataSet.
             This makes use of the 'getSTDperAtom method.
 
             If mergeXYZ is True, then it computes the distance to the origin first. """
 
-        rmsd = self.getSTDperAtom(selection, align, begin, end, mergeXYZ)
+        std = self.getSTDperAtom(selection, align, begin, end, mergeXYZ)
+        xRange = np.arange(std.shape[0])
+
+        if mergeXYZ:
+            plt.plot(xRange, std)
+            plt.ylabel(r'$STD \ (\AA)$')
+
+        else:
+            #_In case of three columns for (x, y, z) coordinates, generate three plot for each.
+            fig, ax = plt.subplots(3, 1, sharex=True)
+
+            ax[0].plot(xRange, std[:,0])
+            ax[0].set_ylabel(r'$STD \ along \ X \ (\AA)$')
+
+            ax[1].plot(xRange, std[:,1])
+            ax[1].set_ylabel(r'$STD \ along \ Y \ (\AA)$')
+
+            ax[2].plot(xRange, std[:,2])
+            ax[2].set_ylabel(r'$STD \ along \ Z \ (\AA)$')
+
+        plt.xlabel(r'$Atom \ index$')
+
+        plt.tight_layout()
+        return plt.show(block=False)
+
+
+    def plotRMSDperAtom(self, selection="all", align=False, begin=0, end=None, mergeXYZ=True):
+        """ Plot the RMSD along the axis 0 of dataSet.
+            This makes use of the 'getRMSDperAtom method.
+
+            If mergeXYZ is True, then it computes the distance to the origin first. """
+
+        rmsd = self.getRMSDperAtom(selection, align, begin, end, mergeXYZ)
         xRange = np.arange(rmsd.shape[0])
 
         if mergeXYZ:
@@ -178,4 +273,37 @@ class NAMDDCD:
         plt.xlabel(r'$Atom \ index$')
 
         plt.tight_layout()
-        plt.show(block=False)
+        return plt.show(block=False)
+
+
+    def plotRMSDperFrame(self, selection="all", align=False, begin=0, end=None, mergeXYZ=True):
+        """ Plot the RMSD along the axis 1 of dataSet.
+            This makes use of the 'getRMSDperFrame method.
+
+            If mergeXYZ is True, then it computes the distance to the origin first. """
+
+        rmsd = self.getRMSDperFrame(selection, align, begin, end, mergeXYZ)
+        xRange = np.arange(rmsd.shape[0]) * self.timestep * self.dcdFreq
+
+        if mergeXYZ:
+            plt.plot(xRange, rmsd)
+            plt.ylabel(r'$RMSD \ (\AA)$')
+
+        else:
+            #_In case of three columns for (x, y, z) coordinates, generate three plot for each.
+            fig, ax = plt.subplots(3, 1, sharex=True)
+
+            ax[0].plot(xRange, rmsd[:,0])
+            ax[0].set_ylabel(r'$RMSD \ along \ X \ (\AA)$')
+
+            ax[1].plot(xRange, rmsd[:,1])
+            ax[1].set_ylabel(r'$RMSD \ along \ Y \ (\AA)$')
+
+            ax[2].plot(xRange, rmsd[:,2])
+            ax[2].set_ylabel(r'$RMSD \ along \ Z \ (\AA)$')
+
+        plt.xlabel(r'Time (s)')
+
+        plt.tight_layout()
+        return plt.show(block=False)
+ 
