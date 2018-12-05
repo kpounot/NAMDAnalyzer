@@ -7,26 +7,18 @@ from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 from matplotlib import cm, colors
 
-from struct import *
+from.velReader import VELReader
 
-class NAMDVel:
+class NAMDVEL(VELReader):
     """ This class contains methods for velocity file analysis. """
 
-    def __init__(self, velFile, parent=None):
+    def __init__(self, velFile=None):
 
-        self.parent = parent
-        
-        with open(velFile, 'rb') as f:
-            data = f.read()
+        VELReader.__init__(self)
 
-        self.nbrAtoms = unpack('i', data[:4])[0]
-
-        #_Allocate memory for the data extraction
-        self.dataSet = np.zeros((self.nbrAtoms, 3))
-        #_Read and convert the data to 64-bit float by group of 3 corresponding to (x, y, z) velocities
-        #_for each atom. The resulting array contains (x, y, z) velocities along axis 1.
-        for i in range(self.nbrAtoms):
-            self.dataSet[i] = unpack('ddd', data[24*i+4:24*i+28])
+        if velFile:
+            self.velFile = velFile
+            self.importVELFile(velFile)
 
         
         
@@ -55,7 +47,7 @@ class NAMDVel:
             return
 
         #_Computes the kinetic energy for each atom
-        data = 0.5 * massList * np.sum(self.dataSet**2, axis=1)[selection] 
+        data = 0.5 * massList * np.sum(self.velData**2, axis=1)[selection] 
         data = np.sort(data)
 
         #_Defining the locations for binning

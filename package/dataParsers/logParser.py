@@ -10,51 +10,18 @@ from scipy.optimize import curve_fit
 
 from collections import namedtuple
 
-class NAMDLog:
+from .logReader import LOGReader
+
+class NAMDLOG(LOGReader):
     """ This class takes a NAMD output logfile as input. """
 
-    def __init__(self, logFile, parent=None):
+    def __init__(self, logFile=None):
 
-        self.parent = parent
+        LOGReader.__init__(self)
 
-        #_Open the file and get the lines
-        try:
-            with open(logFile, 'r', encoding='utf-16') as fileToRead:
-                raw_data = fileToRead.read().splitlines()
-
-        except UnicodeError:
-            with open(logFile, 'r') as fileToRead:
-                raw_data = fileToRead.read().splitlines()
-
-        except:    
-            print("Error while reading the file.\nPlease check the file path given in argument.")
-            return 
-
-        #_Store each lines corresponding to energies output to a list
-        entries = []
-        for line in raw_data:
-            if re.search('^ENERGY:', line):
-                entries.append(line.split()[1:])
-            elif re.search('^Info: TIMESTEP', line):
-                self.timestep = float(line.split()[2])
-            elif re.search('^ETITLE:', line):
-                self.etitle = line.split()[1:]
-
-
-        #_Create a namedtuple so that data are stored in a secured way and can be retrieved using keywords
-        dataTuple = namedtuple('dataTuple', " ".join(self.etitle)) 
-
-        #_This dictionary is meant to be used to easily retrieve data series and column labels
-        self.keywordsDict = {}
-        for i, title in enumerate(self.etitle):
-            self.keywordsDict[title] = i   
-
-        #_Convert the python list to numpy array for easier manipulation
-        entries = np.array(entries).astype(float)
-
-        #_Store the data in the namedtuple according to their column/keyword
-        self.dataSet = dataTuple(*[ entries[:,col] for col, val in enumerate(entries[0]) ]) 
-
+        if logFile:
+            self.logFile = logFile
+            self.importLOGFile(logFile)
 
     #---------------------------------------------
     #_Data accession methods
@@ -75,7 +42,7 @@ class NAMDLog:
         #_Add selected columns to a list
         dataSeries = []
         for key in keywords:
-            dataSeries.append( self.dataSet[self.keywordsDict[key]] )
+            dataSeries.append( self.logData[self.keywordsDict[key]] )
 
         return np.array(dataSeries).transpose()[begin:end]
 
@@ -135,7 +102,7 @@ class NAMDLog:
         keywords = list(filter(None, keywords))
 
         #_Get the x-axis values for the plot
-        xData = self.dataSet[self.keywordsDict[xaxis]][begin:end]
+        xData = self.logData[self.keywordsDict[xaxis]][begin:end]
         #_If x-axis consists in timestep, convert it to time with magnitude given by scale factor
         if xaxis == 'TS':
             xData = xData * self.timestep * timeScale

@@ -1,107 +1,26 @@
 import os, sys
 import numpy as np
-import re
 
 from collections import namedtuple
 
-class NAMDPSF:
+from .psfReader import PSFReader
+
+class NAMDPSF(PSFReader):
     """ This class is used for .psf file reading. """
 
-    def __init__(self, psfFile, parent=None):
+    def __init__(self, psfFile=None):
 
-        self.parent = parent
-        
-        with open(psfFile, 'r') as f:
-            try:
-                data = f.read().splitlines()
-            except:
-                print("Error while reading the file.\n"
-                      + "Please check the file path given in argument.")
-                return 
+        PSFReader.__init__(self)
 
-        dataTuple = namedtuple('dataTuple', 'atoms bonds angles dihedrals impropers donors acceptors '
-                                          + 'nonBonded xterms')
-
-        #_Initialize the temporary lists (avoid errors in case they're not created below
-        atomList        = []
-        bondList        = []
-        thetaList       = []
-        phiList         = []
-        imprpList       = []
-        donorsList      = []
-        acceptorsList   = []
-        nonBondedList   = []
-        xTermsList      = []
-
-        pattern = re.compile('\s+[0-9]+\s![A-Z]+') #_Entry category identifier
-        for i, line in enumerate(data):
-            if pattern.match(line):
-                nbrEntries = int(line.split()[0]) #_Get the number of lines to read for the category
-                #_Each category data is stored in a corresponding temporary array, which will be
-                #_then copied and protected from modifications in the namedtuple.
-                if re.search('ATOM', line):
-                    atomList = np.array([ entry.split() for entry in data[i+1:i+1+nbrEntries] ])
-                elif re.search('BOND', line):
-                    bondList =  np.array([ entry.split() for entry in data[i+1:i+1+nbrEntries] ])
-                elif re.search('THETA', line):
-                    thetaList =  np.array([ entry.split() for entry in data[i+1:i+1+nbrEntries] ])
-                elif re.search('PHI', line):
-                    phiList =  np.array([ entry.split() for entry in data[i+1:i+1+nbrEntries] ])
-                elif re.search('IMPHI', line):
-                    imprpList =  np.array([ entry.split() for entry in data[i+1:i+1+nbrEntries] ])
-                elif re.search('DON', line):
-                    donorsList =  np.array([ entry.split() for entry in data[i+1:i+1+nbrEntries] ])
-                elif re.search('ACC', line):
-                    acceptorsList =  np.array([ entry.split() for entry in data[i+1:i+1+nbrEntries] ])
-                elif re.search('NNB', line):
-                    nonBondedList =  np.array([ entry.split() for entry in data[i+1:i+1+nbrEntries] ])
-                elif re.search('CRTERM', line):
-                    xTermsList =  np.array([ entry.split() for entry in data[i+1:i+1+nbrEntries] ])
-
-        self.dataSet = dataTuple( atomList, bondList, thetaList, phiList, imprpList, 
-                                donorsList, acceptorsList, nonBondedList, xTermsList)
-
-        #_Defining some useful attributes
-        self.protSel        = ["GLY", "ALA", "VAL", "LEU", "ILE", "MET", "PHE", "TRP", "TRY", "PRO"
-                              "SER", "THR", "CYS", "TYR", "ASN", "GLN", "ASP", "GLU", "LYS", "ARG", "HIS"]
-
-        self.backboneSel    = ["C", "O", "N", "HN", "CA", "HA"]
-
-        self.protH          = ["HN", "HA", "HB", "HA1", "HA2", "HB1", "HB2", "HB3", "HD1", "HD2", "HD11", 
-                               "HD12", "HD13", "HD21", "HD22", "HD23", "HD2", "HE1", "HE2", "HG1", "HG2",
-                               "HG11", "HG12", "HG13", "HG21", "HG22", "HG23", "HZ1", "HZ2", "HZ3", "HH", 
-                               "OH", "HH11", "HH12", "HH21", "HH22", "HE", "HE3", "HE21", "HE22", "HD3", "HZ",
-                               "HT1", "HT2", "HT3"]
-
-        self.protExchH   = {'ALA': ['HN'],
-                            'ARG': ['HN', 'HE', 'HH11', 'HH12', 'HH21', 'HH22'],
-                            'ASN': ['HN', 'HD21', 'HD22'],
-                            'ASP': ['HN'],
-                            'CYS': ['HN', 'HG1'],
-                            'GLN': ['HN', 'HE21', 'HE22'],
-                            'GLU': ['HN'],
-                            'GLY': ['HN'],
-                            'HSD': ['HN', 'HD1', 'HD2'],
-                            'HSE': ['HN', 'HE2'],
-                            'HSP': ['HN', 'HD1', 'HE2'],
-                            'ILE': ['HN'],
-                            'LEU': ['HN'],
-                            'LYS': ['HN', 'HZ1', 'HZ2', 'HZ3'],
-                            'MET': ['HN'],
-                            'PHE': ['HN'],
-                            'PRO': ['None'],
-                            'SER': ['HN', 'HG1'],
-                            'THR': ['HN', 'HG1'],
-                            'TRP': ['HN', 'HE1'],
-                            'TYR': ['HN', 'HH'],
-                            'VAL': ['HN']}
-
-        self.waterH         = ["H1", "H2"]
+        if psfFile:
+            self.psfFile = psfFile
+            self.importPSFFile(psfFile)
 
 
-    #---------------------------------------------
-    #_Data accession methods
-    #---------------------------------------------
+
+#---------------------------------------------
+#_Data accession methods
+#---------------------------------------------
     def getAtomsMasses(self, selection):
         """ Return the column corresponding to atoms masses as an 1D array of float.
 
@@ -112,7 +31,7 @@ class NAMDPSF:
         if type(selection) == str:
             selection = self.parent.psfData.getSelection(selection)
 
-        return self.dataSet.atoms[selection,7].astype(float)
+        return self.psfData.atoms[selection,7].astype(float)
 
 
     def getSelection(self, selText="all", segName=None, NOTsegName=None, resNbr=None, resName=None, 
@@ -154,24 +73,24 @@ class NAMDPSF:
 
         #_Getting the different index lists corresponding to the given selection(s)
         if selText == "all":
-            keepIdxList.append( np.ones_like(self.dataSet.atoms[:,0]).astype(bool) )
+            keepIdxList.append( np.ones_like(self.psfData.atoms[:,0]).astype(bool) )
         if selText == "protein":
-            keepIdxList.append( np.isin(self.dataSet.atoms[:,3], self.protSel) )
+            keepIdxList.append( np.isin(self.psfData.atoms[:,3], self.protSel) )
         if selText == "protH":
-            keepIdxList.append( np.isin(self.dataSet.atoms[:,4], self.protH) )
+            keepIdxList.append( np.isin(self.psfData.atoms[:,4], self.protH) )
         if selText == "backbone":
-            keepIdxList.append( np.isin(self.dataSet.atoms[:,4], self.backboneSel) )
+            keepIdxList.append( np.isin(self.psfData.atoms[:,4], self.backboneSel) )
         if selText == "water":
-            keepIdxList.append( np.isin(self.dataSet.atoms[:,3], "TIP3") )
+            keepIdxList.append( np.isin(self.psfData.atoms[:,3], "TIP3") )
         if selText == "waterH":
-            keepIdxList.append( np.isin(self.dataSet.atoms[:,4], self.waterH) )
+            keepIdxList.append( np.isin(self.psfData.atoms[:,4], self.waterH) )
 
         if selText == "protNonExchH":
-            keepIdxList = np.ones(self.dataSet.atoms.shape[0]).astype(bool)
-            keepIdxList = np.bitwise_and(keepIdxList, np.isin(self.dataSet.atoms[:,3], self.protSel))
+            keepIdxList = np.ones(self.psfData.atoms.shape[0]).astype(bool)
+            keepIdxList = np.bitwise_and(keepIdxList, np.isin(self.psfData.atoms[:,3], self.protSel))
             for key, value in self.protExchH.items():
-                resArray        = np.isin(self.dataSet.atoms[:,3], key)
-                exchHArray      = np.isin(self.dataSet.atoms[:,4], value)
+                resArray        = np.isin(self.psfData.atoms[:,3], key)
+                exchHArray      = np.isin(self.psfData.atoms[:,4], value)
                 nonExchHArray   = np.invert(np.bitwise_and(resArray, exchHArray))
                 keepIdxList     = np.bitwise_and(keepIdxList, nonExchHArray)
 
@@ -181,47 +100,47 @@ class NAMDPSF:
         #_Parsing the segment list if not None
         if segName:
             segName = np.array(segName).astype(str)
-            keepIdxList.append( np.isin(self.dataSet.atoms[:,1], segName) )
+            keepIdxList.append( np.isin(self.psfData.atoms[:,1], segName) )
 
         #_Parsing the not segment list if not None
         if NOTsegName:
             NOTsegName = np.array(NOTsegName).astype(str)
-            keepIdxList.append( np.invert(np.isin(self.dataSet.atoms[:,1], NOTsegName)) )
+            keepIdxList.append( np.invert(np.isin(self.psfData.atoms[:,1], NOTsegName)) )
 
         #_Parsing the residue number list if not None
         if resNbr:
             resNbr = np.array(resNbr).astype(str)
-            keepIdxList.append( np.isin(self.dataSet.atoms[:,2], resNbr) )
+            keepIdxList.append( np.isin(self.psfData.atoms[:,2], resNbr) )
 
         #_Parsing the not residue number list if not None
         if NOTresNbr:
             NOTresNbr = np.array(NOTresNbr).astype(str)
-            keepIdxList.append( np.invert(np.isin(self.dataSet.atoms[:,2], NOTresNbr)) )
+            keepIdxList.append( np.invert(np.isin(self.psfData.atoms[:,2], NOTresNbr)) )
 
         #_Parsing the residue name list if not None
         if resName:
             resName = np.array(resName).astype(str)
-            keepIdxList.append( np.isin(self.dataSet.atoms[:,3], resNbr) )
+            keepIdxList.append( np.isin(self.psfData.atoms[:,3], resNbr) )
 
         #_Parsing the not residue name list if not None
         if NOTresName:
             NOTresName = np.array(NOTresName).astype(str)
-            keepIdxList.append( np.invert(np.isin(self.dataSet.atoms[:,3], NOTresName)) )
+            keepIdxList.append( np.invert(np.isin(self.psfData.atoms[:,3], NOTresName)) )
 
         #_Parsing the name list if not None
         if atom:
             atom = np.array(atom).astype(str)
-            keepIdxList.append( np.isin(self.dataSet.atoms[:,4], atom) )
+            keepIdxList.append( np.isin(self.psfData.atoms[:,4], atom) )
 
         #_Parsing the not atom list if not None
         if NOTatom:
             NOTatom = np.array(NOTatom).astype(str)
-            keepIdxList.append( np.invert(np.isin(self.dataSet.atoms[:,4], NOTatom)) )
+            keepIdxList.append( np.invert(np.isin(self.psfData.atoms[:,4], NOTatom)) )
 
         #_Parsing the index list if not None
         if index:
             index   = np.array(index).astype(str)
-            keepIdxList.append( np.isin(self.dataSet.atoms[:,0], index) )
+            keepIdxList.append( np.isin(self.psfData.atoms[:,0], index) )
 
 
         #_Using bitwise AND to keep only the indices that are true everywhere
