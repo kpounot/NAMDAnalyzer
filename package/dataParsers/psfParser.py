@@ -13,7 +13,6 @@ class NAMDPSF(PSFReader):
         PSFReader.__init__(self)
 
         if psfFile:
-            self.psfFile = psfFile
             self.importPSFFile(psfFile)
 
 
@@ -24,12 +23,11 @@ class NAMDPSF(PSFReader):
     def getAtomsMasses(self, selection):
         """ Return the column corresponding to atoms masses as an 1D array of float.
 
-            Input:  firstAtom   -> starting index
-                    lastAtom    -> last index """ 
+            Input:  selection   -> a selection of atom indices """
 
         #_Get the indices corresponding to the selection
         if type(selection) == str:
-            selection = self.parent.psfData.getSelection(selection)
+            selection = self.getSelection(selection)
 
         return self.psfData.atoms[selection,7].astype(float)
 

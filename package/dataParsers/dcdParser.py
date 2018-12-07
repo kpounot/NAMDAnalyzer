@@ -9,21 +9,22 @@ from mpl_toolkits.mplot3d.axes3d import Axes3D
 
 from collections import namedtuple
 
-from ..dataManipulation.molFit_quaternions import alignAllMol
+from ..dataManipulation import molFit_quaternions as molFit_q
 from ..dataConverters.backscatteringDataConvert import BackScatData
 from .dcdReader import DCDReader
+from .psfParser import NAMDPSF
 
 
-class NAMDDCD(DCDReader, BackScatData):
+class NAMDDCD(NAMDPSF, DCDReader, BackScatData):
     """ This class contains methods for trajectory file analysis. """
 
-    def __init__(self, dcdFile=None):
+    def __init__(self, psfFile, dcdFile=None):
     
+        NAMDPSF.__init__(self, psfFile)
         DCDReader.__init__(self)
         BackScatData.__init__(self)
 
         if dcdFile:
-            self.dcdFile = dcdFile
             self.importDCDFile(dcdFile)
 
 
@@ -186,7 +187,7 @@ class NAMDDCD(DCDReader, BackScatData):
         centerOfMass = self.getCenterOfMass(selection, begin, end)
         alignData    = np.copy(self.dcdData[selection,begin:end,:])   
 
-        alignData = alignAllMol(alignData, centerOfMass)
+        alignData = molFit_q.alignAllMol(alignData, centerOfMass)
         
         return alignData
 
@@ -311,75 +312,4 @@ class NAMDDCD(DCDReader, BackScatData):
 
         plt.tight_layout()
         return plt.show(block=False)
-
-
-    def plotEISF(self):
-        """ This method calls self.backScatData.getEISF to obtain the Elastic Incoherent Structure Factor.
-            Then, a plot is generated, showing self-correlation for each q-values in qValList. """
-
-        EISF, times = self.getEISF()
-        qValList    = self.qVals
-        
-        #_Use a fancy colormap
-        normColors = colors.Normalize(vmin=np.min(qValList), vmax=np.max(qValList))
-        cmap = cm.get_cmap('winter')
-
- 
-        for idx, qVal in enumerate(qValList):
-            plt.plot(times, EISF[idx].real, label=qVal, c=cmap(normColors(qVal)))
-            plt.xlabel(r'Time (s)')
-            plt.ylabel(r'$EISF(q,t)$')
-            plt.legend(fontsize=12)
-
-        plt.tight_layout()
-        return plt.show(block=False)
-
-
-
-    def plotIntermediateFunc(self):
-        """ This method calls self.backScatData.getIntermediateFunc to obtain the intermediate 
-            scattering function.
-            Then, a plot is generated, showing self-correlation for each q-values in qValList. """
-
-        intF, times = self.getIntermediateFunc()
-        qValList    = self.qVals
-        
-        #_Use a fancy colormap
-        normColors = colors.Normalize(vmin=np.min(qValList), vmax=np.max(qValList))
-        cmap = cm.get_cmap('winter')
-
- 
-        for idx, qVal in enumerate(qValList):
-            plt.plot(times, intF[idx].real, label=qVal, c=cmap(normColors(qVal)))
-            plt.xlabel(r'Time (s)')
-            plt.ylabel(r'$I(q,t)$')
-            plt.legend(fontsize=12)
-
-        plt.tight_layout()
-        return plt.show(block=False)
-
-
-
-    def plotScatteringFunc(self):
-        """ This method calls self.backScatDatagetScatteringFunc to obtain the scattering function S(q,omega).
-            Then, a plot is generated, showing self-correlation for each q-values in qValList. """
-
-        scatF, energies = self.getScatFunc()
-        qValList        = self.qVals
-        
-        #_Use a fancy colormap
-        normColors = colors.Normalize(vmin=np.min(qValList), vmax=np.max(qValList))
-        cmap = cm.get_cmap('winter')
-
-        ax = plt.subplot(111, projection='3d')
-
-        for qIdx, qVal in enumerate(qValList):
-            ax.plot( energies, np.absolute(scatF[qIdx]), qVal, zorder=50-qVal, 
-                                                            zdir='y', c=cmap(normColors(qVal)) )
-            ax.set_xlabel(r'Energy ($\mu$eV)', labelpad=15)
-            ax.set_ylabel(r'q ($\AA^{-1}$)', labelpad=15)
-            ax.set_zlabel(r'$S(q,\omega)$', labelpad=15)
-
-        return plt.show(block=False)
-
 

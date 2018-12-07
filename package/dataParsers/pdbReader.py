@@ -21,6 +21,8 @@ class PDBReader:
         """ Imports a new file and store the result in self.pdbData.
             If something already exists in self.pdbData, it will be deleted. """
 
+        self.pdbFile = pdbFile
+
         #_Open the file and get the lines
         with open(pdbFile, 'r') as fileToRead:
             try:

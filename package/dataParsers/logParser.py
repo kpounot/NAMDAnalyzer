@@ -11,16 +11,17 @@ from scipy.optimize import curve_fit
 from collections import namedtuple
 
 from .logReader import LOGReader
+from .psfParser import NAMDPSF
 
-class NAMDLOG(LOGReader):
+class NAMDLOG(NAMDPSF, LOGReader):
     """ This class takes a NAMD output logfile as input. """
 
-    def __init__(self, logFile=None):
+    def __init__(self, psfFile, logFile=None):
 
+        NAMDPSF.__init__(self, psfFile)
         LOGReader.__init__(self)
 
         if logFile:
-            self.logFile = logFile
             self.importLOGFile(logFile)
 
     #---------------------------------------------
@@ -91,8 +92,8 @@ class NAMDLOG(LOGReader):
     #---------------------------------------------
     #_Plotting methods
     #---------------------------------------------
-    def plotDataSeries(self, keywordsStr, xaxis='TS', timeScale=0.001, timeUnit='ps', 
-                        begin=0, end=None, fit=False, fitIndex=0, model=None, p0=None):
+    def plotDataSeries(self, keywordsStr, xaxis='TS', begin=0, end=None, fit=False, fitIndex=0, 
+                                                                                model=None, p0=None):
         """ This method can be used to quickly plot one or several data series.
             
             Input: keywords string (example: "ELECT MISC TOTAL") """
@@ -105,7 +106,7 @@ class NAMDLOG(LOGReader):
         xData = self.logData[self.keywordsDict[xaxis]][begin:end]
         #_If x-axis consists in timestep, convert it to time with magnitude given by scale factor
         if xaxis == 'TS':
-            xData = xData * self.timestep * timeScale
+            xData = xData * self.timestep
 
         #_Get selected data series
         dataSeries = self.getDataSeries(keywordsStr, begin=begin, end=end)
@@ -119,7 +120,7 @@ class NAMDLOG(LOGReader):
         ax1.plot(xData, dataSeries[:,0], color=colorList[0])
 
         if xaxis == 'TS':
-            ax1.set_xlabel('Time (' + timeUnit + ')')
+            ax1.set_xlabel('Time (s)')
         else:
             ax1.set_xlabel(xaxis)
 
@@ -166,6 +167,7 @@ class NAMDLOG(LOGReader):
                     end     -> last frame to be used + 1
                     fit     -> if set to True, use the given model in scipy's curve_fit method and plot it
                     model   -> model to be used for the fit """
+
 
         keyData = np.sort(self.getDataSeries(keyword, begin=begin, end=end).ravel())
 

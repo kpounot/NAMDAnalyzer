@@ -51,6 +51,8 @@ class PSFReader:
         """ Imports a new file and store the result in self.psfData.
             If something already exists in self.psfData, it will be deleted. """
 
+        self.psfFile = psfFile
+
         with open(psfFile, 'r') as f:
             data = f.read().splitlines()
 

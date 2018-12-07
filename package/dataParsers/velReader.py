@@ -14,6 +14,8 @@ class VELReader:
         """ Imports a new file and store the result in self.velData.
             If something already exists in self.velData, it will be deleted. """
 
+        self.velFile = velFile
+
         with open(velFile, 'rb') as f:
             data = f.read()
 

@@ -20,6 +20,8 @@ class DCDReader:
         """ Imports a new file and store the result in self.dcdData.
             If something already exists in self.dcdData, it will be deleted. """
 
+        self.dcdFile = dcdFile
+
         self.dcdData = None #_Free memory in case data were already loaded
 
         dcdFile = FortranFile(dcdFile, 'r')

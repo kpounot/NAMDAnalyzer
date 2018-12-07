@@ -15,6 +15,8 @@ class LOGReader:
         """ Imports a new file and store the result in self.logData.
             If something already exists in self.logData, it will be deleted. """
 
+        self.logFile = logFile
+
         #_Open the file and get the lines
         try:
             with open(logFile, 'r', encoding='utf-16') as fileToRead:
@@ -34,7 +36,7 @@ class LOGReader:
             if re.search('^ENERGY:', line):
                 entries.append(line.split()[1:])
             elif re.search('^Info: TIMESTEP', line):
-                self.timestep = float(line.split()[2])
+                self.timestep = float(line.split()[2]) * 1e-15
             elif re.search('^ETITLE:', line):
                 self.etitle = line.split()[1:]
 

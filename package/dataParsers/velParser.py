@@ -8,16 +8,17 @@ import matplotlib.pyplot as plt
 from matplotlib import cm, colors
 
 from.velReader import VELReader
+from .psfParser import NAMDPSF
 
-class NAMDVEL(VELReader):
+class NAMDVEL(NAMDPSF, VELReader):
     """ This class contains methods for velocity file analysis. """
 
-    def __init__(self, velFile=None):
+    def __init__(self, psfFile, velFile=None):
 
+        NAMDPSF.__init__(self, psfFile)
         VELReader.__init__(self)
 
         if velFile:
-            self.velFile = velFile
             self.importVELFile(velFile)
 
         
@@ -38,10 +39,10 @@ class NAMDVEL(VELReader):
 
         #_Get the indices corresponding to the selection
         if type(selection) == str:
-            selection = self.parent.psfData.getSelection(selection)
+            selection = parent.psfData.getSelection(selection)
 
         try: #_Try to get the masses list for each selected atoms
-            massList = self.parent.psfData.getAtomsMasses(selection) 
+            massList = parent.psfData.getAtomsMasses(selection) 
         except AttributeError:
             print("No psf data can be found in the NAMDAnalyzer object.\n Please load a .psf file.\n")
             return
@@ -92,6 +93,7 @@ class NAMDVEL(VELReader):
                     fit     -> if set to True, use the given model in scipy's curve_fit method and plot it
                     model   -> model to be used for the fit 
                     p0      -> starting parameter for fitting """
+
 
         dist = self.getKineticEnergyDistribution(selection, binSize)
         xBins = dist[:,0]
