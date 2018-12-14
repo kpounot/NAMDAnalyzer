@@ -4,7 +4,6 @@ import re
 from scipy.io import FortranFile
 from struct import *
 
-
 class DCDReader:
     def __init__(self):
 
@@ -24,42 +23,55 @@ class DCDReader:
 
         self.dcdData = None #_Free memory in case data were already loaded
 
-        dcdFile = FortranFile(dcdFile, 'r')
+        with open(dcdFile, 'rb') as f:
+            data = f.read(92)
 
-        #_Get some simulation parameters (frames, steps and dcd frequency)
-        header = dcdFile.read_record('i4')
-        self.nbrFrames  = header[1]
-        dcdFreq         = header[3]
-        self.nbrSteps   = header[4]
-        self.timestep   = unpack('f', pack('i', header[10]))[0] * 0.04888e-12 
+            #_Get some simulation parameters (frames, steps and dcd frequency)
+            record = unpack('i4c9if11i', data)
 
-        #_Skip the next record
-        dcdFile.read_record(dtype='i4')
+            self.nbrFrames  = record[5]
+            dcdFreq         = record[7]
+            self.nbrSteps   = record[8]
+            self.timestep   = record[14] * 0.04888e-12 
+            self.cell       = record[15] #_Whether cell dimensions are given
 
-        #_Get the number of atoms
-        self.nbrAtoms = dcdFile.read_record(dtype='i4')[0]
 
-        #_Allocating memory to make the process much faster
-        self.dcdData = np.zeros((self.nbrAtoms, 3*self.nbrFrames))
+            #_Get next record size to skip it (title)
+            data = f.read(4)
+            titleSize = unpack('i', data)[0]
+            data = f.read(titleSize+4)
 
-        #_Check the first entry to determine how data are organized
-        firstEntry = dcdFile.read_record('f')
+            #_Get the number of atoms
+            data = f.read(12)
+            self.nbrAtoms = unpack('iii', data)[1]
 
-        if firstEntry.shape == self.nbrAtoms:
-            self.dcdData[:,0] = firstEntry
-            #_Read data for all frames and store coordinated in self.dcdData 
-            for i in range(3 * self.nbrFrames - 1):
-                self.dcdData[:,i+1] = dcdFile.read_record('f')
 
-        else: #_We need to skip each four lines
-            self.dcdData[:,0] = dcdFile.read_record('f')
-            self.dcdData[:,1] = dcdFile.read_record('f')
-            self.dcdData[:,2] = dcdFile.read_record('f')
-            for i in range(self.nbrFrames - 1):
-                dcdFile.read_record('f')
-                self.dcdData[:,3 + 3*i] = dcdFile.read_record('f')
-                self.dcdData[:,4 + 3*i] = dcdFile.read_record('f')
-                self.dcdData[:,5 + 3*i] = dcdFile.read_record('f')
+            #_Allocating memory to make the process much faster
+            self.dcdData = np.zeros( (self.nbrAtoms, 3*self.nbrFrames), dtype='f' )
+
+            if self.cell:
+                recSize         = 4 * self.nbrAtoms + 8
+                self.cellDims   = np.zeros( (12, self.nbrFrames) )
+                for frame in range(self.nbrFrames):
+                    data = f.read(56+3*recSize)
+                    self.cellDims[:,frame]    = unpack('i12fi', data[:56])[1:-1]
+                    self.dcdData[:,3*frame]   = unpack('i%ifi' % self.nbrAtoms, 
+                                                                data[56:56+recSize])[1:-1]
+                    self.dcdData[:,3*frame+1] = unpack('i%ifi' % self.nbrAtoms, 
+                                                                data[56+recSize:56+2*recSize])[1:-1]
+                    self.dcdData[:,3*frame+2] = unpack('i%ifi' % self.nbrAtoms, 
+                                                                data[56+2*recSize:56+3*recSize])[1:-1]
+                    
+
+            else:
+                recSize = 4 * self.nbrAtoms + 8
+                for frame in range(self.nbrFrames):
+                    self.dcdData[:,3*frame]   = unpack('i%ifi' % self.nbrAtoms, data[:recSize])[1:-1]
+                    self.dcdData[:,3*frame+1] = unpack('i%ifi' % self.nbrAtoms, 
+                                                                        data[recSize:2*recSize])[1:-1]
+                    self.dcdData[:,3*frame+2] = unpack('i%ifi' % self.nbrAtoms, 
+                                                                        data[2*recSize:3*recSize])[1:-1]
+
 
         #_The dataset is reshaped so that we have atom index in axis 0, frame number in axis 1, 
         #_and (x, y, z) coordinates in axis 2
@@ -68,6 +80,8 @@ class DCDReader:
         #_Converting dcdFreq to an array of size nbrFrames for handling different dcdFreq 
         #_during conversion to time
         self.dcdFreq = np.zeros(self.dcdData.shape[1]) + dcdFreq
+
+        
 
 
 

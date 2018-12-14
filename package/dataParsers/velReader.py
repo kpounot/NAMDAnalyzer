@@ -28,4 +28,6 @@ class VELReader:
         for i in range(self.nbrAtoms):
             self.velData[i] = unpack('ddd', data[24*i+4:24*i+28])
 
+        data = None
+
 

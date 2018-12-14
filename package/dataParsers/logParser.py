@@ -11,14 +11,14 @@ from scipy.optimize import curve_fit
 from collections import namedtuple
 
 from .logReader import LOGReader
-from .psfParser import NAMDPSF
 
-class NAMDLOG(NAMDPSF, LOGReader):
+class NAMDLOG(LOGReader):
     """ This class takes a NAMD output logfile as input. """
 
-    def __init__(self, psfFile, logFile=None):
+    def __init__(self, parent, logFile=None):
 
-        NAMDPSF.__init__(self, psfFile)
+        self.parent = parent
+
         LOGReader.__init__(self)
 
         if logFile:

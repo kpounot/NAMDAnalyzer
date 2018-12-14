@@ -46,6 +46,8 @@ class PSFReader:
 
         self.waterH         = ["H1", "H2"]
 
+        self.H              = re.compile('[A-Za-z0-9]*H[A-Za-z0-9]*')
+
 
     def importPSFFile(self, psfFile):
         """ Imports a new file and store the result in self.psfData.
@@ -59,7 +61,7 @@ class PSFReader:
         dataTuple = namedtuple('dataTuple', 'atoms bonds angles dihedrals impropers donors acceptors '
                                           + 'nonBonded xterms')
 
-        #_Initialize the temporary lists (avoid errors in case they're not created below
+        #_Initialize the temporary lists        
         atomList        = []
         bondList        = []
         thetaList       = []
@@ -97,7 +99,5 @@ class PSFReader:
 
         self.psfData = dataTuple( atomList, bondList, thetaList, phiList, imprpList, 
                                 donorsList, acceptorsList, nonBondedList, xTermsList)
-
-
 
 

@@ -17,5 +17,5 @@ def getRandomVec(q):
 
     qi *= q / np.sqrt(np.sum(qi**2))
 
-    return qi
+    return qi.astype('f')
 

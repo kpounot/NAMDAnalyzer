@@ -10,19 +10,17 @@ from mpl_toolkits.mplot3d.axes3d import Axes3D
 from collections import namedtuple
 
 from ..dataManipulation import molFit_quaternions as molFit_q
-from ..dataConverters.backscatteringDataConvert import BackScatData
 from .dcdReader import DCDReader
-from .psfParser import NAMDPSF
 
 
-class NAMDDCD(NAMDPSF, DCDReader, BackScatData):
+class NAMDDCD(DCDReader):
     """ This class contains methods for trajectory file analysis. """
-
-    def __init__(self, psfFile, dcdFile=None):
     
-        NAMDPSF.__init__(self, psfFile)
+    def __init__(self, parent, dcdFile=None):
+    
+        self.parent = parent
+
         DCDReader.__init__(self)
-        BackScatData.__init__(self)
 
         if dcdFile:
             self.importDCDFile(dcdFile)
@@ -36,20 +34,23 @@ class NAMDDCD(NAMDPSF, DCDReader, BackScatData):
         """ Binning method for dcd data. The binning is performed along the axis 1 of the dataset,
             which corresponds to frames dimension. """
 
+        if binSize==1:
+            return
+
+        print('Binning trajectories...')
+
         nbrLoops = int(self.dcdData.shape[1] / binSize)
 
         #_Performs the binning
         for i in range(nbrLoops):
-            self.dcdData[:,i] = np.mean( self.dcdData[:, i*binSize : i*binSize+binSize], axis=1)
+            self.dcdData[:,i] = self.dcdData[:, i*binSize : i*binSize+binSize].mean(axis=1)
             self.dcdFreq[i] = np.sum( self.dcdFreq[i*binSize : i*binSize+binSize] )
 
         #_Free the memory
         self.dcdData = np.delete(self.dcdData, range(nbrLoops,self.dcdData.shape[1]), axis=1)
         self.dcdFreq = np.delete(self.dcdFreq, range(nbrLoops,self.dcdFreq.size))
 
-        #_Returns only the useful information
-        self.dcdData = self.dcdData[:,:nbrLoops]
-        self.dcdFreq = self.dcdFreq[:nbrLoops]
+        print('Done\n')
 
 
         
@@ -69,7 +70,7 @@ class NAMDDCD(NAMDPSF, DCDReader, BackScatData):
 
         #_Get the indices corresponding to the selection
         if type(selection) == str:
-            selection = self.getSelection(selection)
+            selection = self.parent.getSelection(selection)
 
         #_Align selected atoms for each selected frames
         if align:
@@ -100,7 +101,7 @@ class NAMDDCD(NAMDPSF, DCDReader, BackScatData):
 
         #_Get the indices corresponding to the selection
         if type(selection) == str:
-            selection = self.getSelection(selection)
+            selection = self.parent.getSelection(selection)
 
         #_Align selected atoms for each selected frames
         if align:
@@ -131,7 +132,7 @@ class NAMDDCD(NAMDPSF, DCDReader, BackScatData):
 
         #_Get the indices corresponding to the selection
         if type(selection) == str:
-            selection = self.getSelection(selection)
+            selection = self.parent.getSelection(selection)
 
         #_Align selected atoms for each selected frames
         if align:
@@ -157,23 +158,19 @@ class NAMDDCD(NAMDPSF, DCDReader, BackScatData):
         try: #_Check if a psf file has been loaded
             #_Get the indices corresponding to the selection
             if type(selection) == str:
-                selection = self.getSelection(selection)
+                selection = self.parent.getSelection(selection)
 
-            atomMasses = self.getAtomsMasses(selection)
+            atomMasses = self.parent.getAtomsMasses(selection)
 
         except AttributeError:
             print("No .psf file was loaded, please import one before using this method.")
             return
 
-        atomMasses = atomMasses.reshape(1, atomMasses.size)
+        atomMasses = atomMasses.reshape(1, atomMasses.size, 1)
 
-        centerOfMass = np.dot(atomMasses, self.dcdData[selection,begin:end,0])
-        centerOfMass = np.row_stack( (centerOfMass, np.dot(atomMasses, 
-                                                        self.dcdData[selection,begin:end,1])) )
-        centerOfMass = np.row_stack( (centerOfMass, np.dot(atomMasses, 
-                                                        self.dcdData[selection,begin:end,2])) )
+        centerOfMass = np.dot(self.dcdData[selection,begin:end].T, atomMasses).T
 
-        centerOfMass = centerOfMass / np.sum(atomMasses)
+        centerOfMass = np.sum(centerOfMass, axis=0) / np.sum(atomMasses) #_Summing over weighed atoms
 
         return centerOfMass
 
@@ -184,8 +181,11 @@ class NAMDDCD(NAMDPSF, DCDReader, BackScatData):
             
             Returns a similar array as the initial dataSet but with aligned coordinates."""
 
+        if type(selection) == str:
+            selection = self.parent.getSelection(selection)
+
         centerOfMass = self.getCenterOfMass(selection, begin, end)
-        alignData    = np.copy(self.dcdData[selection,begin:end,:])   
+        alignData    = np.copy(self.dcdData[selection,begin:end])   
 
         alignData = molFit_q.alignAllMol(alignData, centerOfMass)
         
@@ -200,7 +200,7 @@ class NAMDDCD(NAMDPSF, DCDReader, BackScatData):
 
         #_Get the indices corresponding to the selection
         if type(selection) == str:
-            selection = self.getSelection(selection)
+            selection = self.parent.getSelection(selection)
 
         centerOfMass = self.getCenterOfMass(selection, begin, end)
 

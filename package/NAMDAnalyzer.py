@@ -4,7 +4,9 @@ import IPython
 
 import re
 
-from .dataParsers.dcdParser import NAMDDCD
+
+#from .dataConverters.backscatteringDataConvert import BackScatData
+from .test.interFuncTest import BackScatData
 from .dataParsers.logParser import NAMDLOG
 from .dataParsers.pdbParser import NAMDPDB
 from .dataParsers.velParser import NAMDVEL
@@ -15,20 +17,22 @@ class NAMDAnalyzer(NAMDPSF):
 
     def __init__(self, fileList):
 
-        self.psfFile = self.getPSF(fileList) #_Check for .psf file presence
+        if isinstance(fileList, str):
+            self.fileList = [fileList]
+        else:
+            self.fileList = fileList
+
+        self.psfFile = self.getPSF(self.fileList) #_Check for .psf file presence
 
         NAMDPSF.__init__(self, self.psfFile) #_Initialize NAMDPSF to access selection methods directly from here
 
-        self.logData = NAMDLOG(self.psfFile)
-        self.dcdData = NAMDDCD(self.psfFile)
-        self.velData = NAMDVEL(self.psfFile)
-        self.pdbData = NAMDPDB(self.psfFile)
+        self.logData = NAMDLOG(self)
+        self.dcdData = BackScatData(self)
+        self.velData = NAMDVEL(self)
+        self.pdbData = NAMDPDB(self)
 
-        if isinstance(fileList, str): #_Single call to importFile of fileList is a string
-            self.importFile(fileList)
-        elif isinstance(fileList, list): #_If fileList is an actual list, call importFile for each entry
-            for f in fileList:
-                self.importFile(f)
+        for f in self.fileList:
+            self.importFile(f)
 
 
 
@@ -39,7 +43,7 @@ class NAMDAnalyzer(NAMDPSF):
         try:
             for idx, dataFile in enumerate(fileList):
                 if re.search('.psf', dataFile):
-                    fileList.pop(idx)
+                    self.fileList.pop(idx)
                     return dataFile
 
             raise Exception("No .psf file found. Please load one to initialize NAMDAnalyzer.")
@@ -60,25 +64,28 @@ class NAMDAnalyzer(NAMDPSF):
                                 'vel' or 'pdb'. If None, the file type will be guessed from extension."""
 
         print("Trying to import file: " + dataFile)
-        try: #_Trying to open the file. Raise an exception if not found for guessing.
-            if fileType=="out" or fileType=="log" or re.search('.log|.out', dataFile):
-                self.logData.importLOGFile(dataFile)
+        if fileType=="out" or fileType=="log" or re.search('.log|.out', dataFile):
+            self.logData.importLOGFile(dataFile)
 
-            elif fileType=="dcd" or re.search('.dcd', dataFile):
-                self.dcdData.importDCDFile(dataFile)
+        elif fileType=="dcd" or re.search('.dcd', dataFile):
+            self.dcdData.importDCDFile(dataFile)
 
-            elif fileType=="pdb" or re.search('.pdb', dataFile):
-                self.pdbData.importPDBFile(dataFile)
+        elif fileType=="pdb" or re.search('.pdb', dataFile):
+            self.pdbData.importPDBFile(dataFile)
 
-            elif fileType=="vel" or re.search('.vel', dataFile):
-                self.velData.importVELFile(dataFile)
+        elif fileType=="vel" or re.search('.vel', dataFile):
+            self.velData.importVELFile(dataFile)
 
-            else:
-                raise Exception("File extension not recognized.")
-
-        except Exception as inst:
-            print(inst)
+        elif fileType=="psf" or re.search('.psf', dataFile):
+            print("Nothing to do, .psf file should be already loaded.")
             return
+
+        elif dataFile == [] or dataFile == None:
+            return
+
+        else:
+            raise Exception("File extension not recognized.")
+
 
         print("Done\n")
 

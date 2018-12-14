@@ -8,14 +8,14 @@ import matplotlib.pyplot as plt
 from matplotlib import cm, colors
 
 from.velReader import VELReader
-from .psfParser import NAMDPSF
 
-class NAMDVEL(NAMDPSF, VELReader):
+class NAMDVEL(VELReader):
     """ This class contains methods for velocity file analysis. """
 
-    def __init__(self, psfFile, velFile=None):
+    def __init__(self, parent, velFile=None):
 
-        NAMDPSF.__init__(self, psfFile)
+        self.parent = parent
+
         VELReader.__init__(self)
 
         if velFile:

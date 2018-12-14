@@ -84,8 +84,9 @@ class NAMDPSF(PSFReader):
             keepIdxList.append( np.isin(self.psfData.atoms[:,4], self.waterH) )
 
         if selText == "protNonExchH":
-            keepIdxList = np.ones(self.psfData.atoms.shape[0]).astype(bool)
-            keepIdxList = np.bitwise_and(keepIdxList, np.isin(self.psfData.atoms[:,3], self.protSel))
+            keepIdxList = np.array([bool( self.H.match(val) ) for val in self.psfData.atoms[:,4]])
+            protList    = np.isin(self.psfData.atoms[:,4], self.protH)
+            keepIdxList = np.bitwise_and(keepIdxList, protList)
             for key, value in self.protExchH.items():
                 resArray        = np.isin(self.psfData.atoms[:,3], key)
                 exchHArray      = np.isin(self.psfData.atoms[:,4], value)
