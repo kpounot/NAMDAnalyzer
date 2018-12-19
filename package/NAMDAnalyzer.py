@@ -5,12 +5,12 @@ import IPython
 import re
 
 
-#from .dataConverters.backscatteringDataConvert import BackScatData
 from .test.interFuncTest import BackScatData
 from .dataParsers.logParser import NAMDLOG
 from .dataParsers.pdbParser import NAMDPDB
 from .dataParsers.velParser import NAMDVEL
 from .dataParsers.psfParser import NAMDPSF
+
 
 class NAMDAnalyzer(NAMDPSF):
     """ Main class for NAMDAnalyzer. It manages the different data types (psf, dcd, vel,...) """

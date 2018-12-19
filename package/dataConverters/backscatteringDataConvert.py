@@ -194,11 +194,14 @@ class BackScatData(NAMDDCD):
         #_Computes intermediate scattering function for one timestep, averaged over time origins
         msd = np.sum( (atomPos[:,frameNbr:] - atomPos[:,:-frameNbr])**2, axis=2) 
 
+        error = np.std( msd, axis=1 )
+        error = error.mean()
+
         msd = msd.mean( 1 ) #_Averaging over time origins 
         msd = msd.mean( 0 ) #_Averaging over atoms
 
 
-        return msd
+        return msd, error
 
 
 
