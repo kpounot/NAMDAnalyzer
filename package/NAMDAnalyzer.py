@@ -5,7 +5,7 @@ import IPython
 import re
 
 
-from .test.interFuncTest import BackScatData
+from .dataConverters.backscatteringDataConvert import BackScatData
 from .dataParsers.logParser import NAMDLOG
 from .dataParsers.pdbParser import NAMDPDB
 from .dataParsers.velParser import NAMDVEL
