@@ -28,7 +28,7 @@ class BackScatData(NAMDDCD):
 #---------------------------------------------
 #_Computation methods
 #---------------------------------------------
-    def compIntermediateFunc(self, qValList, minFrames, maxFrames, nbrBins=50, selection='protNonExchH', 
+    def compIntermediateFunc(self, qValList, minFrames, maxFrames, nbrBins=60, selection='protNonExchH', 
                                                                                     begin=0, end=None):
         """ This method computes intermediate function for all q-value (related to scattering angle)
 
@@ -68,8 +68,9 @@ class BackScatData(NAMDDCD):
             #_Compute time step
             timestep.append(self.timestep * nbrFrames * self.dcdFreq[0])
 
-            #_Speed up computation and try to prevent MemoryError for large arrays
-            incr = int(atomPos.shape[1] / 20) 
+            #_Defines the number of time origins to be averaged on
+            #_Speeds up computation and helps to prevent MemoryError for large arrays
+            incr = int(atomPos.shape[1] / 25) 
 
             #_Computes intermediate scattering function for one timestep, averaged over time origins
             displacement = atomPos[:,nbrFrames::incr] - atomPos[:,:-nbrFrames:incr]
@@ -80,7 +81,6 @@ class BackScatData(NAMDDCD):
                                             args=(displacement, qIdx, qVecs, corr, it)) )
         
                 threadList[qIdx].start()
-                time.sleep(0.01)
         
             for thr in threadList:
                 thr.join()
@@ -101,7 +101,6 @@ class BackScatData(NAMDDCD):
             temp = temp.mean() #_Average over time origins, q vectors and atoms
 
             corr[qIdx,it] += temp
-
 
 
 
@@ -167,8 +166,9 @@ class BackScatData(NAMDDCD):
         #_Performs the Fourier transform
         scatFunc = fftshift( fft(scatFunc, axis=1), axes=1 ) / scatFunc.shape[1]
 
-        #_Convert time to energies
-        energies = fftshift( 6.582119514e-2 * 2 * np.pi * fftfreq(scatFunc.shape[1], d=1/nbrBins) )  
+        #_Convert time to energies in micro-electron volts
+        timeIncr = (timesteps[1:] - timesteps[:-1])[0]
+        energies = 4.135662668e-15 * fftshift( fftfreq(timesteps.size, d=timeIncr) ) * 1e6
 
         self.scatFunc = scatFunc, energies
 
@@ -192,13 +192,15 @@ class BackScatData(NAMDDCD):
         atomPos = self.alignCenterOfMass(selection, begin, end)
 
         #_Computes intermediate scattering function for one timestep, averaged over time origins
-        msd = np.sum( (atomPos[:,frameNbr:] - atomPos[:,:-frameNbr])**2, axis=2) 
+        displacement = atomPos[:,frameNbr:] - atomPos[:,:-frameNbr]
 
-        error = np.std( msd, axis=1 )
+        error = np.std(displacement, axis=1) 
         error = error.mean()
 
+        msd = np.sum( (displacement)**2, axis=2) 
         msd = msd.mean( 1 ) #_Averaging over time origins 
-        msd = msd.mean( 0 ) #_Averaging over atoms
+
+        msd = msd.mean()    #_Averaging over atoms
 
 
         return msd, error

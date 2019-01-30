@@ -6,11 +6,14 @@ import matplotlib.pyplot as plt
 from matplotlib import cm, colors
 from mpl_toolkits.mplot3d.axes3d import Axes3D
 
+from threading import Thread, RLock
+
 
 from collections import namedtuple
 
 from ..dataManipulation import molFit_quaternions as molFit_q
 from .dcdReader import DCDReader
+
 
 
 class NAMDDCD(DCDReader):
@@ -24,6 +27,78 @@ class NAMDDCD(DCDReader):
 
         if dcdFile:
             self.importDCDFile(dcdFile)
+
+
+
+    def getWithin(self, distance, usrSel, outSel=None, frame=-1, batchSize=2000):
+        """ Selects all atoms that within the given distance of the given selection and frame.
+    
+            Input:  distance    -> distance in angstrom, within which to select atoms
+                    selection   -> initial selection from which distance should be computed
+                    outSel      -> specific selection for output. If not None, after all atoms within the
+                                   given distance have been selected, the selected can be restricted
+                                   further using a keyword or a list of indices. Only atoms that are
+                                   present in the 'within' list and in the 'outSel' list are returned.
+                    frame       -> frame number to be used for atom selection
+
+            Returns the list of selected atom indices. """
+
+
+        #_Get the indices corresponding to the selection
+        if type(usrSel) == str:
+            usrSel = self.parent.getSelection(usrSel)
+
+        if type(outSel) == str:
+            outSel = self.parent.getSelection(outSel)
+
+    
+        distance = distance**2
+
+
+        usrSel      = self.dcdData[usrSel,frame]        #_Get initial atom selection
+        frameAll    = self.dcdData[:,frame]             #_Get all atom in given frame
+        keepIdx     = np.zeros(self.dcdData.shape[0])   #_Initialize boolean array for atom selection
+
+
+        pList = []
+        batchIdx = np.arange(0, frameAll.shape[0], batchSize)
+        for idx in batchIdx:
+            vecDist = frameAll[idx:idx+batchSize]
+
+            pList.append( Thread(target=self.kernelWithin, args=(vecDist, usrSel, distance, keepIdx, idx)) )
+
+            try:
+                pList[-1].start()
+            except MemoryError:
+                print("Memory Error: resulting array too big, try to reduce batchSize" 
+                                                                         + " or use smaller selection\n")
+
+
+        for p in pList:
+            p.join()
+            
+
+
+        if outSel is not None:
+            outSelBool = np.zeros(self.dcdData.shape[0]) #_Creates an array of boolean for logical_and
+            outSelBool[outSel] = 1  #_Sets selected atoms indices to 1
+
+            keepIdx = np.logical_and( outSelBool, keepIdx )
+
+
+        return np.argwhere( keepIdx )[:,0]
+
+
+
+
+    def kernelWithin(self, M0, M1, distance, outVec, idx):
+
+        vecDist = np.sum( (M0[:,np.newaxis,:] - M1)**2, axis=2 )
+
+        outVec[ np.unique( np.argwhere(vecDist <= distance)[:,0] + idx ) ] = 1
+
+
+
 
 
 

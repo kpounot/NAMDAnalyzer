@@ -32,6 +32,8 @@ class NAMDPSF(PSFReader):
         return self.psfData.atoms[selection,7].astype(float)
 
 
+
+
     def getSelection(self, selText="all", segName=None, NOTsegName=None, resNbr=None, resName=None, 
                             NOTresNbr=None, NOTresName=None, atom=None, NOTatom=None, index=None):
         """ This method returns an list of index corresponding to the ones that have been selected 
@@ -149,4 +151,6 @@ class NAMDPSF(PSFReader):
 
         #_Using argwhere to return the indices corresponding to the True values
         return np.argwhere(keepIdxList[0])[:,0]
+
+
 
