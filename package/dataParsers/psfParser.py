@@ -81,7 +81,7 @@ class NAMDPSF(PSFReader):
         if selText == "backbone":
             keepIdxList.append( np.isin(self.psfData.atoms[:,4], self.backboneSel) )
         if selText == "water":
-            keepIdxList.append( np.isin(self.psfData.atoms[:,3], "TIP3") )
+            keepIdxList.append( np.isin(self.psfData.atoms[:,3], ["TIP3", "TIP4", "TIP5", "SPC", "SPCE"]) )
         if selText == "waterH":
             keepIdxList.append( np.isin(self.psfData.atoms[:,4], self.waterH) )
 
@@ -154,3 +154,20 @@ class NAMDPSF(PSFReader):
 
 
 
+
+
+    def getSameResidueAs(self, selection):
+        """ Given the provided selection, selects all others atoms that are present in the same residues and
+            returns an updated selection. """
+
+        if selection.shape[0] == 1:
+            sel = self.psfData.atoms[selection][1:3] #_Selects the segment and resiID columns
+        else:
+            sel = self.psfData.atoms[selection][:,1:3] #_Selects the segment and resiID columns
+
+        segList = np.isin(self.psfData.atoms[:,1], sel[:,0])
+        resList = np.isin(self.psfData.atoms[:,2], sel[:,1])
+
+        keepList = np.bitwise_and(segList, resList)
+
+        return np.argwhere(keepList)[:,0]

@@ -15,7 +15,7 @@ from .dataParsers.psfParser import NAMDPSF
 class NAMDAnalyzer(NAMDPSF):
     """ Main class for NAMDAnalyzer. It manages the different data types (psf, dcd, vel,...) """
 
-    def __init__(self, fileList):
+    def __init__(self, fileList, stride):
 
         if isinstance(fileList, str):
             self.fileList = [fileList]
@@ -27,7 +27,7 @@ class NAMDAnalyzer(NAMDPSF):
         NAMDPSF.__init__(self, self.psfFile) #_Initialize NAMDPSF to access selection methods directly from here
 
         self.logData = NAMDLOG(self)
-        self.dcdData = BackScatData(self)
+        self.dcdData = BackScatData(self, None, stride)
         self.velData = NAMDVEL(self)
         self.pdbData = NAMDPDB(self)
 
@@ -58,7 +58,6 @@ class NAMDAnalyzer(NAMDPSF):
         """ Method used to import one file.
             The method automatically stores the corresponding class in NAMDAnalyzer variables like
             self.logData. If something already exists, it will be overridden.
-
             Input:  a single data file (*.log, *.dcd,...)
                     fileType -> data file type, can be 'log or 'out' for standard NAMD log output, 'dcd',
                                 'vel' or 'pdb'. If None, the file type will be guessed from extension."""
@@ -97,4 +96,3 @@ if __name__ == '__main__':
 
     data = NAMDAnalyzer(fileList)
 
-        

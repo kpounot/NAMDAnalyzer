@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from matplotlib import cm, colors
 from mpl_toolkits.mplot3d.axes3d import Axes3D
 
-from ..lib.pygetWithin import py_getWithin
+from pathos.multiprocessing import ProcessingPool
 
 from collections import namedtuple
 
@@ -18,19 +18,18 @@ from .dcdReader import DCDReader
 class NAMDDCD(DCDReader):
     """ This class contains methods for trajectory file analysis. """
     
-    def __init__(self, parent, dcdFile=None, stride=1):
+    def __init__(self, parent, dcdFile=None):
     
         self.parent = parent
-        self.stride = stride
 
-        DCDReader.__init__(self, stride)
+        DCDReader.__init__(self)
 
         if dcdFile:
             self.importDCDFile(dcdFile)
 
 
 
-    def getWithin(self, distance, usrSel, outSel=None, frame=-1, getSameResid=True):
+    def getWithin(self, distance, usrSel, outSel=None, frame=-1, batchSize=500):
         """ Selects all atoms that within the given distance of the given selection and frame.
     
             Input:  distance    -> distance in angstrom, within which to select atoms
@@ -40,7 +39,6 @@ class NAMDDCD(DCDReader):
                                    further using a keyword or a list of indices. Only atoms that are
                                    present in the 'within' list and in the 'outSel' list are returned.
                     frame       -> frame number to be used for atom selection
-                    getSameResid-> if True, select all atoms in the same residue before returning the list 
 
             Returns the list of selected atom indices. """
 
@@ -53,36 +51,35 @@ class NAMDDCD(DCDReader):
             outSel = self.parent.getSelection(outSel)
 
     
-        frameAll    = np.ascontiguousarray(self.dcdData[:,frame], dtype='float32') #_Get frame coordinates
-
-        #_Get initial atom selection
-        usrSel      = np.ascontiguousarray(self.dcdData[usrSel,frame], dtype='float32')
-
-        #_Get cell dimensions for given frame and make array contiguous
-        cellDims    = np.ascontiguousarray(self.cellDims[:,frame], dtype='float32')
-
-        #_Initialize boolean array for atom selection
-        keepIdx     = np.zeros(self.dcdData.shape[0], dtype=int)
+        distance = distance**2
 
 
-        py_getWithin(frameAll, usrSel, cellDims, keepIdx, distance)
+        cellDims    = self.cellDims[:,frame]
+        usrSel      = self.dcdData[usrSel,frame]        #_Get initial atom selection
+        frameAll    = self.dcdData[:,frame]             #_Get all atom in given frame
+        keepIdx     = np.zeros(self.dcdData.shape[0])   #_Initialize boolean array for atom selection
+
+
+        pList = []
+        batchIdx = np.arange(0, frameAll.shape[0], batchSize)
+        for idx in batchIdx:
+            vecDist = frameAll[idx:idx+batchSize]
+            vecDist = (vecDist[:,np.newaxis,:] - usrSel)
+            vecDist = vecDist - cellDims * np.round(vecDist / cellDims)
+
+            vecDist = np.sum( vecDist**2, axis=2 )
+
+            keepIdx[ np.unique( np.argwhere(vecDist <= distance)[:,0] + idx ) ] = 1
 
 
         if outSel is not None:
-            #_Creates an array of boolean for logical_and
-            outSelBool = np.zeros(self.dcdData.shape[0], dtype=bool) 
+            outSelBool = np.zeros(self.dcdData.shape[0]) #_Creates an array of boolean for logical_and
             outSelBool[outSel] = 1  #_Sets selected atoms indices to 1
 
-            keepIdx = np.logical_and( outSelBool, keepIdx.astype(bool) )
+            keepIdx = np.logical_and( outSelBool, keepIdx )
 
 
-        keepIdx = np.argwhere( keepIdx )[:,0]
-
-        if getSameResid:
-            keepIdx = self.parent.getSameResidueAs(keepIdx)
-
-
-        return keepIdx
+        return np.argwhere( keepIdx )[:,0]
 
 
 
@@ -213,8 +210,6 @@ class NAMDDCD(DCDReader):
         return rmsd
  
 
-
-
     def getCenterOfMass(self, selection="all", begin=0, end=None):
         """ Computes the center of mass of the system for atoms between firstAtom and lastATom,
             and for frames between begin and end. """
@@ -230,15 +225,13 @@ class NAMDDCD(DCDReader):
             print("No .psf file was loaded, please import one before using this method.")
             return
 
-        atomMasses = atomMasses.reshape(1, atomMasses.size, 1).astype('float32')
+        atomMasses = atomMasses.reshape(1, atomMasses.size, 1)
 
         centerOfMass = np.dot(self.dcdData[selection,begin:end].T, atomMasses).T
 
         centerOfMass = np.sum(centerOfMass, axis=0) / np.sum(atomMasses) #_Summing over weighed atoms
 
         return centerOfMass
-
-
 
 
     def getAlignedData(self, selection, begin=0, end=None):
@@ -268,12 +261,12 @@ class NAMDDCD(DCDReader):
         if type(selection) == str:
             selection = self.parent.getSelection(selection)
 
+        centerOfMass = self.getCenterOfMass(selection, begin, end)
 
         dataSet = np.copy( self.dcdData[selection, begin:end] )
 
         #_Substract the center of mass coordinates to each atom for each frame
         for i in range(dataSet.shape[1]):
-            centerOfMass = self.getCenterOfMass(selection, i, i+1)
             dataSet[:,i,:] = dataSet[:,i,:] - centerOfMass[:,i]
 
         return dataSet

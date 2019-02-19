@@ -13,11 +13,12 @@ from scipy.fftpack import fft, irfft, fftfreq, fftshift
 from ..helpersFunctions import ConstantsAndModels as CM 
 from ..dataParsers.dcdParser import NAMDDCD
 
+
 class BackScatData(NAMDDCD):
 
-    def __init__(self, parent, dcdFile=None):
+    def __init__(self, parent, dcdFile=None, stride=1):
 
-        NAMDDCD.__init__(self, parent, dcdFile)
+        NAMDDCD.__init__(self, parent, dcdFile, stride)
 
         self.EISF       = None
         self.interFunc  = None
@@ -28,7 +29,7 @@ class BackScatData(NAMDDCD):
 #---------------------------------------------
 #_Computation methods
 #---------------------------------------------
-    def compIntermediateFunc(self, qValList, minFrames, maxFrames, nbrBins=50, selection='protNonExchH', 
+    def compIntermediateFunc(self, qValList, minFrames, maxFrames, nbrBins=60, selection='protNonExchH', 
                                                                                     begin=0, end=None):
         """ This method computes intermediate function for all q-value (related to scattering angle)
 
@@ -53,7 +54,7 @@ class BackScatData(NAMDDCD):
         #_Computes random q vectors
         qArray = []
         for qIdx, qVal in enumerate(qValList):
-            qList = [CM.getRandomVec(qVal) for i in range(20)] 
+            qList = [CM.getRandomVec(qVal) for i in range(15)] 
             qArray.append( np.array(qList).T )
 
         qArray = np.array(qArray)
@@ -61,14 +62,15 @@ class BackScatData(NAMDDCD):
         corr = np.zeros( (qValList.size, nbrBins), dtype='c16') 
         timestep = []
 
-        for it in range(nbrBins):
+        for idx, it in enumerate(np.arange(nbrBins)):
             print("Computing bin: %i/%i" % (it+1, nbrBins), end='\r')
             nbrFrames   = minFrames + int(it * (maxFrames - minFrames) / nbrBins )
 
             #_Compute time step
             timestep.append(self.timestep * nbrFrames * self.dcdFreq[0])
 
-            #_Speed up computation and try to prevent MemoryError for large arrays
+            #_Defines the number of time origins to be averaged on
+            #_Speeds up computation and helps to prevent MemoryError for large arrays
             incr = int(atomPos.shape[1] / 20) 
 
             #_Computes intermediate scattering function for one timestep, averaged over time origins
@@ -80,7 +82,6 @@ class BackScatData(NAMDDCD):
                                             args=(displacement, qIdx, qVecs, corr, it)) )
         
                 threadList[qIdx].start()
-                time.sleep(0.01)
         
             for thr in threadList:
                 thr.join()
@@ -101,7 +102,6 @@ class BackScatData(NAMDDCD):
             temp = temp.mean() #_Average over time origins, q vectors and atoms
 
             corr[qIdx,it] += temp
-
 
 
 
@@ -167,8 +167,9 @@ class BackScatData(NAMDDCD):
         #_Performs the Fourier transform
         scatFunc = fftshift( fft(scatFunc, axis=1), axes=1 ) / scatFunc.shape[1]
 
-        #_Convert time to energies
-        energies = fftshift( 6.582119514e-2 * 2 * np.pi * fftfreq(scatFunc.shape[1], d=1/nbrBins) )  
+        #_Convert time to energies in micro-electron volts
+        timeIncr = (timesteps[1:] - timesteps[:-1])[0]
+        energies = 4.135662668e-15 * fftshift( fftfreq(timesteps.size, d=timeIncr) ) * 1e6
 
         self.scatFunc = scatFunc, energies
 
@@ -192,13 +193,18 @@ class BackScatData(NAMDDCD):
         atomPos = self.alignCenterOfMass(selection, begin, end)
 
         #_Computes intermediate scattering function for one timestep, averaged over time origins
-        msd = np.sum( (atomPos[:,frameNbr:] - atomPos[:,:-frameNbr])**2, axis=2) 
+        displacement = atomPos[:,frameNbr:] - atomPos[:,:-frameNbr]
 
+        error = np.std(displacement, axis=1) 
+        error = error.mean()
+
+        msd = np.sum( (displacement)**2, axis=2) 
         msd = msd.mean( 1 ) #_Averaging over time origins 
-        msd = msd.mean( 0 ) #_Averaging over atoms
+
+        msd = msd.mean()    #_Averaging over atoms
 
 
-        return msd
+        return msd, error
 
 
 

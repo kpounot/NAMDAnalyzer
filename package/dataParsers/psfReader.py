@@ -10,8 +10,9 @@ class PSFReader:
         self.psfData = None
 
         #_Defining some useful attributes
-        self.protSel        = ["GLY", "ALA", "VAL", "LEU", "ILE", "MET", "PHE", "TRP", "TRY", "PRO"
-                              "SER", "THR", "CYS", "TYR", "ASN", "GLN", "ASP", "GLU", "LYS", "ARG", "HIS"]
+        self.protSel        = ["GLY", "ALA", "VAL", "LEU", "ILE", "MET", "PHE", "TRP", "TRY", "PRO",
+                              "SER", "THR", "CYS", "TYR", "ASN", "GLN", "ASP", "GLU", "LYS", "ARG", "HIS",
+                              "HSE", "HSP"," HSD"]
 
         self.backboneSel    = ["C", "O", "N", "HN", "CA", "HA"]
 
