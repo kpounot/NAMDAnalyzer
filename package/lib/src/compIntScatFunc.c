@@ -6,7 +6,7 @@
 void compIntScatFunc(float *atomPos, int atomPos_dim0, int atomPos_dim1, int atomPos_dim2, 
                      float *qVecs, int qVecs_dim0, int qVecs_dim1, int qVecs_dim2, 
                      double complex *out, int out_dim0, int out_dim1, 
-                     int nbrBins, int minFrames, int maxFrames)
+                     int nbrBins, int minFrames, int maxFrames, int nbrTimeOri)
 {
     /*  The function computes the intermediate neutron incoherent scattering function.
      *  Using given atom positions, minimum and maximum timesteps, and the desired number of time bins,
@@ -22,7 +22,8 @@ void compIntScatFunc(float *atomPos, int atomPos_dim0, int atomPos_dim1, int ato
      *          cellDims    ->  dimensions of the cell in x, y and z (used for periodic boundary conditions) 
      *          nbrBins     -> number of timestep bins to be used between minFrame and maxFrame 
      *          minFrames   -> minimum number of frames to be used for timestep
-     *          maxFrames   -> maximum number of frames to be used for timestep */
+     *          maxFrames   -> maximum number of frames to be used for timestep 
+     *          nbrTimeOri  -> number of time origins to be averaged over */
 
 
 
@@ -40,12 +41,10 @@ void compIntScatFunc(float *atomPos, int atomPos_dim0, int atomPos_dim1, int ato
     float dist_0;
     float dist_1;
     float dist_2;
-    double complex exponent;
+    double exponent;
 
     // Computes the increment for time steps in terms of frames
     int incr  = ( maxFrames - minFrames  ) / nbrBins ;
-
-    int nbrTimeOri = 20; // Use given number of time origins
 
     unsigned int avgFactor = atomPos_dim0 * nbrTimeOri * qVecs_dim1; 
 
@@ -79,12 +78,12 @@ void compIntScatFunc(float *atomPos, int atomPos_dim0, int atomPos_dim1, int ato
                         dist_1 = atomPos[atom_tf_idx+1] - atomPos[atom_t0_idx+1];
                         dist_2 = atomPos[atom_tf_idx+2] - atomPos[atom_t0_idx+2];
 
-                        exponent = I * (  qVecs[qVec_idx] * dist_0
-                                        + qVecs[qVec_idx+1] * dist_1
-                                        + qVecs[qVec_idx+2] * dist_2 );
+                        exponent = ( qVecs[qVec_idx] * dist_0 
+                                     + qVecs[qVec_idx+1] * dist_1
+                                     + qVecs[qVec_idx+2] * dist_2 );
 
 
-                        correlation += cexp(exponent);
+                        correlation += cexp(I * exponent);
 
                     } // atoms loop
 

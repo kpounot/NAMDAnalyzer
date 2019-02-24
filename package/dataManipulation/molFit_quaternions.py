@@ -33,7 +33,7 @@ def get_bestMatrix(q):
     return qM
 
 
-def alignAllMol(dataSet, centerOfMass):
+def alignAllMol(dataSet):
     """ This function takes trajectories from .dcd file, and apply the following procedure 
         for all frame between begin and end and to all atoms between firstAtom and lastAtom:
 
@@ -43,10 +43,6 @@ def alignAllMol(dataSet, centerOfMass):
         
         This procedure is based on the Berthold K. P. Horn (1987) and Douglas L. Theobald (2005) papers."""
 
-
-    #_Substract the center of mass coordinates to each atom for each frame,
-    for i in range(dataSet.shape[1]):
-        dataSet[:,i,:] = dataSet[:,i,:] - centerOfMass[:,i]
 
     #_Determines the correct rotations to align the molecules
     for i in range(1, dataSet.shape[1]):

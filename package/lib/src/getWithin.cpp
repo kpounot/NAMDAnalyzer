@@ -43,8 +43,6 @@ void getWithin(float *allAtoms, int nbrAtoms, float *selAtoms, int sel_dim0, flo
     for(int selAtom=0; selAtom < sel_dim0; ++selAtom)
     {
 
-        printf("Finding neighbours around atom %d of %d...\r", selAtom+1, sel_dim0);
-
         for(std::list<int>::iterator it=atomIds.begin(); it != atomIds.end(); ++it)
         {
 

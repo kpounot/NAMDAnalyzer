@@ -50,14 +50,15 @@ class DCDReader:
 
 
             #_Allocating memory to make the process much faster
-            self.dcdData = np.zeros( (self.nbrAtoms, 3 * (int(self.nbrFrames / self.stride)) ), 
-                                                                                        dtype='float32' )
+            self.dcdData = np.zeros( (self.nbrAtoms, 3 * int(np.ceil(self.nbrFrames / self.stride)) ), 
+                                                                                        dtype=np.float32 )
 
         
-
             if self.cell:
+
                 recSize         = 4 * self.nbrAtoms + 8
-                self.cellDims   = np.zeros( (3, int(self.nbrFrames / self.stride) ) )
+                self.cellDims   = np.zeros( (3, int(np.ceil(self.nbrFrames / self.stride)) ) )
+
                 for frame in range(self.nbrFrames):
                     data = f.read(56+3*recSize)
                     if (frame % self.stride) == 0:
@@ -72,7 +73,9 @@ class DCDReader:
                         
 
             else:
+
                 recSize = 3 * self.nbrAtoms + 8
+
                 for frame in range(self.nbrFrames):
                     data = f.read(56+3*recSize)
                     if (frame % self.stride) == 0:
@@ -88,7 +91,9 @@ class DCDReader:
 
         #_The dataset is reshaped so that we have atom index in axis 0, frame number in axis 1, 
         #_and (x, y, z) coordinates in axis 2
-        self.dcdData = self.dcdData.reshape(self.dcdData.shape[0], int(self.nbrFrames / self.stride), 3)
+        self.dcdData = self.dcdData.reshape(self.dcdData.shape[0], 
+                                            int(np.ceil(self.nbrFrames / self.stride)), 
+                                            3)
 
 
         #_Converting dcdFreq to an array of size nbrFrames for handling different dcdFreq 
@@ -97,7 +102,7 @@ class DCDReader:
 
         
         #_Set number of frames to the right value, taking stride parameter into account
-        self.nbrFrames = int(self.nbrFrames / self.stride) 
+        self.nbrFrames = int(np.ceil(self.nbrFrames / self.stride)) 
 
 
         if self.stride == 1: #_Removes the additional entry at the end when stride is equal to one.

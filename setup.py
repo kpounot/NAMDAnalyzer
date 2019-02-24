@@ -17,12 +17,22 @@ packagesList = [    'package',
 
 pycompIntScatFunc_ext = Extension( "pycompIntScatFunc", 
                                    ["package/lib/pycompIntScatFunc.pyx", "package/lib/src/compIntScatFunc.c"],
-                                   include_dirs=["package/lib/src",  np.get_include()] )
+                                   include_dirs=["package/lib/src", np.get_include()] )
+
+
 
 pygetWithin_ext       = Extension( "pygetWithin", 
                                    ["package/lib/pygetWithin.pyx", "package/lib/src/getWithin.cpp"],
                                    include_dirs=["package/lib/src",  np.get_include()],
                                    language='c++' )
+
+
+pygetCOM_ext = Extension( "pygetCenterOfMass", ["package/lib/pygetCenterOfMass.pyx"],
+                                   include_dirs=[np.get_include()] ) 
+
+
+pysetCOMAligned_ext = Extension( "pysetCenterOfMassAligned", ["package/lib/pysetCenterOfMassAligned.pyx"],
+                                   include_dirs=[np.get_include()] ) 
 
 
 setup(  name='NAMDAnalyzer',
@@ -32,5 +42,8 @@ setup(  name='NAMDAnalyzer',
         author_email='kpounot@hotmail.fr',
         url='github.com/kpounot/NAMDAnalyzer',
         packages=packagesList,
-        ext_modules=cythonize( [pycompIntScatFunc_ext, pygetWithin_ext] )  )
+        ext_modules=cythonize( [pycompIntScatFunc_ext, 
+                                pygetWithin_ext,
+                                pygetCOM_ext,
+                                pysetCOMAligned_ext] )  )
 

@@ -7,6 +7,8 @@ from matplotlib import cm, colors
 from mpl_toolkits.mplot3d.axes3d import Axes3D
 
 from ..lib.pygetWithin import py_getWithin
+from ..lib.pygetCenterOfMass import py_getCenterOfMass
+from ..lib.pysetCenterOfMassAligned import py_setCenterOfMassAligned
 
 from collections import namedtuple
 
@@ -22,6 +24,7 @@ class NAMDDCD(DCDReader):
     
         self.parent = parent
         self.stride = stride
+        self.COMAligned = False #_To check if center of mass were aligned
 
         DCDReader.__init__(self, stride)
 
@@ -215,26 +218,20 @@ class NAMDDCD(DCDReader):
 
 
 
-    def getCenterOfMass(self, selection="all", begin=0, end=None):
-        """ Computes the center of mass of the system for atoms between firstAtom and lastATom,
-            and for frames between begin and end. """
+    def getCenterOfMass(self):
+        """ Computes the center of mass for all atoms in all frames. """
 
         try: #_Check if a psf file has been loaded
-            #_Get the indices corresponding to the selection
-            if type(selection) == str:
-                selection = self.parent.getSelection(selection)
-
-            atomMasses = self.parent.getAtomsMasses(selection)
+            atomMasses = self.parent.getAtomsMasses('all')
 
         except AttributeError:
             print("No .psf file was loaded, please import one before using this method.")
             return
 
-        atomMasses = atomMasses.reshape(1, atomMasses.size, 1).astype('float32')
+        atomMasses = atomMasses.reshape(atomMasses.size, 1)
 
-        centerOfMass = np.dot(self.dcdData[selection,begin:end].T, atomMasses).T
+        centerOfMass = py_getCenterOfMass(self.dcdData, atomMasses)
 
-        centerOfMass = np.sum(centerOfMass, axis=0) / np.sum(atomMasses) #_Summing over weighed atoms
 
         return centerOfMass
 
@@ -250,16 +247,16 @@ class NAMDDCD(DCDReader):
         if type(selection) == str:
             selection = self.parent.getSelection(selection)
 
-        centerOfMass = self.getCenterOfMass(selection, begin, end)
-        alignData    = np.copy(self.dcdData[selection,begin:end])   
+        alignData = self.getAlignedCenterOfMass(selection, begin, end)
 
-        alignData = molFit_q.alignAllMol(alignData, centerOfMass)
+        alignData = molFit_q.alignAllMol(alignData)
         
         return alignData
 
 
 
-    def alignCenterOfMass(self, selection='all', begin=0, end=None):
+
+    def getAlignedCenterOfMass(self, selection='all', begin=0, end=None):
         """ This method aligns the center of mass of each frame to the origin.
             It does not perform any fitting for rotations, so that it can be used for center of mass
             drift corrections if no global angular momentum is present. """
@@ -271,12 +268,33 @@ class NAMDDCD(DCDReader):
 
         dataSet = np.copy( self.dcdData[selection, begin:end] )
 
+        centerOfMass = self.getCenterOfMass()[np.newaxis, begin:end]
+
         #_Substract the center of mass coordinates to each atom for each frame
-        for i in range(dataSet.shape[1]):
-            centerOfMass = self.getCenterOfMass(selection, i, i+1)
-            dataSet[:,i,:] = dataSet[:,i,:] - centerOfMass[:,i]
+        dataSet = dataSet - centerOfMass
 
         return dataSet
+
+
+
+
+
+    def setCenterOfMassAligned(self, begin=0, end=None):
+        """ Modifies the dcd data by aligning center of mass of all atoms between given frames delimited by
+            begin and end keywords. """
+
+        print("\nAligning center of mass of all molecules...\n")
+
+        centerOfMass = self.getCenterOfMass()[begin:end]
+
+        #_Substract the center of mass coordinates to each atom for each frame
+        py_setCenterOfMassAligned(self.dcdData[:,begin:end], centerOfMass)
+
+
+        self.COMAligned = True
+
+
+        print("Done\n")
 
 
 
