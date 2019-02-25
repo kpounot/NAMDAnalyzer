@@ -8,11 +8,13 @@ New files can be loaded using the importFile method.
 Installation:
 
 Windows
-    MinGW is necessary to compile C and cython routines.
-    Then simply use nmake to build the API inplace, which can be use directly from powershell console (see 'Start the interpreter')
+MinGW is necessary to compile C and cython routines.
+Then simply use nmake to build the API inplace, which can be use directly from powershell console (see 'Start the interpreter')
 
-    To install it within your python distribution, use 'python setup.py build_ext bdist'
-    Then use 'pip install NAMDAnalyzer-versionNumber.win32.zip'
+To install it within your python distribution, use 
+    python setup.py build_ext bdist
+Then use 
+    pip install ./dist/<name of .zip file created>
 
 
 Start the interpreter:
