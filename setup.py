@@ -17,14 +17,18 @@ packagesList = [    'package',
 
 pycompIntScatFunc_ext = Extension( "pycompIntScatFunc", 
                                    ["package/lib/pycompIntScatFunc.pyx", "package/lib/src/compIntScatFunc.c"],
-                                   include_dirs=["package/lib/src", np.get_include()] )
+                                   include_dirs=["package/lib/src", np.get_include()],
+                                   extra_compile_args=['-Ofast'],
+                                   extra_link_args=['-Ofast'])
 
 
 
 pygetWithin_ext       = Extension( "pygetWithin", 
                                    ["package/lib/pygetWithin.pyx", "package/lib/src/getWithin.cpp"],
                                    include_dirs=["package/lib/src",  np.get_include()],
-                                   language='c++' )
+                                   language='c++',
+                                   extra_compile_args=['-Ofast'],
+                                   extra_link_args=['-Ofast'])
 
 
 pygetCOM_ext = Extension( "pygetCenterOfMass", ["package/lib/pygetCenterOfMass.pyx"],
