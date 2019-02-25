@@ -5,9 +5,9 @@ The  programm is organized on a master class contained in NAMDAnalyzer.
 New files can be loaded using the importFile method.
 
 
-##Installation:
+## Installation:
 
-###Windows
+### Windows
 MinGW is necessary to compile C and cython routines.
 Then simply use nmake to build the API inplace, which can be use directly from powershell console (see 'Start the interpreter')
 
@@ -17,14 +17,14 @@ Then use
     pip install ./dist/<name of .zip file created>
 
 
-##Start the interpreter:
+## Start the interpreter:
 Initialization of the ipython console can be done using the following command:
 
     ipython -i <path to NAMDAnalyzer.py> -- <list of files to be loaded> [-s stride]
 
-###Options: -s stride -> use to skip frames when loading a .dcd file. For instance if "-s 5" is provided, only the frames that are multiples of 5 will be loaded.
+### Options: -s stride -> use to skip frames when loading a .dcd file. For instance if "-s 5" is provided, only the frames that are multiples of 5 will be loaded.
 
-##Usage:
+## Usage:
 Each class in dataParser contains an __init__ routine, in which the file is read and data extracted.
 They contain also methods to get access to data in numpy array format,
 and methods to plot data in different ways.
