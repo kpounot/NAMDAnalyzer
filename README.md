@@ -13,11 +13,7 @@ Then simply use nmake to build the API inplace, which can be use directly from p
 
 To install it within your python distribution, use 
 
-    python setup.py build_ext bdist
-
-Then use 
-
-    pip install ./dist/<name of .zip file created>
+    python setup.py install
 
 
 ## Start the interpreter:

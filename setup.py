@@ -2,6 +2,8 @@ from distutils.core import setup, Extension
 from Cython.Build import cythonize
 import numpy as np
 
+from sys import platform
+
 
 with open('README.md', 'r') as f:
     description = f.read()
@@ -13,6 +15,7 @@ packagesList = [    'package',
                     'package.dataConverters',
                     'package.helpersFunctions',
                     'package.test'  ]
+
 
 
 pycompIntScatFunc_ext = Extension( "pycompIntScatFunc", 
