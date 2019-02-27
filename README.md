@@ -7,13 +7,27 @@ New files can be loaded using the importFile method.
 
 ## Installation:
 
+### Unix
+Change compiler to unix in the setup.cfg file.
+To install it within your python distribution, use 
+
+    make 
+    make install
+
+or
+    
+    python3 setup.py build
+    python3 setup.py install
+
+
 ### Windows
 MinGW is necessary to compile C and cython routines.
-Then simply use nmake to build the API inplace, which can be use directly from powershell console (see 'Start the interpreter')
+Change compiler to mingw32 i nthe setup.cfg file.
 
 To install it within your python distribution, use 
 
-    python setup.py install
+    mingw32-make.exe 
+    mingw32-make.exe install
 
 
 ## Start the interpreter:
@@ -23,7 +37,7 @@ Initialization of the ipython console can be done using the following command:
 
 ### Options: 
 
--s stride -> use to skip frames when loading a .dcd file. For instance if "-s 5" is provided, only the frames that are multiples of 5 will be loaded.
+- -s stride -> use to skip frames when loading a .dcd file. For instance if "-s 5" is provided, only the frames that are multiples of 5 will be loaded.
 
 ## Usage:
 Each class in dataParser contains an __init__ routine, in which the file is read and data extracted.
