@@ -1,3 +1,2 @@
-__all__ = ['NAMDAnalyzer']
-
+from core.NAMDAnalyzer import NAMDAnalyzer
 

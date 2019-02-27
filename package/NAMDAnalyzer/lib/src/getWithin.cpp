@@ -75,7 +75,7 @@ void getWithin(float *allAtoms, int nbrAtoms, float *selAtoms, int sel_dim0, flo
 
 
 
-        for(auto const& id: eraseList)
+        for(int const& id: eraseList)
         {
             atomIds.remove(id); // Remove already found atoms from the search list
         }
