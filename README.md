@@ -1,14 +1,12 @@
 # NAMDAnalyzer
 Python based routines for molecular dynamics simulation analysis from NAMD
 
-The  programm is organized on a master class contained in NAMDAnalyzer.
-New files can be loaded using the importFile method.
-
 
 ## Installation:
 
 ### Unix
 Change compiler to unix in the setup.cfg file.
+
 To install it within your python distribution, use 
 
     make 
@@ -40,6 +38,10 @@ Initialization of the ipython console can be done using the following command:
 - -s stride -> use to skip frames when loading a .dcd file. For instance if "-s 5" is provided, only the frames that are multiples of 5 will be loaded.
 
 ## Usage:
+The program is organized on a master class contained in NAMDAnalyzer.
+
+New files can be loaded using the importFile method.
+
 Each class in dataParser contains an __init__ routine, in which the file is read and data extracted.
 They contain also methods to get access to data in numpy array format,
 and methods to plot data in different ways.
