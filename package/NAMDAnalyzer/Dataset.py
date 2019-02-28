@@ -5,17 +5,17 @@ import IPython
 import re
 
 
-from .dataConverters.backscatteringDataConvert import BackScatData
+from .dataParsers.dcdParser import NAMDDCD
 from .dataParsers.logParser import NAMDLOG
 from .dataParsers.pdbParser import NAMDPDB
 from .dataParsers.velParser import NAMDVEL
 from .dataParsers.psfParser import NAMDPSF
 
 
-class NAMDAnalyzer(NAMDPSF):
+class Dataset(NAMDDCD):
     """ Main class for NAMDAnalyzer. It manages the different data types (psf, dcd, vel,...) """
 
-    def __init__(self, fileList, stride):
+    def __init__(self, fileList, stride=1):
 
         if isinstance(fileList, str):
             self.fileList = [fileList]
@@ -24,10 +24,9 @@ class NAMDAnalyzer(NAMDPSF):
 
         self.psfFile = self.getPSF(self.fileList) #_Check for .psf file presence
 
-        NAMDPSF.__init__(self, self.psfFile) #_Initialize NAMDPSF to access selection methods directly from here
+        NAMDDCD.__init__(self, self.psfFile, stride=stride) #_Initialize NAMDDCD 
 
         self.logData = NAMDLOG(self)
-        self.dcdData = BackScatData(self, None, stride)
         self.velData = NAMDVEL(self)
         self.pdbData = NAMDPDB(self)
 
@@ -67,7 +66,7 @@ class NAMDAnalyzer(NAMDPSF):
             self.logData.importLOGFile(dataFile)
 
         elif fileType=="dcd" or re.search('.dcd', dataFile):
-            self.dcdData.importDCDFile(dataFile)
+            self.importDCDFile(dataFile)
 
         elif fileType=="pdb" or re.search('.pdb', dataFile):
             self.pdbData.importPDBFile(dataFile)

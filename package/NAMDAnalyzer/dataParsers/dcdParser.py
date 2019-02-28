@@ -14,15 +14,19 @@ from collections import namedtuple
 
 from ..dataManipulation import molFit_quaternions as molFit_q
 from .dcdReader import DCDReader
+from .psfParser import NAMDPSF
 
 
 
-class NAMDDCD(DCDReader):
-    """ This class contains methods for trajectory file analysis. """
+class NAMDDCD(DCDReader, NAMDPSF):
+    """ This class contains methods for trajectory file analysis. 
+        It's te second class to be called, after NAMDPSF.
+        Here a dcd file is optional and can be added after initialization"""
     
-    def __init__(self, parent, dcdFile=None, stride=1):
+    def __init__(self, psfFile, dcdFile=None, stride=1):
     
-        self.parent = parent
+        NAMDPSF.__init__(self, psfFile)
+
         self.stride = stride
         self.COMAligned = False #_To check if center of mass were aligned
 
@@ -50,10 +54,10 @@ class NAMDDCD(DCDReader):
 
         #_Get the indices corresponding to the selection
         if type(usrSel) == str:
-            usrSel = self.parent.getSelection(usrSel)
+            usrSel = self.getSelection(usrSel)
 
         if type(outSel) == str:
-            outSel = self.parent.getSelection(outSel)
+            outSel = self.getSelection(outSel)
 
     
         frameAll    = np.ascontiguousarray(self.dcdData[:,frame], dtype='float32') #_Get frame coordinates
@@ -82,7 +86,7 @@ class NAMDDCD(DCDReader):
         keepIdx = np.argwhere( keepIdx )[:,0]
 
         if getSameResid:
-            keepIdx = self.parent.getSameResidueAs(keepIdx)
+            keepIdx = self.getSameResidueAs(keepIdx)
 
 
         return keepIdx
@@ -135,7 +139,7 @@ class NAMDDCD(DCDReader):
 
         #_Get the indices corresponding to the selection
         if type(selection) == str:
-            selection = self.parent.getSelection(selection)
+            selection = self.getSelection(selection)
 
         #_Align selected atoms for each selected frames
         if align:
@@ -166,7 +170,7 @@ class NAMDDCD(DCDReader):
 
         #_Get the indices corresponding to the selection
         if type(selection) == str:
-            selection = self.parent.getSelection(selection)
+            selection = self.getSelection(selection)
 
         #_Align selected atoms for each selected frames
         if align:
@@ -197,7 +201,7 @@ class NAMDDCD(DCDReader):
 
         #_Get the indices corresponding to the selection
         if type(selection) == str:
-            selection = self.parent.getSelection(selection)
+            selection = self.getSelection(selection)
 
         #_Align selected atoms for each selected frames
         if align:
@@ -222,7 +226,7 @@ class NAMDDCD(DCDReader):
         """ Computes the center of mass for all atoms in all frames. """
 
         try: #_Check if a psf file has been loaded
-            atomMasses = self.parent.getAtomsMasses('all')
+            atomMasses = self.getAtomsMasses('all')
 
         except AttributeError:
             print("No .psf file was loaded, please import one before using this method.")
@@ -245,7 +249,7 @@ class NAMDDCD(DCDReader):
             Returns a similar array as the initial dataSet but with aligned coordinates."""
 
         if type(selection) == str:
-            selection = self.parent.getSelection(selection)
+            selection = self.getSelection(selection)
 
         alignData = self.getAlignedCenterOfMass(selection, begin, end)
 
@@ -263,7 +267,7 @@ class NAMDDCD(DCDReader):
 
         #_Get the indices corresponding to the selection
         if type(selection) == str:
-            selection = self.parent.getSelection(selection)
+            selection = self.getSelection(selection)
 
 
         dataSet = np.copy( self.dcdData[selection, begin:end] )

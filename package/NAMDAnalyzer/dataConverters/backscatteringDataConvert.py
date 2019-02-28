@@ -8,23 +8,29 @@ from mpl_toolkits.mplot3d.axes3d import Axes3D
 from scipy.fftpack import fft, irfft, fftfreq, fftshift
 
 from ..helpersFunctions import ConstantsAndModels as CM 
-from ..dataParsers.dcdParser import NAMDDCD
 
 from ..lib.pycompIntScatFunc import py_compIntScatFunc
 
 
 
+class BackScatData:
 
-class BackScatData(NAMDDCD):
+    def __init__(self, dataset):
+        """ This class defines methods to convert trajectories into experimental-like Quasi-Elastic Neutron 
+            Scattering spectra (QENS) or Elastic Incoherent Structure Factors (EISF).
+            Mean-Squared Displacements (MSD) can aloso be computed directly from trajectories. 
+            
+            Some plotting methods are also available to quicly check the results. 
+            
+            Input: self.dataset -> a self.dataset class instance containing trajectories data """
 
-    def __init__(self, parent, dcdFile=None, stride=1):
-
-        NAMDDCD.__init__(self, parent, dcdFile, stride)
+        self.dataset = dataset
 
         self.EISF       = None
         self.interFunc  = None
         self.scatFunc   = None
         self.qVals      = None
+        self.MSD        = None
 
 
 #---------------------------------------------
@@ -48,17 +54,17 @@ class BackScatData(NAMDDCD):
 
 
         if type(selection) == str:
-            selection = self.parent.getSelection(selection)
+            selection = self.dataset.getSelection(selection)
 
         qValList = np.array(qValList)
         self.qVals = qValList
 
 
-        if alignCOM and not self.COMAligned:
-            self.setCenterOfMassAligned(begin, end)
+        if alignCOM and not self.dataset.COMAligned:
+            self.dataset.setCenterOfMassAligned(begin, end)
 
 
-        atomPos = self.dcdData[selection, begin:end]
+        atomPos = self.dataset.dcdData[selection, begin:end]
 
         #_Computes random q vectors
         qArray = []
@@ -76,7 +82,7 @@ class BackScatData(NAMDDCD):
         timestep = []
         for i in range(nbrBins):
             frameIncr = int( (maxFrames - minFrames + 1) / nbrBins )
-            timestep.append( (minFrames + i*frameIncr) * self.timestep * self.dcdFreq[0] )
+            timestep.append( (minFrames + i*frameIncr) * self.dataset.timestep * self.dataset.dcdFreq[0] )
 
 
         print("Computing intermediate scattering function...\n")
@@ -86,10 +92,8 @@ class BackScatData(NAMDDCD):
             
 
         self.interFunc = corr, np.array(timestep)
+
         print("\nDone\n")
-
-
-
 
 
 
@@ -132,8 +136,8 @@ class BackScatData(NAMDDCD):
 
 
 
-    def compScatteringFunc(self, qValList, minFrames, maxFrames, nbrBins=50, nbrTimeOri=20, resFunc=None,
-                                                selection='protNonExchH', alignCOM=True, begin=0, end=None):
+    def compScatteringFunc(self, qValList, minFrames, maxFrames, nbrBins=50, nbrTimeOri=20, 
+                                resFunc=None, selection='protNonExchH', alignCOM=True, begin=0, end=None):
         """ This method calls getIntermediateFunc several times for different time steps, given by
             the number of frames, which will start from minFrames and by incremented to reach maxFrames
             in the given number of bins.
@@ -169,21 +173,27 @@ class BackScatData(NAMDDCD):
 
 
 
-    def compMSD(self, frameNbr, selection='protNonExchH', begin=0, end=None):
+    def compMSD(self, frameNbr, selection='protNonExchH', begin=0, end=None, alignCOM=True):
         """ Computes the Mean-Squared Displacement for the given number of frames, which should correspond
             to the max time scale probed by the instrument.
 
             Input:  nbrFrame  -> number of frames to be used (time interval)
                     selection -> atom selection to be used to compute MSD
                     begin     -> first frame to be used
-                    end       -> last frame to be used """
+                    end       -> last frame to be used 
+                    alignCOM  -> whether center of mass should be aligned or not """
 
         #_Get the indices corresponding to the selection
         if type(selection) == str:
-            selection = self.parent.getSelection(selection)
+            selection = self.dataset.getSelection(selection)
 
-        #_Computes atoms positions
-        atomPos = self.alignCenterOfMass(selection, begin, end)
+        #_ALign center of masses if required
+        if alignCOM and not self.dataset.COMAligned:
+            self.dataset.setCenterOfMassAligned(begin, end)
+
+
+        atomPos = self.dataset.dcdData[selection, begin:end]
+
 
         #_Computes intermediate scattering function for one timestep, averaged over time origins
         displacement = atomPos[:,frameNbr:] - atomPos[:,:-frameNbr]
@@ -197,41 +207,8 @@ class BackScatData(NAMDDCD):
         msd = msd.mean()    #_Averaging over atoms
 
 
-        return msd, error
+        self.MSD = msd, error
 
-
-
-#---------------------------------------------
-#_Data accession methods
-#---------------------------------------------
-
-    def getEISF(self):
-        """ Accession method for self.EISF attribute. """
-
-        if not self.EISF:
-            return "No EISF was computed yet. Use compEISF method before using this."
-        else:
-            return self.EISF
-
-
-    def getIntermediateFunc(self):
-        """ Accession method for self.interFunc attribute. """
-
-        if not self.interFunc:
-            return ("No intermediate function was computed yet. Use compIntermedateFunc method " 
-                    + "before using this.")
-        else:
-            return self.interFunc
-
-
-    def getScatFunc(self):
-        """ Accession method for self.scatFunc attribute. """
-
-        if not self.scatFunc:
-            return ("No scattering function was computed yet. Use compScatFunc method "
-                    + "before using this.")
-        else:
-            return self.scatFunc
 
 
 #---------------------------------------------
@@ -255,7 +232,7 @@ class BackScatData(NAMDDCD):
             scattering function.
             Then, a plot is generated, showing self-correlation for each q-values in qValList. """
 
-        intF, times = self.getIntermediateFunc()
+        intF, times = self.interFunc
         qValList    = self.qVals
         
         #_Use a fancy colormap
@@ -278,7 +255,7 @@ class BackScatData(NAMDDCD):
         """ This method calls self.backScatData.getEISF to obtain the Elastic Incoherent Structure Factor.
             Then, a plot is generated, showing self-correlation for each q-values in qValList. """
 
-        EISF, times = self.getEISF()
+        EISF, times = self.EISF
         qValList    = self.qVals
         
         #_Use a fancy colormap
@@ -302,7 +279,7 @@ class BackScatData(NAMDDCD):
         """ This method calls self.backScatDatagetScatteringFunc to obtain the scattering function S(q,omega).
             Then, a plot is generated, showing self-correlation for each q-values in qValList. """
 
-        scatF, energies = self.getScatFunc()
+        scatF, energies = self.ScatFunc
         qValList        = self.qVals
         
         #_Use a fancy colormap
@@ -318,6 +295,7 @@ class BackScatData(NAMDDCD):
             ax.set_ylabel(r'q ($\AA^{-1}$)', labelpad=15)
             ax.set_zlabel(r'$S(q,\omega)$', labelpad=15)
 
+        plt.tight_layout()
         return plt.show(block=False)
 
 

@@ -2,7 +2,8 @@ import sys, os
 
 import argparse
 
-from NAMDAnalyzer.NAMDAnalyzer import NAMDAnalyzer
+from NAMDAnalyzer.Dataset import Dataset
+from NAMDAnalyzer.dataConverters.backscatteringDataConvert import BackScatData
 
 
 
@@ -14,5 +15,5 @@ parser.add_argument("-s", "--stride", type=int, nargs='?', default=1,
 
 args = parser.parse_args()
 
-data = NAMDAnalyzer(args.fileList, args.stride)
+data = Dataset(args.fileList, args.stride)
 

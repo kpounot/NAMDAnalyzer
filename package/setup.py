@@ -1,6 +1,7 @@
 from distutils.core import setup, Extension
 from Cython.Build import cythonize
 import numpy as np
+import platform
 
 import os
 
@@ -9,8 +10,20 @@ with open('../README.md', 'r') as f:
     description = f.read()
 
 
-packagesList = [    'NAMDAnalyzer',
-                    'NAMDAnalyzer.dataManipulation',
+#_Detecting platform and set compiler according to it
+sysType = platform.system()
+
+if sysType == 'Windows':
+    with open('setup.cfg', 'w') as f:
+        f.write("[build_ext] \n compiler=mingw32")
+
+if sysType == 'Linux' or sysType == 'Darwin':
+    with open('setup.cfg', 'w') as f:
+        f.write("[build_ext] \n compiler=gcc")
+
+
+
+packagesList = [    'NAMDAnalyzer.dataManipulation',
                     'NAMDAnalyzer.dataParsers',
                     'NAMDAnalyzer.dataConverters',
                     'NAMDAnalyzer.lib',
@@ -51,6 +64,7 @@ setup(  name='NAMDAnalyzer',
         author='Kevin Pounot',
         author_email='kpounot@hotmail.fr',
         url='github.com/kpounot/NAMDAnalyzer',
+        py_modules=['NAMDAnalyzer.Dataset'],
         packages=packagesList,
         ext_modules=cythonize( [pycompIntScatFunc_ext, 
                                 pygetWithin_ext,
