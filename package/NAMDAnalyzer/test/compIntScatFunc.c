@@ -1,13 +1,12 @@
 #include <stdio.h>
 #include <math.h>
-#include <omp.h>
 
 #include "compIntScatFunc.h"
 
 void compIntScatFunc(float *atomPos, int atomPos_dim0, int atomPos_dim1, int atomPos_dim2, 
                      float *qVecs, int qVecs_dim0, int qVecs_dim1, int qVecs_dim2, 
                      float complex *out, int out_dim0, int out_dim1, 
-                     int binSize, int minFrames, int maxFrames, int nbrTimeOri)
+                     int nbrBins, int minFrames, int maxFrames, int nbrTimeOri)
 {
     /*  The function computes the intermediate neutron incoherent scattering function.
      *  Using given atom positions, minimum and maximum timesteps, and the desired number of time bins,
@@ -21,7 +20,7 @@ void compIntScatFunc(float *atomPos, int atomPos_dim0, int atomPos_dim1, int ato
      *          out         ->  output array of floats to store correlations for each q-value (dim 0) and
      *                          each timestep bin (dim 1) 
      *          cellDims    ->  dimensions of the cell in x, y and z (used for periodic boundary conditions) 
-     *          binSize     -> increment for the number of frames corresponding to time interval
+     *          nbrBins     -> number of timestep bins to be used between minFrame and maxFrame 
      *          minFrames   -> minimum number of frames to be used for timestep
      *          maxFrames   -> maximum number of frames to be used for timestep 
      *          nbrTimeOri  -> number of time origins to be averaged over */
@@ -35,25 +34,27 @@ void compIntScatFunc(float *atomPos, int atomPos_dim0, int atomPos_dim1, int ato
     // time step.
     
 
-    // Declaring some variables to avoid unecessary memory allocations
+    //Declaring some variables to avoid unecessary memory allocations
     int atom_tf_idx; 
     int atom_t0_idx;
     int qVec_idx;
     float dist_0;
     float dist_1;
     float dist_2;
-    float complex exponent;
+    double exponent;
+
+    // Computes the increment for time steps in terms of frames
+    int incr  = ( maxFrames - minFrames + 1 ) / nbrBins ;
 
     unsigned int avgFactor = atomPos_dim0 * nbrTimeOri * qVecs_dim1; 
-    unsigned int nbrBins   = (maxFrames - minFrames + 1) / binSize;
 
     for(int qIdx=0; qIdx < qVecs_dim0; ++qIdx)
     {
         printf("Computing q value %d of %d...\r", qIdx+1, qVecs_dim0);
 
-        for(int bin=0; bin < nbrBins; bin+=binSize)
+        for(int bin=0; bin < nbrBins; ++bin)
         {
-            int nbrFrames  = minFrames + bin;
+            int nbrFrames   = minFrames + bin*incr;
             float complex correlation = 0;
 
             int timeIncr = ( atomPos_dim1 - nbrFrames ) / nbrTimeOri; 
@@ -64,7 +65,6 @@ void compIntScatFunc(float *atomPos, int atomPos_dim0, int atomPos_dim1, int ato
                 for(int qVec=0; qVec < qVecs_dim1; ++qVec)
                 {
 
-                    #pragma omp parallel for reduction(+:correlation)
                     for(int atom=0; atom < atomPos_dim0; ++atom)
                     {
 
@@ -78,12 +78,12 @@ void compIntScatFunc(float *atomPos, int atomPos_dim0, int atomPos_dim1, int ato
                         dist_1 = atomPos[atom_tf_idx+1] - atomPos[atom_t0_idx+1];
                         dist_2 = atomPos[atom_tf_idx+2] - atomPos[atom_t0_idx+2];
 
-                        exponent = cexpf ( I * ( qVecs[qVec_idx] * dist_0 
-                                                + qVecs[qVec_idx+1] * dist_1
-                                                + qVecs[qVec_idx+2] * dist_2 ) );
+                        exponent = ( qVecs[qVec_idx] * dist_0 
+                                     + qVecs[qVec_idx+1] * dist_1
+                                     + qVecs[qVec_idx+2] * dist_2 );
 
 
-                        correlation += exponent;
+                        correlation += cexpf(I * exponent);
 
                     } // atoms loop
 
@@ -97,7 +97,7 @@ void compIntScatFunc(float *atomPos, int atomPos_dim0, int atomPos_dim1, int ato
 
         } // bins loop
 
-    } // q values loop
+    } // q indices loop
 
 }
 

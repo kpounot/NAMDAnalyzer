@@ -340,7 +340,7 @@ class NAMDDCD(DCDReader, NAMDPSF):
         """ Modifies the dcd data by aligning center of mass of all atoms between given frames delimited by
             begin and end keywords. """
 
-        print("\nAligning center of mass of selected atoms...\n")
+        print("\nAligning center of mass of all molecules...\n")
 
         centerOfMass = self.getCenterOfMass(selection, begin, end, step)
 

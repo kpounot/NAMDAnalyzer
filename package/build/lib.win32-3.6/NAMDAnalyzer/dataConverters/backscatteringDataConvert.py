@@ -94,7 +94,7 @@ class BackScatData:
 
 
 
-        corr = np.zeros( (qValList.size, int((maxFrames-minFrames+1)/binSize)), dtype=np.complex64 ) 
+        corr = np.zeros( (qValList.size, maxFrames-minFrames+1), dtype=np.complex64 ) 
 
 
         #_Get timestep array

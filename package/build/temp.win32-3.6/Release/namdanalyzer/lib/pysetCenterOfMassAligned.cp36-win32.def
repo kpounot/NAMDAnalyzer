@@ -1,0 +1,3 @@
+LIBRARY pysetCenterOfMassAligned.cp36-win32.pyd
+EXPORTS
+PyInit_pysetCenterOfMassAligned
