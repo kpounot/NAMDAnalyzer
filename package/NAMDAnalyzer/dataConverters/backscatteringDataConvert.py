@@ -63,7 +63,7 @@ class BackScatData:
 
         #_Align center of mass if necessary
         if alignCOM:
-            self.dataset.setCenterOfMassAligned('all', frames)
+            self.dataset.setCenterOfMassAligned(selection, frames)
 
 
         atomPos = self.dataset.dcdData[selection, frames]
