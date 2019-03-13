@@ -23,7 +23,6 @@ class DCDReader:
             If something already exists in self.dcdData, it will be deleted. """
 
         self.dcdFile = dcdFile
-        self.COMAligned = False
 
         self.dcdData = None #_Free memory in case data were already loaded
 

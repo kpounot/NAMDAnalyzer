@@ -21,8 +21,6 @@ void compIntScatFunc(float *atomPos, int atomPos_dim0, int atomPos_dim1, int ato
      *          out         ->  output array of floats to store correlations for each q-value (dim 0) and
      *                          each timestep bin (dim 1) 
      *          cellDims    ->  dimensions of the cell in x, y and z (used for periodic boundary conditions) 
-     *          binSize     -> increment for the number of frames corresponding to time interval
-     *          minFrames   -> minimum number of frames to be used for timestep
      *          maxFrames   -> maximum number of frames to be used for timestep 
      *          nbrTimeOri  -> number of time origins to be averaged over */
 
@@ -35,16 +33,7 @@ void compIntScatFunc(float *atomPos, int atomPos_dim0, int atomPos_dim1, int ato
     // time step.
     
 
-    // Declaring some variables to avoid unecessary memory allocations
-    int atom_tf_idx; 
-    int atom_t0_idx;
-    int qVec_idx;
-    float dist_0;
-    float dist_1;
-    float dist_2;
-    float complex exponent;
-
-    unsigned int avgFactor = atomPos_dim0 * nbrTimeOri * qVecs_dim1; 
+    int nbrIter;
 
     for(int qIdx=0; qIdx < qVecs_dim0; ++qIdx)
     {
@@ -56,32 +45,34 @@ void compIntScatFunc(float *atomPos, int atomPos_dim0, int atomPos_dim1, int ato
 
             int timeIncr = ( atomPos_dim1 - nbrFrames ) / nbrTimeOri; 
 
+            nbrIter = 0;
             for(int timeOri=0; timeOri < nbrTimeOri; ++timeOri)
             {
 
                 for(int qVec=0; qVec < qVecs_dim1; ++qVec)
                 {
 
-                    #pragma omp parallel for reduction(+:correlation)
+                    #pragma omp parallel for reduction(+:correlation, nbrIter)
                     for(int atom=0; atom < atomPos_dim0; ++atom)
                     {
 
-                        atom_tf_idx = 3 * (atom * atomPos_dim1 + timeOri*timeIncr + nbrFrames); 
-                        atom_t0_idx = 3 * (atom * atomPos_dim1 + timeOri*timeIncr);
+                        int atom_tf_idx = 3 * (atom * atomPos_dim1 + timeOri*timeIncr + nbrFrames); 
+                        int atom_t0_idx = 3 * (atom * atomPos_dim1 + timeOri*timeIncr);
 
-                        qVec_idx = 3 * (qIdx * qVecs_dim1 + qVec);
+                        int qVec_idx = 3 * (qIdx * qVecs_dim1 + qVec);
 
                         // Computes distances for given timestep and atom
-                        dist_0 = atomPos[atom_tf_idx] - atomPos[atom_t0_idx];
-                        dist_1 = atomPos[atom_tf_idx+1] - atomPos[atom_t0_idx+1];
-                        dist_2 = atomPos[atom_tf_idx+2] - atomPos[atom_t0_idx+2];
+                        float dist_0 = atomPos[atom_tf_idx] - atomPos[atom_t0_idx];
+                        float dist_1 = atomPos[atom_tf_idx+1] - atomPos[atom_t0_idx+1];
+                        float dist_2 = atomPos[atom_tf_idx+2] - atomPos[atom_t0_idx+2];
 
-                        exponent = cexpf ( I * ( qVecs[qVec_idx] * dist_0 
+                        float complex exponent = cexpf ( I * ( qVecs[qVec_idx] * dist_0 
                                                 + qVecs[qVec_idx+1] * dist_1
                                                 + qVecs[qVec_idx+2] * dist_2 ) );
 
 
                         correlation += exponent;
+                        nbrIter += 1;
 
                     } // atoms loop
 
@@ -91,9 +82,9 @@ void compIntScatFunc(float *atomPos, int atomPos_dim0, int atomPos_dim1, int ato
 
 
             // Done with average for this q-value and time step bin 
-            out[ qIdx * out_dim1 + nbrFrames ] = correlation / avgFactor; 
+            out[ qIdx * out_dim1 + nbrFrames ] = correlation / nbrIter; 
 
-        } // bins loop
+        } // nbrFrames loop
 
     } // q values loop
 

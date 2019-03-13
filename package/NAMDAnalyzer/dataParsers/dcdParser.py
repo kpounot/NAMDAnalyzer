@@ -364,8 +364,7 @@ class NAMDDCD(DCDReader, NAMDPSF):
         #_Substract the center of mass coordinates to each atom for each frame
         py_setCenterOfMassAligned(dcdData, centerOfMass)
 
-
-        self.COMAligned = True
+        self.dcdData[selection, frames] = dcdData
 
 
         print("Done\n")

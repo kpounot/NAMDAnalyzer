@@ -62,7 +62,7 @@ class BackScatData:
 
 
         #_Align center of mass if necessary
-        if alignCOM and not self.dataset.COMAligned:
+        if alignCOM:
             self.dataset.setCenterOfMassAligned('all', frames)
 
 
@@ -88,7 +88,7 @@ class BackScatData:
         #_Get timestep array
         timestep = []
         for i in range( maxFrames ):
-            timestep.append( i * self.dataset.timestep * self.dataset.dcdFreq[0] )
+            timestep.append( i*frames.step * self.dataset.timestep * self.dataset.dcdFreq[0] )
 
 
         print("Computing intermediate scattering function...\n")
@@ -119,8 +119,7 @@ class BackScatData:
 
 
         #_Computes intermediate scattering function if None       
-        if self.interFunc is None:
-            self.compIntermediateFunc(qValList, nbrTimeOri, selection, alignCOM, frames)
+        self.compIntermediateFunc(qValList, nbrTimeOri, selection, alignCOM, frames)
 
         print("Using given resolution function to compute elastic incoherent structure factors.\n")
 

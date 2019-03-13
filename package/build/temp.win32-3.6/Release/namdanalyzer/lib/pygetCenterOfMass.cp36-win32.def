@@ -1,3 +1,0 @@
-LIBRARY pygetCenterOfMass.cp36-win32.pyd
-EXPORTS
-PyInit_pygetCenterOfMass
