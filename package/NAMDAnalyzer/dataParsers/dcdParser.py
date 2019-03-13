@@ -28,7 +28,6 @@ class NAMDDCD(DCDReader, NAMDPSF):
         NAMDPSF.__init__(self, psfFile)
 
         self.stride = stride
-        self.COMAligned = False #_To check if center of mass were aligned
 
         DCDReader.__init__(self, stride)
 
@@ -114,7 +113,7 @@ class NAMDDCD(DCDReader, NAMDPSF):
     
         frameAll    = np.ascontiguousarray(self.dcdData[:,frame], dtype='float32') #_Get frame coordinates
 
-        usrSel      = np.ascontiguousarray(COM[np.newaxis,:], dtype='float32')
+        usrSel      = np.ascontiguousarray(COM, dtype='float32')
 
         #_Get cell dimensions for given frame and make array contiguous
         cellDims    = np.ascontiguousarray(self.cellDims[:,frame], dtype='float32')
@@ -176,7 +175,7 @@ class NAMDDCD(DCDReader, NAMDPSF):
 #---------------------------------------------
 #_Data analysis methods
 #---------------------------------------------
-    def getSTDperAtom(self, selection="all", align=False, begin=0, end=None, mergeXYZ=True):
+    def getSTDperAtom(self, selection="all", align=False, frames=None, mergeXYZ=True):
         """ Computes the standard deviation for each atom in selection and for frames between
             begin and end. 
             Returns the standard deviation averaged over time.
@@ -193,9 +192,9 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
         #_Align selected atoms for each selected frames
         if align:
-            data = self.getAlignedData(selection, begin, end)
+            data = self.getAlignedData(selection, frames)
         else:
-            data = self.dcdData[selection, begin:end]
+            data = self.dcdData[selection, frames]
 
         #_Computes the standard deviation
         if mergeXYZ:
@@ -208,7 +207,7 @@ class NAMDDCD(DCDReader, NAMDPSF):
         return std
 
 
-    def getRMSDperAtom(self, selection="all", align=False, begin=0, end=None, mergeXYZ=True):
+    def getRMSDperAtom(self, selection="all", align=False, frames=None, mergeXYZ=True):
         """ Computes the RMSD for each atom in selection and for frames between begin and end.
             Returns the RMSD averaged over time.
 
@@ -224,9 +223,9 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
         #_Align selected atoms for each selected frames
         if align:
-            data = self.getAlignedData(selection, begin, end)
+            data = self.getAlignedData(selection, frames)
         else:
-            data = self.dcdData[selection, begin:end]
+            data = self.dcdData[selection, frames]
 
         #_Computes the standard deviation
         if mergeXYZ:
@@ -239,7 +238,7 @@ class NAMDDCD(DCDReader, NAMDPSF):
         return rmsd
 
 
-    def getRMSDperFrame(self, selection="all", align=False, begin=0, end=None, mergeXYZ=True):
+    def getRMSDperFrame(self, selection="all", align=False, frames=None, mergeXYZ=True):
         """ Computes the RMSD for each atom in selection and for frames between begin and end.
             Returns the RMSD averaged over all selected atoms.
 
@@ -255,9 +254,9 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
         #_Align selected atoms for each selected frames
         if align:
-            data = self.getAlignedData(selection, begin, end)
+            data = self.getAlignedData(selection, frames)
         else:
-            data = self.dcdData[selection, begin:end]
+            data = self.dcdData[selection, frames]
 
         #_Computes the standard deviation
         if mergeXYZ:
@@ -272,8 +271,11 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
 
 
-    def getCenterOfMass(self, selection, begin=0, end=None, step=1):
-        """ Computes the center of mass for selected atoms and frames. """
+    def getCenterOfMass(self, selection, frames=None):
+        """ Computes the center of mass for selected atoms and frames. 
+        
+            Input:  selection   -> either string or array of indices for selected atoms
+                    frames      -> either None to select all frames, an int, or a slice object """
 
         if type(selection) == str:
             selection = self.getSelection(selection)
@@ -287,7 +289,11 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
         atomMasses = atomMasses.reshape(atomMasses.size, 1)
 
-        centerOfMass = py_getCenterOfMass(self.dcdData[selection,begin:end:step], atomMasses)
+        dcdData = self.dcdData[selection, frames]
+        if dcdData.ndim == 2:
+            dcdData = dcdData[:,np.newaxis,:]
+
+        centerOfMass = py_getCenterOfMass(dcdData, atomMasses)
 
 
         return centerOfMass
@@ -295,16 +301,19 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
 
 
-    def getAlignedData(self, selection, begin=0, end=None, step=1):
+    def getAlignedData(self, selection, frames=None):
         """ This method will fit all atoms between firstAtom and lastAtom for each frame between
             begin and end, using the first frame for the others to be fitted on. 
             
+            Input:  selection   -> either string or array of indices for selected atoms
+                    frames      -> either None to select all frames, an int, or a slice object
+
             Returns a similar array as the initial dataSet but with aligned coordinates."""
 
         if type(selection) == str:
             selection = self.getSelection(selection)
 
-        alignData = self.getAlignedCenterOfMass(selection, begin, end, step)
+        alignData = self.getAlignedCenterOfMass(selection, frames)
 
         alignData = molFit_q.alignAllMol(alignData)
         
@@ -313,7 +322,7 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
 
 
-    def getAlignedCenterOfMass(self, selection='all', begin=0, end=None, step=1):
+    def getAlignedCenterOfMass(self, selection='all', frames=None):
         """ This method aligns the center of mass of each frame to the origin.
             It does not perform any fitting for rotations, so that it can be used for center of mass
             drift corrections if no global angular momentum is present. """
@@ -323,9 +332,9 @@ class NAMDDCD(DCDReader, NAMDPSF):
             selection = self.getSelection(selection)
 
 
-        dataSet = np.copy( self.dcdData[selection, begin:end:step] )
+        dataSet = np.copy( self.dcdData[selection, frames] )
 
-        centerOfMass = self.getCenterOfMass(selection, begin, end, step)[np.newaxis]
+        centerOfMass = self.getCenterOfMass(selection, frames)[np.newaxis]
 
         #_Substract the center of mass coordinates to each atom for each frame
         dataSet = dataSet - centerOfMass
@@ -336,16 +345,24 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
 
 
-    def setCenterOfMassAligned(self, selection='all', begin=0, end=None, step=1):
+    def setCenterOfMassAligned(self, selection='all', frames=None):
         """ Modifies the dcd data by aligning center of mass of all atoms between given frames delimited by
             begin and end keywords. """
 
+        #_Get the indices corresponding to the selection
+        if type(selection) == str:
+            selection = self.getSelection(selection)
+
         print("\nAligning center of mass of selected atoms...\n")
 
-        centerOfMass = self.getCenterOfMass(selection, begin, end, step)
+        centerOfMass = self.getCenterOfMass(selection, frames)
+
+        dcdData = self.dcdData[selection, frames]
+        if dcdData.ndim == 2:
+            dcdData = dcdData[:,np.newaxis,:]
 
         #_Substract the center of mass coordinates to each atom for each frame
-        py_setCenterOfMassAligned(self.dcdData[selection,begin:end:step], centerOfMass)
+        py_setCenterOfMassAligned(dcdData, centerOfMass)
 
 
         self.COMAligned = True
@@ -372,16 +389,17 @@ class NAMDDCD(DCDReader, NAMDPSF):
             selection = self.getSelection(selection)
 
 
-        COM = self.getCenterOfMass(selection, frame, frame+1)
-        dist = np.arange(dr, maxR, dr)
+        COM = self.getCenterOfMass(selection, frame)
+        dist = np.arange(0, maxR, dr)
         totalAtoms = self.getWithinCOM(maxR, COM, selection, frame).size 
 
         nbrAtoms = []
         for r in dist:
             nbrAtoms.append( self.getWithinCOM(r, COM, selection, frame).size )
 
-        nbrAtoms = np.array( nbrAtoms )
-        density  = 1 / (4*np.pi*dist**2*dr) * np.insert( (nbrAtoms[1:] - nbrAtoms[:-1]), 0, nbrAtoms[0] )
+        nbrAtoms    = np.array( nbrAtoms, dtype=np.float32 )
+        density     = np.insert((nbrAtoms[1:] - nbrAtoms[:-1]), 0, nbrAtoms[0])
+        density[1:] = density[1:] / (4*np.pi*dist[1:]**2*dr)  
 
         return dist, density
 
@@ -391,16 +409,14 @@ class NAMDDCD(DCDReader, NAMDPSF):
 #_Plotting methods
 #---------------------------------------------
 
-    def plotSTDperAtom(self, selection="all", align=False, begin=0, end=None, mergeXYZ=True):
+    def plotSTDperAtom(self, selection="all", align=False, frames=None, mergeXYZ=True):
         """ Plot the standard deviation along the axis 0 of dataSet.
-        nbrAtoms = 
-        nbrAtoms = 
             This makes use of the 'getSTDperAtom method.
 
             If mergeXYZ is True, then computes the distance to the origin first. """
 
-        std = self.getSTDperAtom(selection, align, begin, end, mergeXYZ)
-        xRange = self.timestep * np.cumsum(self.dcdFreq[begin:end])
+        std = self.getSTDperAtom(selection, align, frames, mergeXYZ)
+        xRange = self.timestep * np.cumsum(self.dcdFreq[frames])
 
         if mergeXYZ:
             plt.plot(xRange, std)
@@ -425,14 +441,14 @@ class NAMDDCD(DCDReader, NAMDPSF):
         return plt.show(block=False)
 
 
-    def plotRMSDperAtom(self, selection="all", align=False, begin=0, end=None, mergeXYZ=True):
+    def plotRMSDperAtom(self, selection="all", align=False, frames=None, mergeXYZ=True):
         """ Plot the RMSD along the axis 0 of dataSet.
             This makes use of the 'getRMSDperAtom method.
 
             If mergeXYZ is True, then it computes the distance to the origin first. """
 
-        rmsd = self.getRMSDperAtom(selection, align, begin, end, mergeXYZ)
-        xRange = self.timestep * np.cumsum(self.dcdFreq[begin:end])
+        rmsd = self.getRMSDperAtom(selection, align, frames, mergeXYZ)
+        xRange = self.timestep * np.cumsum(self.dcdFreq[frames])
 
         if mergeXYZ:
             plt.plot(xRange, rmsd)
@@ -457,14 +473,14 @@ class NAMDDCD(DCDReader, NAMDPSF):
         return plt.show(block=False)
 
 
-    def plotRMSDperFrame(self, selection="all", align=False, begin=0, end=None, mergeXYZ=True):
+    def plotRMSDperFrame(self, selection="all", align=False, frames=None, mergeXYZ=True):
         """ Plot the RMSD along the axis 1 of dataSet.
             This makes use of the 'getRMSDperFrame method.
 
             If mergeXYZ is True, then it computes the distance to the origin first. """
 
-        rmsd = self.getRMSDperFrame(selection, align, begin, end, mergeXYZ)
-        xRange = self.timestep * np.cumsum(self.dcdFreq[begin:end])
+        rmsd = self.getRMSDperFrame(selection, align, frames, mergeXYZ)
+        xRange = self.timestep * np.cumsum(self.dcdFreq[frames])
 
         if mergeXYZ:
             plt.plot(xRange, rmsd)

@@ -1,41 +1,29 @@
-#include <stdio.h>
-#include <math.h>
-#include <omp.h>
+#include <cmath>
+#include <iostream>
+
+#include <cuda.h>
+#include <cuda_runtime.h>
 
 #include "compIntScatFunc.h"
+
+
+void cu_compIntScatFunc_wrapper(const float *atomPos, int atomPos_dim0, int atomPos_dim1, 
+                                const float *qVecs, int qVecs_dim0, int qVecs_dim1,
+                                int timeOri, int timeIncr, int qVec, int nbrFrames, float complex correlation,
+                                cudaDeviceProp devProp);
+
 
 void compIntScatFunc(float *atomPos, int atomPos_dim0, int atomPos_dim1, int atomPos_dim2, 
                      float *qVecs, int qVecs_dim0, int qVecs_dim1, int qVecs_dim2, 
                      float complex *out, int out_dim0, int out_dim1, 
-                     int maxFrames, int nbrTimeOri)
+                     int binSize, int minFrames, int maxFrames, int nbrTimeOri)
 {
-    /*  The function computes the intermediate neutron incoherent scattering function.
-     *  Using given atom positions, minimum and maximum timesteps, and the desired number of time bins,
-     *  vectors are substracted for each timesteps, then dotted with random q vectors and exponentiated.
-     *  This being done with averaging over q vectors, time origins and atoms. 
-     *
-     *  Input:  atomPos     ->  flattened 3D array of atom positions for each frame
-     *                          dimensions: atoms (0), frames (1), coordinates (2)
-     *          qVecs       ->  flattened 3D array of qVectors
-     *                          dimensions: q index (0), q vectors (1), coordinates (2) 
-     *          out         ->  output array of floats to store correlations for each q-value (dim 0) and
-     *                          each timestep bin (dim 1) 
-     *          cellDims    ->  dimensions of the cell in x, y and z (used for periodic boundary conditions) 
-     *          binSize     -> increment for the number of frames corresponding to time interval
-     *          minFrames   -> minimum number of frames to be used for timestep
-     *          maxFrames   -> maximum number of frames to be used for timestep 
-     *          nbrTimeOri  -> number of time origins to be averaged over */
+    int devCount;
+    cudaGetDeviceCount(&devCount);
 
+    cudaDeviceProp devProp;
+    cudaGetDeviceProperties(&devProp, 0);
 
-
-    // To tackle MemoryError and because averaging cannot be done inside the exponential, a lot of loops
-    // follow after this. The first one computes the intermediate scattering function for each scattering 
-    // angle q. The next one computes the correlation for each time step for given q value. The last three
-    // ones are used to compute the average over atoms, time origins and q vectors for the given q value and
-    // time step.
-    
-
-    // Declaring some variables to avoid unecessary memory allocations
     int atom_tf_idx; 
     int atom_t0_idx;
     int qVec_idx;
@@ -45,13 +33,15 @@ void compIntScatFunc(float *atomPos, int atomPos_dim0, int atomPos_dim1, int ato
     float complex exponent;
 
     unsigned int avgFactor = atomPos_dim0 * nbrTimeOri * qVecs_dim1; 
+    unsigned int nbrBins   = (maxFrames - minFrames + 1) / binSize;
 
     for(int qIdx=0; qIdx < qVecs_dim0; ++qIdx)
     {
         printf("Computing q value %d of %d...\r", qIdx+1, qVecs_dim0);
 
-        for(int nbrFrames=0; nbrFrames < maxFrames; ++nbrFrames)
+        for(int bin=0; bin < nbrBins; bin+=binSize)
         {
+            int nbrFrames  = minFrames + bin;
             float complex correlation = 0;
 
             int timeIncr = ( atomPos_dim1 - nbrFrames ) / nbrTimeOri; 
@@ -91,11 +81,12 @@ void compIntScatFunc(float *atomPos, int atomPos_dim0, int atomPos_dim1, int ato
 
 
             // Done with average for this q-value and time step bin 
-            out[ qIdx * out_dim1 + nbrFrames ] = correlation / avgFactor; 
+            out[ qIdx * out_dim1 + bin ] = correlation / avgFactor; 
 
         } // bins loop
 
     } // q values loop
 
-}
 
+
+}

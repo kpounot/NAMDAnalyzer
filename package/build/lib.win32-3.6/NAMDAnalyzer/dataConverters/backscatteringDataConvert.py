@@ -38,18 +38,17 @@ class BackScatData:
 #---------------------------------------------
 #_Computation methods
 #---------------------------------------------
-    def compIntermediateFunc(self, qValList, minFrames, maxFrames, binSize=1, nbrTimeOri=20,
-            selection='protNonExchH', alignCOM=True, begin=0, end=None):
+    def compIntermediateFunc(self, qValList, nbrTimeOri=20, selection='protNonExchH', 
+                                                                    alignCOM=True, frames=slice(0, None, 2)):
         """ This method computes intermediate function for all q-value (related to scattering angle)
 
             Input:  qValList    -> list of q-values to be used 
-                    minFrames   -> minimum number of frames to be used (lower limit of time integration)
                     maxFrames   -> maximum number of frames to be used (upper limit of time integration)
+                    step        -> step for time interval increment 
                     nbrTimeOri  -> number of time origins to be averaged over
                     selection   -> atom selection
                     alignCOM    -> whether center of mass should be aligned or not
-                    begin       -> first frame to be used
-                    end         -> last frame to be used 
+                    frames      -> either None to select all frames, an int, or a slice object
                     
             Returns an (nbr of q-values, timesteps) shaped array. """
 
@@ -62,25 +61,14 @@ class BackScatData:
 
 
 
-        #_Performs some checks
-        if maxFrames > self.dataset.nbrFrames:
-            print('\nmaxFrames higher than total number of frames, setting parameter to the maximum allowed\n')
-            maxFrames = self.dataset.nbrFrames - nbrTimeOri - 1
-
-        if minFrames >= maxFrames:
-            print("\nminFrames higher or equal to maxFrames.") 
-            print("Intermediate scattering function cannot be computed.\n")
-            return
-
-
-
         #_Align center of mass if necessary
         if alignCOM and not self.dataset.COMAligned:
-            self.dataset.setCenterOfMassAligned(selection, begin, end, binSize)
+            self.dataset.setCenterOfMassAligned('all', frames)
 
 
-        atomPos = self.dataset.dcdData[selection, begin:end:binSize]
+        atomPos = self.dataset.dcdData[selection, frames]
 
+        maxFrames = atomPos.shape[1] - nbrTimeOri
 
 
         #_Computes random q vectors
@@ -94,18 +82,18 @@ class BackScatData:
 
 
 
-        corr = np.zeros( (qValList.size, maxFrames-minFrames+1), dtype=np.complex64 ) 
+        corr = np.zeros( (qValList.size, maxFrames), dtype=np.complex64 ) 
 
 
         #_Get timestep array
         timestep = []
-        for i in range( int((maxFrames-minFrames+1)/binSize) ):
-            timestep.append( (minFrames + i) * self.dataset.timestep * self.dataset.dcdFreq[0] )
+        for i in range( maxFrames ):
+            timestep.append( i * self.dataset.timestep * self.dataset.dcdFreq[0] )
 
 
         print("Computing intermediate scattering function...\n")
 
-        py_compIntScatFunc(atomPos, qArray, corr, binSize, minFrames, maxFrames, nbrTimeOri)
+        py_compIntScatFunc(atomPos, qArray, corr, maxFrames, nbrTimeOri)
             
         self.interFunc = corr, np.array(timestep)
 
@@ -113,30 +101,26 @@ class BackScatData:
 
 
 
-    def compEISF(self, qValList, minFrames, maxFrames, binSize=1, nbrTimeOri=20, resFunc=None, 
-                                                selection='protNonExchH', alignCOM=True, begin=0, end=None):
+    def compEISF(self, qValList, nbrTimeOri=20, resFunc=None, selection='protNonExchH', 
+                                                                alignCOM=True, frames=slice(0, None, 2)):
         """ This method performs a multiplication of the inverse Fourier transform given resolution 
             function with the computed intermediate function to get the convoluted signal, 
             which can be used to compute MSD. 
 
             Input:  qValList    -> list of q-values to be used 
-                    minFrames   -> minimum number of frames to be used (lower limit of time integration)
-                    maxFrames   -> maximum number of frames to be used (upper limit of time integration)
-                    nbrBins     -> number of desired data points in the energy dimension (optional, default 50)
                     nbrTimeOri  -> number of time origins to be averaged over
                     resFunc     -> resolution function to be used (optional, default resFuncSPHERES)
                     selection   -> atom selection (optional, default 'protein')
                     alignCOM    -> whether center of mass should be aligned or not
-                    begin       -> first frame to be used (optional, default 0)
-                    end         -> last frame to be used (optional, default None) """
+                    frames      -> either None to select all frames, an int, or a slice object """
 
         if resFunc == None:
             resFunc = CM.FTresFuncSPHERES
 
 
-        #_Gets intermediate scattering function        
-        self.compIntermediateFunc(qValList, minFrames, maxFrames, binSize, nbrTimeOri,
-                                                                selection, alignCOM, begin, end)
+        #_Computes intermediate scattering function if None       
+        if self.interFunc is None:
+            self.compIntermediateFunc(qValList, nbrTimeOri, selection, alignCOM, frames)
 
         print("Using given resolution function to compute elastic incoherent structure factors.\n")
 
@@ -152,8 +136,8 @@ class BackScatData:
 
 
 
-    def compScatteringFunc(self, qValList, minFrames, maxFrames, binSize=1, nbrTimeOri=20, 
-                                resFunc=None, selection='protNonExchH', alignCOM=True, begin=0, end=None):
+    def compScatteringFunc(self, qValList, nbrTimeOri=20, resFunc=None, 
+                                            selection='protNonExchH', alignCOM=True, frames=slice(0, None, 2)):
         """ This method calls getIntermediateFunc several times for different time steps, given by
             the number of frames, which will start from minFrames and by incremented to reach maxFrames
             in the given number of bins.
@@ -161,17 +145,12 @@ class BackScatData:
             Then, a Fourier transform is performed to compute the scattering function.
 
             Input:  qValList    -> list of q-values to be used 
-                    minFrames   -> minimum number of frames to be used (lower limit of time integration)
-                    maxFrames   -> maximum number of frames to be used (upper limit of time integration)
-                    nbrBins     -> number of desired data points in the energy dimension (optional, default 50)
                     nbrTimeOri  -> number of time origins to be averaged over
                     selection   -> atom selection (optional, default 'protein')
                     alignCOM    -> whether center of mass should be aligned or not
-                    begin       -> first frame to be used (optional, default 0)
-                    end         -> last frame to be used (optional, default None) """
+                    frames      -> either None to select all frames, an int, or a slice object """
 
-        self.compEISF(qValList, minFrames, maxFrames, binSize, nbrTimeOri,
-                                                        resFunc, selection, alignCOM, begin, end)
+        self.compEISF(qValList, nbrTimeOri, resFunc, selection, alignCOM, frames)
 
         print("Using Fourier transform on all EISF to obtain full scattering function.\n")
 
@@ -181,7 +160,7 @@ class BackScatData:
         scatFunc = fftshift( fft(scatFunc, axis=1), axes=1 ) / scatFunc.shape[1]
 
         #_Convert time to energies in micro-electron volts
-        timeIncr = (timesteps[1:] - timesteps[:-1])[0]
+        timeIncr = timesteps[1] - timesteps[0]
         energies = 4.135662668e-15 * fftshift( fftfreq(timesteps.size, d=timeIncr) ) * 1e6
 
         self.scatFunc = scatFunc, energies
@@ -193,10 +172,9 @@ class BackScatData:
         """ Computes the Mean-Squared Displacement for the given number of frames, which should correspond
             to the max time scale probed by the instrument.
 
-            Input:  nbrFrame  -> number of frames to be used (time interval)
+            Input:  frameNbr  -> number of frames to be used (time interval)
                     selection -> atom selection to be used to compute MSD
-                    begin     -> first frame to be used
-                    end       -> last frame to be used 
+                    frames    -> either None to select all frames, an int, or a slice object
                     alignCOM  -> whether center of mass should be aligned or not """
 
         #_Get the indices corresponding to the selection
@@ -205,10 +183,10 @@ class BackScatData:
 
         #_ALign center of masses if required
         if alignCOM and not self.dataset.COMAligned:
-            self.dataset.setCenterOfMassAligned(begin, end)
+            self.dataset.setCenterOfMassAligned(frames)
 
 
-        atomPos = self.dataset.dcdData[selection, begin:end]
+        atomPos = self.dataset.dcdData[selection, frames]
 
 
         #_Computes intermediate scattering function for one timestep, averaged over time origins

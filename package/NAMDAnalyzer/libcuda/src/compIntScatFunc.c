@@ -7,7 +7,7 @@
 void compIntScatFunc(float *atomPos, int atomPos_dim0, int atomPos_dim1, int atomPos_dim2, 
                      float *qVecs, int qVecs_dim0, int qVecs_dim1, int qVecs_dim2, 
                      float complex *out, int out_dim0, int out_dim1, 
-                     int maxFrames, int nbrTimeOri)
+                     int binSize, int minFrames, int maxFrames, int nbrTimeOri)
 {
     /*  The function computes the intermediate neutron incoherent scattering function.
      *  Using given atom positions, minimum and maximum timesteps, and the desired number of time bins,
@@ -45,13 +45,15 @@ void compIntScatFunc(float *atomPos, int atomPos_dim0, int atomPos_dim1, int ato
     float complex exponent;
 
     unsigned int avgFactor = atomPos_dim0 * nbrTimeOri * qVecs_dim1; 
+    unsigned int nbrBins   = (maxFrames - minFrames + 1) / binSize;
 
     for(int qIdx=0; qIdx < qVecs_dim0; ++qIdx)
     {
         printf("Computing q value %d of %d...\r", qIdx+1, qVecs_dim0);
 
-        for(int nbrFrames=0; nbrFrames < maxFrames; ++nbrFrames)
+        for(int bin=0; bin < nbrBins; bin+=binSize)
         {
+            int nbrFrames  = minFrames + bin;
             float complex correlation = 0;
 
             int timeIncr = ( atomPos_dim1 - nbrFrames ) / nbrTimeOri; 
@@ -91,7 +93,7 @@ void compIntScatFunc(float *atomPos, int atomPos_dim0, int atomPos_dim1, int ato
 
 
             // Done with average for this q-value and time step bin 
-            out[ qIdx * out_dim1 + nbrFrames ] = correlation / avgFactor; 
+            out[ qIdx * out_dim1 + bin ] = correlation / avgFactor; 
 
         } // bins loop
 

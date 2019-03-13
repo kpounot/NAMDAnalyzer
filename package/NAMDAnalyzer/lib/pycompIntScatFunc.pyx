@@ -8,7 +8,7 @@ cdef extern from "compIntScatFunc.h":
     void compIntScatFunc(float *atomPos, int atomPos_dim0, int atomPos_dim1, int atomPos_dim2, 
                          float *qVecs, int qVecs_dim0, int qVecs_dim1, int qVecs_dim2,
                          float complex *out, int out_dim0, int out_dim1, 
-                         int binSize, int minFrames, int maxFrames, int nbrTimeOri)
+                         int maxFrames, int nbrTimeOri)
 
 
 
@@ -17,9 +17,9 @@ cdef extern from "compIntScatFunc.h":
 def py_compIntScatFunc( np.ndarray[float, ndim=3, mode="c"] atomPos not None,
                         np.ndarray[float, ndim=3, mode="c"] qVecs not None,
                         np.ndarray[np.complex64_t, ndim=2, mode="c"] out not None,
-                        int binSize, int minFrames, int maxFrames, int nbrTimeOri ):
+                        int maxFrames, int nbrTimeOri ):
 
     compIntScatFunc(<float*> np.PyArray_DATA(atomPos), atomPos.shape[0], atomPos.shape[1], atomPos.shape[2],
                     <float*> np.PyArray_DATA(qVecs), qVecs.shape[0], qVecs.shape[1], qVecs.shape[2], 
                     <float complex*> np.PyArray_DATA(out), out.shape[0], out.shape[1],
-                    binSize, minFrames, maxFrames, nbrTimeOri )
+                    maxFrames, nbrTimeOri )
