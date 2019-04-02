@@ -75,8 +75,8 @@ class Dataset(NAMDDCD):
             self.velData.importVELFile(dataFile)
 
         elif fileType=="psf" or re.search('.psf', dataFile):
-            print("Nothing to do, .psf file should be already loaded.")
-            return
+            self.psfFile = dataFile
+            self.importPSFFile(dataFile)
 
         elif dataFile == [] or dataFile == None:
             return

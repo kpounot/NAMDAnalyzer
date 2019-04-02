@@ -17,7 +17,7 @@ class PDBReader:
         self.seqresList     = []
 
 
-    def importPDBFile(pdbFile):
+    def importPDBFile(self, pdbFile):
         """ Imports a new file and store the result in self.pdbData.
             If something already exists in self.pdbData, it will be deleted. """
 
@@ -55,20 +55,14 @@ class PDBReader:
             elif re.search('^ANISOU', line):
                 tempAnisouList.append(line)
 
-            #_If a 'TER' or a 'ENDMDL' is encountered, copy temporary lists into main ones, 
+            #_If a 'TER' or a 'ENDMDL', or 'END' is encountered, copy temporary lists into main ones, 
             #_and clear the former to start a new model/chain
-            elif re.search('^TER', line):
-                self.atomList.append(tempAtomList)
-                self.hetatomList.append(tempHetAtomList)
-                self.anisouList.append(tempAnisouList)
+            elif re.search('^TER', line) or re.search('^ENDMDL', line) or re.search('^END', line):
+                self.atomList.append( np.copy(tempAtomList) )
+                self.hetatomList.append( np.copy(tempHetAtomList) )
+                self.anisouList.append( np.copy(tempAnisouList) )
                 tempAtomList.clear()
                 tempHetAtomList.clear()
                 tempAnisouList.clear()
-            elif re.search('^ENDMDL', line):
-                self.atomList.append(tempAtomList)
-                self.hetatomList.append(tempHetAtomList)
-                self.anisouList.append(tempAnisouList)
-                tempAtomList.clear()
-                tempHetAtomList.clear()
-                tempAnisouList.clear()
+
  

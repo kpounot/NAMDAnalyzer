@@ -1,8 +1,11 @@
 #include <stdio.h>
 #include <math.h>
-#include <omp.h>
 
 #include "compIntScatFunc.h"
+
+void cu_compIntScatFunc_wrapper(const float *atomPos, int atomPos_dim0, int atomPos_dim1, 
+                                const float *qVecs, int qVecs_dim0, int qVecs_dim1,
+                                int timeOri, int timeIncr, int qVec, int nbrFrames, float complex correlation)
 
 void compIntScatFunc(float *atomPos, int atomPos_dim0, int atomPos_dim1, int atomPos_dim2, 
                      float *qVecs, int qVecs_dim0, int qVecs_dim1, int qVecs_dim2, 
@@ -35,15 +38,6 @@ void compIntScatFunc(float *atomPos, int atomPos_dim0, int atomPos_dim1, int ato
     // time step.
     
 
-    // Declaring some variables to avoid unecessary memory allocations
-    int atom_tf_idx; 
-    int atom_t0_idx;
-    int qVec_idx;
-    float dist_0;
-    float dist_1;
-    float dist_2;
-    float complex exponent;
-
     unsigned int avgFactor = atomPos_dim0 * nbrTimeOri * qVecs_dim1; 
     unsigned int nbrBins   = (maxFrames - minFrames + 1) / binSize;
 
@@ -64,7 +58,6 @@ void compIntScatFunc(float *atomPos, int atomPos_dim0, int atomPos_dim1, int ato
                 for(int qVec=0; qVec < qVecs_dim1; ++qVec)
                 {
 
-                    #pragma omp parallel for reduction(+:correlation)
                     for(int atom=0; atom < atomPos_dim0; ++atom)
                     {
 

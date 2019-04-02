@@ -1,7 +1,6 @@
 from distutils.core import setup, Extension
 from Cython.Build import cythonize
 import numpy as np
-import platform
 
 import os
 
@@ -10,22 +9,11 @@ with open('../README.md', 'r') as f:
     description = f.read()
 
 
-#_Detecting platform and set compiler according to it
-sysType = platform.system()
-
-if sysType == 'Windows':
-    with open('setup.cfg', 'w') as f:
-        f.write("[build_ext] \n compiler=mingw32")
-
-if sysType == 'Linux' or sysType == 'Darwin':
-    with open('setup.cfg', 'w') as f:
-        f.write("[build_ext] \n compiler=gcc")
-
 
 
 packagesList = [    'NAMDAnalyzer.dataManipulation',
                     'NAMDAnalyzer.dataParsers',
-                    'NAMDAnalyzer.dataConverters',
+                    'NAMDAnalyzer.dataAnalysis',
                     'NAMDAnalyzer.lib',
                     'NAMDAnalyzer.helpersFunctions' ]
 

@@ -2,6 +2,8 @@ import os, sys
 import numpy as np
 import re
 
+from collections import namedtuple
+
 import matplotlib.pyplot as plt
 from matplotlib import cm, colors
 from mpl_toolkits.mplot3d.axes3d import Axes3D
@@ -10,7 +12,6 @@ from ..lib.pygetWithin import py_getWithin
 from ..lib.pygetCenterOfMass import py_getCenterOfMass
 from ..lib.pysetCenterOfMassAligned import py_setCenterOfMassAligned
 
-from collections import namedtuple
 
 from ..dataManipulation import molFit_quaternions as molFit_q
 from .dcdReader import DCDReader
@@ -33,6 +34,30 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
         if dcdFile:
             self.importDCDFile(dcdFile)
+
+
+
+    def appendCoordinates(self, coor):
+        """ Can be used to append a frame with coordinates from a pdb file.
+
+            coor -> 2D array containing 3D coordinates for each atom. """
+
+        try:
+            np.append( self.dcdData, coor[:,np.newaxis,:].astype('float32'), axis=1 )
+            np.append( self.dcdFreq, self.dcdFreq[-1] )
+            np.append( self.cellDims, self.cellDims[-1] )
+            self.nbrFrames += 1
+            self.nbrSteps  += 1
+
+
+        except: #_If no trajectories were loaded, just create one frame and use default values
+            self.dcdData    = coor[:,np.newaxis,:].astype('float32')
+            self.dcdFreq    = np.array( [1] )
+            self.timestep   = 2
+            self.nbrFrames  = 1
+            self.nbrSteps   = 1
+            self.nbrAtoms   = coor.shape[0]
+            self.cellDims   = np.array( [[3*np.max(coor[:,0]), 3*np.max(coor[:,1]), 3*np.max(coor[:,2])]] ) 
 
 
 
@@ -88,6 +113,8 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
 
         return keepIdx
+
+
 
 
 
@@ -182,7 +209,6 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
             Input: selection -> selected atom, can be a single string or a member of parent's selList
                    align     -> if True, will try to align all atoms to the ones on the first frame
-                   begin     -> first frame to be used
                    end       -> last frame to be used + 1
                    mergeXYZ  -> if True, uses the vector from the origin instead of each projections """
 
@@ -213,8 +239,7 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
             Input: selection -> selected atom, can be a single string or a member of parent's selList
                    align     -> if True, will try to align all atoms to the ones on the first frame
-                   begin     -> first frame to be used
-                   end       -> last frame to be used + 1
+                   frames      -> either None to select all frames, an int, or a slice object
                    mergeXYZ  -> if True, uses the vector from the origin instead of each projections """
 
         #_Get the indices corresponding to the selection
@@ -244,8 +269,7 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
             Input: selection -> selected atom, can be a single string or a member of parent's selList
                    align     -> if True, will try to align all atoms to the ones on the first frame
-                   begin     -> first frame to be used
-                   end       -> last frame to be used + 1
+                   frames      -> either None to select all frames, an int, or a slice object
                    mergeXYZ  -> if True, uses the vector from the origin instead of each projections """
 
         #_Get the indices corresponding to the selection
@@ -325,7 +349,12 @@ class NAMDDCD(DCDReader, NAMDPSF):
     def getAlignedCenterOfMass(self, selection='all', frames=None):
         """ This method aligns the center of mass of each frame to the origin.
             It does not perform any fitting for rotations, so that it can be used for center of mass
-            drift corrections if no global angular momentum is present. """
+            drift corrections if no global angular momentum is present. 
+
+            Input:  selection   -> either string or array of indices for selected atoms
+                    frames      -> either None to select all frames, an int, or a slice object
+            """
+
 
         #_Get the indices corresponding to the selection
         if type(selection) == str:
@@ -334,7 +363,7 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
         dataSet = np.copy( self.dcdData[selection, frames] )
 
-        centerOfMass = self.getCenterOfMass(selection, frames)[np.newaxis]
+        centerOfMass = self.getCenterOfMass(selection, frames)
 
         #_Substract the center of mass coordinates to each atom for each frame
         dataSet = dataSet - centerOfMass
@@ -346,8 +375,12 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
 
     def setCenterOfMassAligned(self, selection='all', frames=None):
-        """ Modifies the dcd data by aligning center of mass of all atoms between given frames delimited by
-            begin and end keywords. """
+        """ Modifies the dcd data by aligning center of mass of all atoms between given frames. 
+
+            Input:  selection   -> either string or array of indices for selected atoms
+                    frames      -> either None to select all frames, an int, or a slice object
+        
+        """
 
         #_Get the indices corresponding to the selection
         if type(selection) == str:
@@ -372,7 +405,7 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
 
 
-    def getCOMRadialDistribution(self, selection='protH', dr=1, maxR=60, frame=-1):
+    def getCOMRadialNumberDensity(self, selection='protH', dr=1, maxR=60, frame=-1):
         """ Computes the radial density distribution from center of mass of selected atoms 
             using the given dr interval.
 
@@ -388,17 +421,18 @@ class NAMDDCD(DCDReader, NAMDPSF):
             selection = self.getSelection(selection)
 
 
-        COM = self.getCenterOfMass(selection, frame)
-        dist = np.arange(0, maxR, dr)
-        totalAtoms = self.getWithinCOM(maxR, COM, selection, frame).size 
+        dist = np.arange(0, maxR, dr) #_Gets x-axis values
 
-        nbrAtoms = []
-        for r in dist:
-            nbrAtoms.append( self.getWithinCOM(r, COM, selection, frame).size )
+        #_Set center of mass to the origin and computes distances from origin for all atoms
+        coor = self.getAlignedCenterOfMass(selection, frame)
+        coor = np.sqrt( np.dot(coor, coor.T) )
 
-        nbrAtoms    = np.array( nbrAtoms, dtype=np.float32 )
-        density     = np.insert((nbrAtoms[1:] - nbrAtoms[:-1]), 0, nbrAtoms[0])
-        density[1:] = density[1:] / (4*np.pi*dist[1:]**2*dr)  
+        density = []
+        for i, r in enumerate(dist):
+            density.append( coor[ coor < r ].size )
+            density[i] -= np.sum( density[:i] )
+        
+        density = np.array( density ) / coor.size
 
         return dist, density
 
@@ -506,12 +540,12 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
 
 
-    def plotCOMRadialDistribution(self, selection='protH', dr=1, maxR=60, frame=-1):
+    def plotCOMRadialNumberDensity(self, selection='protH', dr=1, maxR=60, frame=-1):
         """ Plot the radial distribution of selected atoms from their center of mass.
             
             Calls the self.getRadialDistribution method to obtain data to plot """
 
-        X, density = self.getCOMRadialDistribution(selection, dr, maxR, frame)
+        X, density = self.getCOMRadialNumberDensity(selection, dr, maxR, frame)
 
 
         fig, ax = plt.subplots()

@@ -6,7 +6,11 @@ init:
 
 
 NAMDAnalyzer: setup.py 
-	python setup.py build 
+ifeq ($(OS), Windows_NT)
+	python setup.py build --compiler=mingw32
+else
+	python setup.py build
+endif	
 
 
 .PHONY: install
@@ -15,11 +19,7 @@ install:
 
 
 .PHONY: clean
-ifeq ($(OS), Windows_NT)
 clean:
-	cd NAMDAnalyzer/lib && del *.c && del *.cpp && cd ../.. && rmdir build /s /q && rmdir dist /s /q && del MANIFEST 
-else
-clean:
-	cd NAMDAnalyzer/lib && rm *.c && rm *.cpp && cd ../.. && rm -r build && rm -r dist && rm MANIFEST
-endif
+	rm -r build
+	cd NAMDAnalyzer/lib && rm *.c *.cpp 
 

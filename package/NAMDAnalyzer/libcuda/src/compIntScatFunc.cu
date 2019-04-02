@@ -6,10 +6,8 @@
 
 __global__
 
-void compIntScatFuncKernel(const float *atomPos, int atomPos_dim0, int atomPos_dim1, 
-                                const float *qVecs, int qVecs_dim0, int qVecs_dim1,
-                                int timeOri, int timeIncr, int qVec, int nbrFrames, float complex correlation,
-                                cudaDeviceProp devProp);
+void compIntScatFuncKernel(const float *atomPos, const float *qVecs, int timeOri, int timeIncr, 
+                            int qVec, int nbrFrames, float complex correlation)
 {
     int blockRow    = blockIdx.y;
     int blockCol    = blockIdx.x;
@@ -52,30 +50,57 @@ void compIntScatFuncKernel(const float *atomPos, int atomPos_dim0, int atomPos_d
 
 
 
-void cu_compIntScatFunc_wrapper(const float *atomPos, int atomPos_dim0, int atomPos_dim1, 
+void cu_compIntScatFunc_wrapper(const float *atomPos, int atomPos_dim0, int atomPos_dim1,
                                 const float *qVecs, int qVecs_dim0, int qVecs_dim1,
                                 int timeOri, int timeIncr, int qVec, int nbrFrames, float complex correlation,
-                                cudaDeviceProp devProp);
+                                cudaDeviceProp devProp)
 {
-    dim3 block(BLOCK_SIZE, 1);
-    dim3 grid(  (C.width + block.x - 1) / block.x,
-                (C.height + block.y - 1) / block.y,
-                1);
 
-    Matrix d_A {A.width, A.height, A.stride};
-    size_t size = A.height * A.width * sizeof(float);
-    cudaMallocManaged(&d_A.elements, size);
-    cudaMemcpy(d_A.elements, A.elements, size, cudaMemcpyHostToDevice);
+    // Copying atomPos matrix on GPU memory
+    float *cu_atomPos;
+    size_t size = atomPos_dim0 * atomPos_dim1 * 3 * sizeof(float);
+    cudaMallocManaged(&cu_atomPos, size);
+    cudaMemcpy(cu_atomPos, atomPos, size, cudaMemcpyHostToDevice);
 
-    Matrix d_B {B.width, B.height, B.stride};
-    size = B.height * B.width * sizeof(float);
-    cudaMallocManaged(&d_B.elements, size);
-    cudaMemcpy(d_B.elements, B.elements, size, cudaMemcpyHostToDevice);
+    // Copying atomPos matrix on GPU memory
+    float *cu_atomPos;
+    size_t size = atomPos_dim0 * atomPos_dim1 * 3 * sizeof(float);
+    cudaMallocManaged(&cu_atomPos, size);
+    cudaMemcpy(cu_atomPos, atomPos, size, cudaMemcpyHostToDevice);
 
-    Matrix d_C {C.width, C.height, C.stride};
-    size = C.height * C.width * sizeof(float);
-    cudaMallocManaged(&d_C.elements, size);
-    cudaMemcpy(d_C.elements, C.elements, size, cudaMemcpyHostToDevice);
+
+    for(int timeOri=0; timeOri < nbrTimeOri; ++timeOri)
+    {
+
+        for(int qVec=0; qVec < qVecs_dim1; ++qVec)
+        {
+
+            for(int atom=0; atom < atomPos_dim0; ++atom)
+            {
+
+                atom_tf_idx = 3 * (atom * atomPos_dim1 + timeOri*timeIncr + nbrFrames); 
+                atom_t0_idx = 3 * (atom * atomPos_dim1 + timeOri*timeIncr);
+
+                qVec_idx = 3 * (qIdx * qVecs_dim1 + qVec);
+
+                // Computes distances for given timestep and atom
+                dist_0 = atomPos[atom_tf_idx] - atomPos[atom_t0_idx];
+                dist_1 = atomPos[atom_tf_idx+1] - atomPos[atom_t0_idx+1];
+                dist_2 = atomPos[atom_tf_idx+2] - atomPos[atom_t0_idx+2];
+
+                exponent = cexpf ( I * ( qVecs[qVec_idx] * dist_0 
+                                        + qVecs[qVec_idx+1] * dist_1
+                                        + qVecs[qVec_idx+2] * dist_2 ) );
+
+
+                correlation += exponent;
+
+            } // atoms loop
+
+        } // q vectors loop 
+
+    } // time origins loop
+
 
     matMulKernel<<<grid, block>>>(d_C, d_A, d_B);
 

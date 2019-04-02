@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib import cm, colors
 from mpl_toolkits.mplot3d.axes3d import Axes3D
 
-from scipy.fftpack import fft, irfft, fftfreq, fftshift
+from scipy.fftpack import fft, fftfreq, fftshift
 
 from threading import Thread
 
@@ -74,7 +74,7 @@ class BackScatData:
         #_Computes random q vectors
         qArray = []
         for qIdx, qVal in enumerate(qValList):
-            qList = [CM.getRandomVec(qVal) for i in range(15)] 
+            qList = [CM.getRandomVec(qVal) for i in range(12)] 
             qArray.append( np.array(qList) )
 
         qArray = np.array(qArray)
@@ -102,7 +102,7 @@ class BackScatData:
 
 
     def compEISF(self, qValList, nbrTimeOri=20, resFunc=None, selection='protNonExchH', 
-                                                                alignCOM=True, frames=slice(0, None, 2)):
+                                            alignCOM=True, frames=slice(0, None, 2), norm=True):
         """ This method performs a multiplication of the inverse Fourier transform given resolution 
             function with the computed intermediate function to get the convoluted signal, 
             which can be used to compute MSD. 
@@ -130,7 +130,10 @@ class BackScatData:
 
         eisf = resolution * intFunc #_Computes the EISF
 
-        self.EISF = eisf / eisf[:,0][:,np.newaxis], timesteps #_Returns the normalized EISF and time 
+        if norm:
+            eisf /= eisf[:,0][:,np.newaxis]
+
+        self.EISF = eisf, timesteps #_Returns the EISF and time 
 
 
 
@@ -153,21 +156,23 @@ class BackScatData:
 
         print("Using Fourier transform on all EISF to obtain full scattering function.\n")
 
-        scatFunc, timesteps = self.EISF 
+        eisf, timesteps = self.EISF 
 
         #_Performs the Fourier transform
-        scatFunc = fftshift( fft(scatFunc, axis=1), axes=1 ) / scatFunc.shape[1]
+        scatFunc = fftshift( fft(eisf, axis=1), axes=1 ) 
+        scatFunc = np.absolute(scatFunc)**2 / scatFunc.shape[1]
 
         #_Convert time to energies in micro-electron volts
         timeIncr = timesteps[1] - timesteps[0]
         energies = 4.135662668e-15 * fftshift( fftfreq(timesteps.size, d=timeIncr) ) * 1e6
+
 
         self.scatFunc = scatFunc, energies
 
 
 
 
-    def compMSD(self, frameNbr, selection='protNonExchH', begin=0, end=None, alignCOM=True):
+    def compMSD(self, frameNbr=100, selection='protNonExchH', frames=slice(0, None, 1), alignCOM=True):
         """ Computes the Mean-Squared Displacement for the given number of frames, which should correspond
             to the max time scale probed by the instrument.
 
@@ -181,8 +186,8 @@ class BackScatData:
             selection = self.dataset.getSelection(selection)
 
         #_ALign center of masses if required
-        if alignCOM and not self.dataset.COMAligned:
-            self.dataset.setCenterOfMassAligned(frames)
+        if alignCOM:
+            self.dataset.setCenterOfMassAligned(selection, frames)
 
 
         atomPos = self.dataset.dcdData[selection, frames]
