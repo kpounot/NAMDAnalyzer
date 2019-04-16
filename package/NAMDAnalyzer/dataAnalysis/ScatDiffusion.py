@@ -95,7 +95,7 @@ class ScatDiffusion(HydroproReader):
                     + "Use self.compEffVolFrac() method before calling this method.\n")
             return
 
-        qVals = np.array( qVals ).astype('f')
+        qVals = np.array( qVals ).astype('f') * 1e8 #_Conversion to cm^(-1)
 
         self.compCorrectedDt()
         self.compCorrectedDs()
@@ -116,14 +116,14 @@ class ScatDiffusion(HydroproReader):
 
 
         dist, density = density
-        dist = dist[:,np.newaxis]
-        density = density[:,np.newaxis]
+        dist = dist[:,np.newaxis] * 1e-8
+        density = density[:,np.newaxis] 
 
         res = np.zeros(qVals.size)
         for n in range(maxN):
-            Bn = (2*n+1) * np.sum( density * spherical_jn(n, qVals*dist), axis=0 )
-            res += ( Bn * self.Dr * n*(n+1) + (self.Dt - D) * qVals**2 
-                            / (self.Dr * n*(n+1) + (self.Dt + D) * qVals**2)**2)
+            Bn = (2*n+1) * np.sum( density * spherical_jn(n, qVals*dist)**2, axis=0 )
+            res += ( Bn * (self.Dr * n*(n+1) + (self.Dt - D) * qVals**2) 
+                            / (self.Dr * n*(n+1) + (self.Dt + D) * qVals**2)**2 )
 
 
         return res
