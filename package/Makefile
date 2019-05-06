@@ -1,25 +1,34 @@
-all: init NAMDAnalyzer
+all: init build
 
 
 init:
 	pip3 install -r requirements.txt
 
 
-NAMDAnalyzer: setup.py 
+build: setup.py 
 ifeq ($(OS), Windows_NT)
 	python setup.py build --compiler=mingw32
 else
-	python setup.py build
+	python3 setup.py build
 endif	
 
 
 .PHONY: install
 install:
-	python setup.py install
+ifeq ($(OS), Windows_NT)
+	python setup.py install 
+else
+	python3 setup.py install
+endif
 
 
 .PHONY: clean
 clean:
-	rm -r build
-	cd NAMDAnalyzer/lib && rm *.c *.cpp 
+ifeq ($(OS), Windows_NT)
+	rmdir /S /Q build  
+	cd NAMDAnalyzer/lib && del *.c *.cpp
+else
+	rm -rf build  
+	rm NAMDAnalyzer/lib/*.c NAMDAnalyzer/lib/*.cpp
+endif
 
