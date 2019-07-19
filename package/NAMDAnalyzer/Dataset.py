@@ -10,6 +10,7 @@ from .dataParsers.logParser import NAMDLOG
 from .dataParsers.pdbParser import NAMDPDB
 from .dataParsers.velParser import NAMDVEL
 from .dataParsers.psfParser import NAMDPSF
+from .dataParsers.selParser import SelParser
 
 
 class Dataset(NAMDDCD):
@@ -86,6 +87,17 @@ class Dataset(NAMDDCD):
 
 
         print("Done\n")
+
+
+
+
+    def selection(self, selT, frame=-1):
+        """ Uses the SelParser to select atoms with a simple string command. """
+
+        selParser = SelParser(self, selT, frame)
+
+        return selParser.selection
+
 
 
 

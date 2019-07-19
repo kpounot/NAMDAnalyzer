@@ -38,8 +38,8 @@ class BackScatData:
 #---------------------------------------------
 #_Computation methods
 #---------------------------------------------
-    def compIntermediateFunc(self, qValList, nbrTimeOri=20, selection='protNonExchH', 
-                                                                    alignCOM=True, frames=slice(0, None, 2)):
+    def compIntermediateFunc(self, qValList, nbrTimeOri=50, selection='protNonExchH', 
+                                        alignCOM=True, frames=slice(0, None, 1), nbrTS=200):
         """ This method computes intermediate function for all q-value (related to scattering angle)
 
             Input:  qValList    -> list of q-values to be used 
@@ -49,12 +49,13 @@ class BackScatData:
                     selection   -> atom selection
                     alignCOM    -> whether center of mass should be aligned or not
                     frames      -> either None to select all frames, an int, or a slice object
+                    nbrTS       -> number of time steps to be used (number of points ni the x-axis output)
                     
             Returns an (nbr of q-values, timesteps) shaped array. """
 
 
         if type(selection) == str:
-            selection = self.dataset.getSelection(selection)
+            selection = self.dataset.selection(selection)
 
         qValList = np.array(qValList)
         self.qVals = qValList
@@ -68,13 +69,11 @@ class BackScatData:
 
         atomPos = self.dataset.dcdData[selection, frames]
 
-        maxFrames = atomPos.shape[1] - nbrTimeOri
-
 
         #_Computes random q vectors
         qArray = []
         for qIdx, qVal in enumerate(qValList):
-            qList = [CM.getRandomVec(qVal) for i in range(12)] 
+            qList = [CM.getRandomVec(qVal) for i in range(15)] 
             qArray.append( np.array(qList) )
 
         qArray = np.array(qArray)
@@ -82,27 +81,30 @@ class BackScatData:
 
 
 
-        corr = np.zeros( (qValList.size, maxFrames), dtype=np.complex64 ) 
+        corr = np.zeros( (qArray.shape[0], 2*nbrTS), dtype=np.float32 ) 
 
 
         #_Get timestep array
         timestep = []
-        for i in range( maxFrames ):
+        for i in range( nbrTS ):
             timestep.append( i*frames.step * self.dataset.timestep * self.dataset.dcdFreq[0] )
 
 
         print("Computing intermediate scattering function...\n")
 
-        py_compIntScatFunc(atomPos, qArray, corr, maxFrames, nbrTimeOri)
+        py_compIntScatFunc(atomPos, qArray, corr, nbrTS, nbrTimeOri)
             
+        #_Convert to complex array
+        corr = corr[:,::2] + 1j*corr[:,1::2]
+
         self.interFunc = corr, np.array(timestep)
 
         print("\nDone\n")
 
 
 
-    def compEISF(self, qValList, nbrTimeOri=20, resFunc=None, selection='protNonExchH', 
-                                            alignCOM=True, frames=slice(0, None, 2), norm=True):
+    def compEISF(self, qValList, nbrTimeOri=50, resFunc=None, selection='protNonExchH', 
+                                            alignCOM=True, frames=slice(0, None, 1), norm=True, nbrTS=200):
         """ This method performs a multiplication of the inverse Fourier transform given resolution 
             function with the computed intermediate function to get the convoluted signal, 
             which can be used to compute MSD. 
@@ -112,14 +114,15 @@ class BackScatData:
                     resFunc     -> resolution function to be used (optional, default resFuncSPHERES)
                     selection   -> atom selection (optional, default 'protein')
                     alignCOM    -> whether center of mass should be aligned or not
-                    frames      -> either None to select all frames, an int, or a slice object """
+                    frames      -> either None to select all frames, an int, or a slice object
+                    nbrTS       -> number of time steps to be used (number of points ni the x-axis output) """
 
         if resFunc == None:
             resFunc = CM.FTresFuncSPHERES
 
 
         #_Computes intermediate scattering function if None       
-        self.compIntermediateFunc(qValList, nbrTimeOri, selection, alignCOM, frames)
+        self.compIntermediateFunc(qValList, nbrTimeOri, selection, alignCOM, frames, nbrTS)
 
         print("Using given resolution function to compute elastic incoherent structure factors.\n")
 
@@ -138,8 +141,8 @@ class BackScatData:
 
 
 
-    def compScatteringFunc(self, qValList, nbrTimeOri=20, resFunc=None, 
-                                            selection='protNonExchH', alignCOM=True, frames=slice(0, None, 2)):
+    def compScatteringFunc(self, qValList, nbrTimeOri=50, resFunc=None, 
+                            selection='protNonExchH', alignCOM=True, frames=slice(0, None, 1), nbrTS=200):
         """ This method calls getIntermediateFunc several times for different time steps, given by
             the number of frames, which will start from minFrames and by incremented to reach maxFrames
             in the given number of bins.
@@ -150,9 +153,10 @@ class BackScatData:
                     nbrTimeOri  -> number of time origins to be averaged over
                     selection   -> atom selection (optional, default 'protein')
                     alignCOM    -> whether center of mass should be aligned or not
-                    frames      -> either None to select all frames, an int, or a slice object """
+                    frames      -> either None to select all frames, an int, or a slice object
+                    nbrTS       -> number of time steps to be used (number of points ni the x-axis output """
 
-        self.compEISF(qValList, nbrTimeOri, resFunc, selection, alignCOM, frames)
+        self.compEISF(qValList, nbrTimeOri, resFunc, selection, alignCOM, frames, nbrTS)
 
         print("Using Fourier transform on all EISF to obtain full scattering function.\n")
 
@@ -183,29 +187,21 @@ class BackScatData:
 
         #_Get the indices corresponding to the selection
         if type(selection) == str:
-            selection = self.dataset.getSelection(selection)
+            selection = self.dataset.selection(selection)
 
         #_ALign center of masses if required
         if alignCOM:
             self.dataset.setCenterOfMassAligned(selection, frames)
 
 
-        atomPos = self.dataset.dcdData[selection, frames]
+        atomPos = self.dataset.dcdData[selection, frames].astype('float16')
 
 
         #_Computes intermediate scattering function for one timestep, averaged over time origins
-        displacement = atomPos[:,frameNbr:] - atomPos[:,:-frameNbr]
-
-        error = np.std(displacement, axis=1) 
-        error = error.mean()
-
-        msd = np.sum( (displacement)**2, axis=2) 
-        msd = msd.mean( 1 ) #_Averaging over time origins 
-
-        msd = msd.mean()    #_Averaging over atoms
+        displacement = np.sum((atomPos[:,frameNbr:] - atomPos[:,:-frameNbr])**2, axis=2)
 
 
-        self.MSD = msd, error
+        self.MSD = displacement.mean(), displacement.std()
 
 
 

@@ -15,18 +15,18 @@ class DCDReader:
         self.dcdFreq    = None
         self.stride     = stride
 
-        self.COMAligned = False #_To check if center of mass were aligned
 
 
     def importDCDFile(self, dcdFile):
         """ Imports a new file and store the result in self.dcdData.
             If something already exists in self.dcdData, it will be deleted. """
 
-        self.dcdFile = dcdFile
-
-        self.dcdData = None #_Free memory in case data were already loaded
-
-        print(self.dcdFile)
+        self.dcdFile    = dcdFile
+        self.dcdData    = None
+        self.dcdFreq    = None
+        self.nbrAtoms   = None
+        self.nbrFrames  = None
+        self.nbrSteps   = None
 
         with open(self.dcdFile, 'rb') as f:
             data = f.read(92)
@@ -107,11 +107,7 @@ class DCDReader:
         self.nbrFrames = int(np.ceil(self.nbrFrames / self.stride)) 
 
 
-        if self.stride == 1: #_Removes the additional entry at the end when stride is equal to one.
-            self.dcdData    = self.dcdData[:,:-1]
-            self.dcdFreq    = self.dcdFreq[:-1]
-            self.nbrFrames  = self.nbrFrames - 1
-            self.cellDims   = self.cellDims[:,:-1]
+        data = None
 
 
     def appendDCD(self, dcdFile):

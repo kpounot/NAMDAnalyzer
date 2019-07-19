@@ -5,6 +5,7 @@ import argparse
 from NAMDAnalyzer.Dataset import Dataset
 from NAMDAnalyzer.dataAnalysis.backscatteringDataConvert import BackScatData
 from NAMDAnalyzer.dataAnalysis.ScatDiffusion import ScatDiffusion
+from NAMDAnalyzer.dataAnalysis.HydrogenBonds import HydrogenBonds
 
 
 

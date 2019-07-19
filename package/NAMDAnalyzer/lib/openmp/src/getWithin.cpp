@@ -45,9 +45,9 @@ void getWithin(float *allAtoms, int nbrAtoms, float *selAtoms, int sel_dim0, flo
 
             
                 // Applying PBC corrections
-                dist_0 = dist_0 - cellDims[0] * round( dist_0 / cellDims[0] );
-                dist_1 = dist_1 - cellDims[1] * round( dist_1 / cellDims[1] );
-                dist_2 = dist_2 - cellDims[2] * round( dist_2 / cellDims[2] );
+                dist_0 = abs(dist_0) - cellDims[0] * round( abs(dist_0) / cellDims[0] );
+                dist_1 = abs(dist_1) - cellDims[1] * round( abs(dist_1) / cellDims[1] );
+                dist_2 = abs(dist_2) - cellDims[2] * round( abs(dist_2) / cellDims[2] );
 
 
                 if(dist_0 > distance || dist_1 > distance || dist_2 > distance) 

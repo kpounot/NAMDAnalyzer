@@ -54,7 +54,15 @@ class NAMDPSF(PSFReader):
 
         self.waterH         = ["H1", "H2"]
 
-        self.H              = re.compile('[A-Za-z0-9]*H[A-Za-z0-9]*')
+        self.H              = np.concatenate( (self.protH, self.waterH) )
+
+
+        self.HDonors        = ["N", "OH2", "OW", "NE", "NH1", "NH2",
+                               "ND2", "SG", "NE2", "ND1", "NE2", "NZ",
+                               "OG", "OG1", "NE1", "OH"]
+
+        self.HAcceptors     = ["O", "OC1", "OC2", "OH2", "OW", "OD1", "OD2", "SG", "OE1",
+                               "OE2", "ND1", "NE2", "SD", "OG", "OG1", "OH"]
 
 
 
@@ -68,15 +76,15 @@ class NAMDPSF(PSFReader):
 
         #_Get the indices corresponding to the selection
         if type(selection) == str:
-            selection = self.getSelection(selection)
+            selection = self.selection(selection)
 
         return self.psfData.atoms[selection,7].astype(float)
 
 
 
 
-    def getSelection(self, selText="all", segName=None, NOTsegName=None, resNbr=None, resName=None, 
-                            NOTresNbr=None, NOTresName=None, atom=None, NOTatom=None, index=None):
+    def getSelection(self, selText="all", segName=None, resID=None, resName=None, atom=None, 
+                                                                        index=None, invert=False):
         """ This method returns an list of index corresponding to the ones that have been selected 
             using the 'selText' argument and the indices list.
 
@@ -87,6 +95,9 @@ class NAMDPSF(PSFReader):
                                     - protNonExchH
                                     - water
                                     - waterH
+                                    - hydrogen
+                                    - hbdonors
+                                    - hbacceptors
 
             For segName, resNbr, resName, atom:  - segment id, or list of segment id
                                                  - any residue number, or list of residue number
@@ -105,8 +116,8 @@ class NAMDPSF(PSFReader):
         #_Converting to lists on case of single string
         if type(segName) == str:
             segName = [segName]
-        if type(resNbr) == str:
-            resNbr = [resNbr]
+        if type(resID) == str:
+            resID = [resID]
         if type(atom) == str:
             atom = [atom]
 
@@ -115,75 +126,83 @@ class NAMDPSF(PSFReader):
         #_Getting the different index lists corresponding to the given selection(s)
         if selText == "all":
             keepIdxList.append( np.ones_like(self.psfData.atoms[:,0]).astype(bool) )
+
+        if selText == "hydrogen":
+            keepIdxList.append( np.isin(self.psfData.atoms[:,4], self.H, invert=invert) )
+
+        if selText == "hbdonors":
+            keepList = np.isin(self.psfData.atoms[:,4], self.HDonors, invert=invert) 
+            keepIdxList.append( self.getHBDonors(keepList) )
+
+        if selText == "hbacceptors":
+            keepList = np.isin(self.psfData.atoms[:,4], self.HAcceptors, invert=invert) 
+            keepIdxList.append( self.getHBAcceptors(keepList) )
+
+        if selText == "hbhydrogens":
+            keepIdxList.append( np.isin(self.psfData.atoms[:,4], self.H) )
+
+            keepList = np.isin(self.psfData.atoms[:,4], self.HDonors) 
+            keepList = self.getHBDonors(keepList) 
+            keepList = np.argwhere(keepList)[:,0]
+            keepIdxList.append( self.getBoundAtoms(keepList) )
+
         if selText == "protein":
-            keepIdxList.append( np.isin(self.psfData.atoms[:,3], self.protSel) )
+            keepIdxList.append( np.isin(self.psfData.atoms[:,3], self.protSel, invert=invert) )
+
         if selText == "protH" or selText == "proteinH":
-            keepIdxList.append( np.isin(self.psfData.atoms[:,4], self.protH) )
+            keepIdxList.append( np.isin(self.psfData.atoms[:,4], self.protH, invert=invert) )
+
         if selText == "backbone":
-            keepIdxList.append( np.isin(self.psfData.atoms[:,4], self.backboneSel) )
+            keepIdxList.append( np.isin(self.psfData.atoms[:,4], self.backboneSel, invert=invert) )
+
         if selText == "water":
             keepIdxList.append( np.isin(self.psfData.atoms[:,3], ["TIP3", "TIP4", "TIP5", "SPC", "SPCE",
-                                                                    "TP3B", "TP3F", "TP4E", "TP45", "TP5E"]) )
+                                                                    "TP3B", "TP3F", "TP4E", "TP45", "TP5E"],
+                                                                invert=invert) )
         if selText == "waterH":
-            keepIdxList.append( np.isin(self.psfData.atoms[:,4], self.waterH) )
+            keepIdxList.append( np.isin(self.psfData.atoms[:,4], self.waterH, invert=invert) )
 
         if selText == "protNonExchH":
-            keepIdxList = np.array([bool( self.H.match(val) ) for val in self.psfData.atoms[:,4]])
-            protList    = np.isin(self.psfData.atoms[:,4], self.protH)
-            keepIdxList = np.bitwise_and(keepIdxList, protList)
+            keepList = np.array([bool( self.H.match(val) ) for val in self.psfData.atoms[:,4]])
+            protList = np.isin(self.psfData.atoms[:,4], self.protH)
+            keepList = np.bitwise_and(keepList, protList)
             for key, value in self.protExchH.items():
                 resArray        = np.isin(self.psfData.atoms[:,3], key)
                 exchHArray      = np.isin(self.psfData.atoms[:,4], value)
                 nonExchHArray   = np.invert(np.bitwise_and(resArray, exchHArray))
-                keepIdxList     = np.bitwise_and(keepIdxList, nonExchHArray)
+                keepList     = np.bitwise_and(keepList, nonExchHArray)
 
-            return np.argwhere(keepIdxList)[:,0]
+            keepIdxList.append(keepList)
+
 
 
         #_Parsing the segment list if not None
         if segName:
             segName = np.array(segName).astype(str)
-            keepIdxList.append( np.isin(self.psfData.atoms[:,1], segName) )
-
-        #_Parsing the not segment list if not None
-        if NOTsegName:
-            NOTsegName = np.array(NOTsegName).astype(str)
-            keepIdxList.append( np.invert(np.isin(self.psfData.atoms[:,1], NOTsegName)) )
+            keepIdxList.append( np.isin(self.psfData.atoms[:,1], segName, invert=invert) )
 
         #_Parsing the residue number list if not None
-        if resNbr:
-            resNbr = np.array(resNbr).astype(str)
-            keepIdxList.append( np.isin(self.psfData.atoms[:,2], resNbr) )
+        if resID:
+            resID = np.array(resID).astype(str)
+            keepIdxList.append( np.isin(self.psfData.atoms[:,2], resID, invert=invert) )
 
-        #_Parsing the not residue number list if not None
-        if NOTresNbr:
-            NOTresNbr = np.array(NOTresNbr).astype(str)
-            keepIdxList.append( np.invert(np.isin(self.psfData.atoms[:,2], NOTresNbr)) )
 
         #_Parsing the residue name list if not None
         if resName:
             resName = np.array(resName).astype(str)
-            keepIdxList.append( np.isin(self.psfData.atoms[:,3], resNbr) )
+            keepIdxList.append( np.isin(self.psfData.atoms[:,3], resName, invert=invert) )
 
-        #_Parsing the not residue name list if not None
-        if NOTresName:
-            NOTresName = np.array(NOTresName).astype(str)
-            keepIdxList.append( np.invert(np.isin(self.psfData.atoms[:,3], NOTresName)) )
 
         #_Parsing the name list if not None
         if atom:
             atom = np.array(atom).astype(str)
-            keepIdxList.append( np.isin(self.psfData.atoms[:,4], atom) )
+            keepIdxList.append( np.isin(self.psfData.atoms[:,4], atom, invert=invert) )
 
-        #_Parsing the not atom list if not None
-        if NOTatom:
-            NOTatom = np.array(NOTatom).astype(str)
-            keepIdxList.append( np.invert(np.isin(self.psfData.atoms[:,4], NOTatom)) )
 
         #_Parsing the index list if not None
         if index:
             index   = np.array(index).astype(str)
-            keepIdxList.append( np.isin(self.psfData.atoms[:,0], index) )
+            keepIdxList.append( np.isin(self.psfData.atoms[:,0], index, invert=invert) )
 
 
         #_Using bitwise AND to keep only the indices that are true everywhere
@@ -202,14 +221,126 @@ class NAMDPSF(PSFReader):
         """ Given the provided selection, selects all others atoms that are present in the same residues and
             returns an updated selection. """
 
-        if selection.shape[0] == 1:
-            sel = self.psfData.atoms[selection][1:3] #_Selects the segment and resiID columns
-        else:
-            sel = self.psfData.atoms[selection][:,1:3] #_Selects the segment and resiID columns
 
-        segList = np.isin(self.psfData.atoms[:,1], sel[:,0])
-        resList = np.isin(self.psfData.atoms[:,2], sel[:,1])
+        if type(selection) == int:
+            sel = self.psfData.atoms[[selection]]
+        elif selection.shape[0] == 1:
+            sel = self.psfData.atoms[selection]
+        else:
+            sel = self.psfData.atoms[selection]
+
+        segList = np.isin(self.psfData.atoms[:,1], sel[:,1])
+        resList = np.isin(self.psfData.atoms[:,2], sel[:,2])
 
         keepList = np.bitwise_and(segList, resList)
 
         return np.argwhere(keepList)[:,0]
+
+
+
+
+
+    def getHBDonors(self, keepList):
+        """ Identifies all possible hydrogen bond donors in the given inde list, and returns only those that
+            correspond to atoms bound to an hydrogen. """
+
+        idxList = np.argwhere(keepList)[:,0]
+
+        for idx in idxList:
+            if self.psfData.atoms[idx,3] == "CYH":
+                idxList = np.delete(idxList, idx)
+
+            if self.psfData.atoms[idx,3] == "HIS":
+                if "HE2" not in data.psfData.atoms[self.getSameResidueAs(idx)]:
+                    idxList = np.delete(idxList, idx)
+                if "HD1" not in data.psfData.atoms[self.getSameResidueAs(idx)]:
+                    idxList = np.delete(idxList, idx)
+
+            if self.psfData.atoms[idx,3] == "HSE" and self.psfData.atoms[idx,4] == "ND1":
+                idxList = np.delete(idxList, idx)
+
+            if self.psfData.atoms[idx,3] == "HSD" and self.psfData.atoms[idx,4] == "NE2":
+                idxList = np.delete(idxList, idx)
+
+            if self.psfData.atoms[idx,3] == "SER":
+                if "HG1" not in data.psfData.atoms[self.getSameResidueAs(idx)]:
+                    idxList = np.delete(idxList, idx)
+
+            if self.psfData.atoms[idx,3] == "THR":
+                if "HG1" not in data.psfData.atoms[self.getSameResidueAs(idx)]:
+                    idxList = np.delete(idxList, idx)
+
+            if self.psfData.atoms[idx,3] == "TYR":
+                if "HH" not in data.psfData.atoms[self.getSameResidueAs(idx)]:
+                    idxList = np.delete(idxList, idx)
+
+
+            keepIdx = np.zeros(self.psfData.atoms.shape[0])
+            keepIdx[idxList] = 1
+
+            return keepIdx.astype(bool)
+
+
+
+
+    def getHBAcceptors(self, keepList):
+        """ Identifies all possible hydrogen bond acceptors in the given index list, and returns only 
+            those that correspond to atoms not bound to an hydrogen. """
+
+        idxList = np.argwhere(keepList)[:,0]
+
+        for idx in idxList:
+            if self.psfData.atoms[idx,3] == "CYS":
+                idxList = np.delete(idxList, idx)
+
+            if self.psfData.atoms[idx,3] == "HIS":
+                if "HE2" in data.psfData.atoms[self.getSameResidueAs(idx)]:
+                    idxList = np.delete(idxList, idx)
+                if "HD1" in data.psfData.atoms[self.getSameResidueAs(idx)]:
+                    idxList = np.delete(idxList, idx)
+
+            if self.psfData.atoms[idx,3] == "HSE" and self.psfData.atoms[idx,4] == "NE2":
+                idxList = np.delete(idxList, idx)
+
+            if self.psfData.atoms[idx,3] == "HSD" and self.psfData.atoms[idx,4] == "ND1":
+                idxList = np.delete(idxList, idx)
+
+            if self.psfData.atoms[idx,3] == "SER":
+                if "HG1" in data.psfData.atoms[self.getSameResidueAs(idx)]:
+                    idxList = np.delete(idxList, idx)
+
+            if self.psfData.atoms[idx,3] == "THR":
+                if "HG1" in data.psfData.atoms[self.getSameResidueAs(idx)]:
+                    idxList = np.delete(idxList, idx)
+
+            if self.psfData.atoms[idx,3] == "TYR":
+                if "HH" in data.psfData.atoms[self.getSameResidueAs(idx)]:
+                    idxList = np.delete(idxList, idx)
+
+
+            keepIdx = np.zeros(self.psfData.atoms.shape[0])
+            keepIdx[idxList] = 1
+
+            return keepIdx.astype(bool)
+
+
+
+    def getBoundAtoms(self, selection):
+        """ Returns the bound atoms for each atom in the given selection. """
+
+        if type(selection) == int:
+            selection = [selection] #_To keep it 2 dimensional
+
+        keepIdx = np.zeros(self.psfData.atoms.shape[0])
+        keepIdx[selection] = 1
+
+        bonds1  = self.psfData.bonds[:,::2]
+        bonds2  = self.psfData.bonds[:,1::2]
+
+        selBonds1   = np.argwhere( np.isin(bonds1, self.psfData.atoms[selection][:,0].astype(int)) )
+        selBonds2   = np.argwhere( np.isin(bonds2, self.psfData.atoms[selection][:,0].astype(int)) )
+
+        keepIdx[ bonds2[selBonds1[:,0], selBonds1[:,1]] - 1 ] = 1
+        keepIdx[ bonds1[selBonds2[:,0], selBonds2[:,1]] - 1 ] = 1
+
+        return keepIdx.astype(bool)

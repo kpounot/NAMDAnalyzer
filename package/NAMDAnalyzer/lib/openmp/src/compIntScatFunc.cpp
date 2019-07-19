@@ -6,8 +6,8 @@
 
 void compIntScatFunc(float *atomPos, int atomPos_dim0, int atomPos_dim1, int atomPos_dim2, 
                      float *qVecs, int qVecs_dim0, int qVecs_dim1, int qVecs_dim2, 
-                     float complex *out, int out_dim0, int out_dim1, 
-                     int maxFrames, int nbrTimeOri)
+                     float *out, int out_dim0, int out_dim1, 
+                     int nbrTS, int nbrTimeOri)
 {
     /*  The function computes the intermediate neutron incoherent scattering function.
      *  Using given atom positions, minimum and maximum timesteps, and the desired number of time bins,
@@ -34,45 +34,51 @@ void compIntScatFunc(float *atomPos, int atomPos_dim0, int atomPos_dim1, int ato
     
 
     int nbrIter;
+    int TSIncr  = (atomPos_dim1 / nbrTS);
 
-    for(int qIdx=0; qIdx < qVecs_dim0; ++qIdx)
+    for(int qValId=0; qValId < qVecs_dim0; ++qValId)
     {
-        printf("Computing q value %d of %d...\r", qIdx+1, qVecs_dim0);
+        printf("Computing q value %d of %d...\r", qValId+1, qVecs_dim0);
 
-        for(int nbrFrames=0; nbrFrames < maxFrames; ++nbrFrames)
+        for(int dt=0; dt < nbrTS; ++dt)
         {
-            float complex correlation = 0;
+            float sum_re = 0;
+            float sum_im = 0;
 
-            int timeIncr = ( atomPos_dim1 - nbrFrames ) / nbrTimeOri; 
+            int timeIncr = (float)(atomPos_dim1 - dt*TSIncr) / nbrTimeOri; 
 
-            nbrIter = 0;
             for(int timeOri=0; timeOri < nbrTimeOri; ++timeOri)
             {
 
                 for(int qVec=0; qVec < qVecs_dim1; ++qVec)
                 {
 
-                    #pragma omp parallel for reduction(+:correlation, nbrIter)
+                    #pragma omp parallel for reduction(+:sum_re, sum_im)
                     for(int atom=0; atom < atomPos_dim0; ++atom)
                     {
 
-                        int atom_tf_idx = 3 * (atom * atomPos_dim1 + timeOri*timeIncr + nbrFrames); 
+                        int atom_tf_idx = 3 * (atom * atomPos_dim1 + timeOri*timeIncr + dt*TSIncr); 
                         int atom_t0_idx = 3 * (atom * atomPos_dim1 + timeOri*timeIncr);
 
-                        int qVec_idx = 3 * (qIdx * qVecs_dim1 + qVec);
+                        int qVec_idx = 3 * (qValId * qVecs_dim1 + qVec);
 
                         // Computes distances for given timestep and atom
                         float dist_0 = atomPos[atom_tf_idx] - atomPos[atom_t0_idx];
                         float dist_1 = atomPos[atom_tf_idx+1] - atomPos[atom_t0_idx+1];
                         float dist_2 = atomPos[atom_tf_idx+2] - atomPos[atom_t0_idx+2];
 
-                        float complex exponent = cexpf ( I * ( qVecs[qVec_idx] * dist_0 
-                                                + qVecs[qVec_idx+1] * dist_1
-                                                + qVecs[qVec_idx+2] * dist_2 ) );
+                        float re = cos( qVecs[qVec_idx] * dist_0 
+                                        + qVecs[qVec_idx+1] * dist_1
+                                        + qVecs[qVec_idx+2] * dist_2 );
+
+                        float im = sin( qVecs[qVec_idx] * dist_0 
+                                        + qVecs[qVec_idx+1] * dist_1
+                                        + qVecs[qVec_idx+2] * dist_2 );
 
 
-                        correlation += exponent;
-                        nbrIter += 1;
+
+                        sum_re += re;
+                        sum_im += im;
 
                     } // atoms loop
 
@@ -80,11 +86,11 @@ void compIntScatFunc(float *atomPos, int atomPos_dim0, int atomPos_dim1, int ato
 
             } // time origins loop
 
-
             // Done with average for this q-value and time step bin 
-            out[ qIdx * out_dim1 + nbrFrames ] = correlation / nbrIter; 
+            out[ qValId * out_dim1 + 2*dt ]      = sum_re / (atomPos_dim0*nbrTimeOri*qVecs_dim1); 
+            out[ qValId * out_dim1 + 2*dt + 1 ]  = sum_im / (atomPos_dim0*nbrTimeOri*qVecs_dim1); 
 
-        } // nbrFrames loop
+        } // dt loop
 
     } // q values loop
 

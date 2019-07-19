@@ -11,6 +11,7 @@ from mpl_toolkits.mplot3d.axes3d import Axes3D
 from ..lib.pygetWithin import py_getWithin
 from ..lib.pygetCenterOfMass import py_getCenterOfMass
 from ..lib.pysetCenterOfMassAligned import py_setCenterOfMassAligned
+from ..lib.pygetDistances import py_getDistances
 
 
 from ..dataManipulation import molFit_quaternions as molFit_q
@@ -35,6 +36,7 @@ class NAMDDCD(DCDReader, NAMDPSF):
         if dcdFile:
             self.importDCDFile(dcdFile)
 
+        self.COMAligned = False #_To check if center of mass were aligned
 
 
     def appendCoordinates(self, coor):
@@ -61,7 +63,54 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
 
 
-    def getWithin(self, distance, usrSel, outSel=None, frame=-1, getSameResid=True):
+#---------------------------------------------
+#_Distances and within selections
+#---------------------------------------------
+    def getDistances(self, sel1=None, sel2=None, frame=-1):
+        """ Selects all atoms that within the given distance of the given selection and frame.
+    
+            Input:  sel1    -> first selection of atoms used for distance calculation with sel2 (default -> all)
+                    sel2    -> second selection for distance calculation with sel1 (default -> all)
+                    frame   -> frame to be used for computation
+
+            Returns a matrix containing pairwise distances if memory allows it. """
+
+
+        #_Get the indices corresponding to the selection
+        if type(sel1) == str:
+            sel1 = self.selection(sel1)
+
+        if sel1 is None:
+            sel1 = self.getSelection()
+
+        if type(sel2) == str:
+            sel2 = self.selection(sel2)
+
+        if sel2 is None:
+            sel2 = self.getSelection()
+
+
+        #_Gets atom coordinates
+        sel1 = self.dcdData[sel1,frame]
+        sel2 = self.dcdData[sel2,frame]
+
+
+        out = np.zeros((sel1.shape[0], sel2.shape[0]), dtype='float32')
+
+
+        #_Get cell dimensions for given frame and make array contiguous
+        cellDims    = np.ascontiguousarray(self.cellDims[:,frame], dtype='float32')
+
+
+        py_getDistances(sel1, sel2, cellDims, out)
+
+        return out
+
+
+
+
+
+    def getWithin(self, distance, usrSel, outSel=None, frame=-1, getSameResid=False):
         """ Selects all atoms that within the given distance of the given selection and frame.
     
             Input:  distance    -> distance in angstrom, within which to select atoms
@@ -78,35 +127,31 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
         #_Get the indices corresponding to the selection
         if type(usrSel) == str:
-            usrSel = self.getSelection(usrSel)
+            usrSel = self.selection(usrSel)
 
         if type(outSel) == str:
-            outSel = self.getSelection(outSel)
+            outSel = self.selection(outSel)
 
     
+        usrSel      = np.ascontiguousarray(self.dcdData[usrSel,frame], dtype='float32')
         frameAll    = np.ascontiguousarray(self.dcdData[:,frame], dtype='float32') #_Get frame coordinates
-
-        usrSel = np.ascontiguousarray(self.dcdData[usrSel,frame], dtype='float32')
 
         #_Get cell dimensions for given frame and make array contiguous
         cellDims    = np.ascontiguousarray(self.cellDims[:,frame], dtype='float32')
 
         #_Initialize boolean array for atom selection
-        keepIdx     = np.zeros(self.dcdData.shape[0], dtype=int)
+        keepIdx = np.zeros(self.nbrAtoms, dtype=int)
 
 
         py_getWithin(frameAll, usrSel, cellDims, keepIdx, distance)
 
 
-        if outSel is not None:
-            #_Creates an array of boolean for logical_and
-            outSelBool = np.zeros(self.dcdData.shape[0], dtype=bool) 
-            outSelBool[outSel] = 1  #_Sets selected atoms indices to 1
-
-            keepIdx = np.logical_and( outSelBool, keepIdx.astype(bool) )
-
-
         keepIdx = np.argwhere( keepIdx )[:,0]
+
+
+        if outSel is not None:
+            keepIdx = np.intersect1d( keepIdx, outSel )
+
 
         if getSameResid:
             keepIdx = self.getSameResidueAs(keepIdx)
@@ -214,7 +259,7 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
         #_Get the indices corresponding to the selection
         if type(selection) == str:
-            selection = self.getSelection(selection)
+            selection = self.selection(selection)
 
         #_Align selected atoms for each selected frames
         if align:
@@ -244,7 +289,7 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
         #_Get the indices corresponding to the selection
         if type(selection) == str:
-            selection = self.getSelection(selection)
+            selection = self.selection(selection)
 
         #_Align selected atoms for each selected frames
         if align:
@@ -274,7 +319,7 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
         #_Get the indices corresponding to the selection
         if type(selection) == str:
-            selection = self.getSelection(selection)
+            selection = self.selection(selection)
 
         #_Align selected atoms for each selected frames
         if align:
@@ -302,7 +347,7 @@ class NAMDDCD(DCDReader, NAMDPSF):
                     frames      -> either None to select all frames, an int, or a slice object """
 
         if type(selection) == str:
-            selection = self.getSelection(selection)
+            selection = self.selection(selection)
 
         try: #_Check if a psf file has been loaded
             atomMasses = self.getAtomsMasses(selection)
@@ -335,7 +380,7 @@ class NAMDDCD(DCDReader, NAMDPSF):
             Returns a similar array as the initial dataSet but with aligned coordinates."""
 
         if type(selection) == str:
-            selection = self.getSelection(selection)
+            selection = self.selection(selection)
 
         alignData = self.getAlignedCenterOfMass(selection, frames)
 
@@ -358,7 +403,7 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
         #_Get the indices corresponding to the selection
         if type(selection) == str:
-            selection = self.getSelection(selection)
+            selection = self.selection(selection)
 
 
         dataSet = np.copy( self.dcdData[selection, frames] )
@@ -384,7 +429,7 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
         #_Get the indices corresponding to the selection
         if type(selection) == str:
-            selection = self.getSelection(selection)
+            selection = self.selection(selection)
 
         print("\nAligning center of mass of selected atoms...\n")
 
@@ -418,7 +463,7 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
 
         if type(selection) == str:
-            selection = self.getSelection(selection)
+            selection = self.selection(selection)
 
 
         dist = np.arange(0, maxR, dr) #_Gets x-axis values

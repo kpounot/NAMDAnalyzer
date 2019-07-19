@@ -40,23 +40,28 @@ class PSFReader:
                 #_Each category data is stored in a corresponding temporary array, which will be
                 #_then copied and protected from modifications in the namedtuple.
                 if re.search('ATOM', line):
-                    atomList = np.array([ entry.split() for entry in data[i+1:i+1+nbrEntries] ])
+                    atomList = np.array([entry.split() for entry in data[i+1:i+1+nbrEntries] ])
                 elif re.search('BOND', line):
-                    bondList =  np.array([ entry.split() for entry in data[i+1:i+1+nbrEntries] ])
+                    bondList =  np.array([entry.split() for entry in data[i+1:i+1+int(nbrEntries/4)] ])
+                    bondList = bondList.astype(int)
                 elif re.search('THETA', line):
-                    thetaList =  np.array([ entry.split() for entry in data[i+1:i+1+nbrEntries] ])
+                    thetaList =  np.array([entry.split() for entry in data[i+1:i+1+int(nbrEntries/3)] ])
+                    thetaList = thetaList.astype(int)
                 elif re.search('PHI', line):
-                    phiList =  np.array([ entry.split() for entry in data[i+1:i+1+nbrEntries] ])
+                    phiList =  np.array([entry.split() for entry in data[i+1:i+1+int(nbrEntries/2)] ])
+                    phiList = phiList.astype(int)
                 elif re.search('IMPHI', line):
-                    imprpList =  np.array([ entry.split() for entry in data[i+1:i+1+nbrEntries] ])
+                    imprpList =  np.array([entry.split() for entry in data[i+1:i+1+int(nbrEntries/2)] ])
+                    imprpList = imprpList.astype(int)
                 elif re.search('DON', line):
-                    donorsList =  np.array([ entry.split() for entry in data[i+1:i+1+nbrEntries] ])
+                    donorsList =  np.array([entry.split() for entry in data[i+1:i+1+nbrEntries] ])
                 elif re.search('ACC', line):
-                    acceptorsList =  np.array([ entry.split() for entry in data[i+1:i+1+nbrEntries] ])
+                    acceptorsList =  np.array([entry.split() for entry in data[i+1:i+1+nbrEntries] ])
                 elif re.search('NNB', line):
-                    nonBondedList =  np.array([ entry.split() for entry in data[i+1:i+1+nbrEntries] ])
+                    nonBondedList =  np.array([entry.split() for entry in data[i+1:i+1+nbrEntries] ])
                 elif re.search('CRTERM', line):
-                    xTermsList =  np.array([ entry.split() for entry in data[i+1:i+1+nbrEntries] ])
+                    xTermsList =  np.array([entry.split() for entry in data[i+1:i+1+int(nbrEntries/2)] ])
+                    xTermsList = xTermsList.astype(int)
 
         self.psfData = dataTuple( atomList, bondList, thetaList, phiList, imprpList, 
                                 donorsList, acceptorsList, nonBondedList, xTermsList)
