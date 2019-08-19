@@ -3,7 +3,7 @@
 #include <list>
 #include <omp.h>
 
-#include "getDistances.h"
+#include "../../libFunc.h"
 
 
 void getDistances(float *sel1, int size_sel1, float *sel2, int size_sel2, float *cellDims, float *out)

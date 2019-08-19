@@ -6,6 +6,8 @@ from NAMDAnalyzer.Dataset import Dataset
 from NAMDAnalyzer.dataAnalysis.backscatteringDataConvert import BackScatData
 from NAMDAnalyzer.dataAnalysis.ScatDiffusion import ScatDiffusion
 from NAMDAnalyzer.dataAnalysis.HydrogenBonds import HydrogenBonds
+from NAMDAnalyzer.dataAnalysis.Rotations import Rotations
+from NAMDAnalyzer.dataAnalysis.RetentionTime import RetentionTime
 
 
 
@@ -17,5 +19,5 @@ parser.add_argument("-s", "--stride", type=int, nargs='?', default=1,
 
 args = parser.parse_args()
 
-data = Dataset(args.fileList, args.stride)
+data = Dataset(*args.fileList, stride=args.stride)
 

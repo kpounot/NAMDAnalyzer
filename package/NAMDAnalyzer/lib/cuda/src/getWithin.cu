@@ -15,47 +15,46 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=t
    }
 }
 
+
+
 __global__
-void compWithin( float *allAtoms, int nbrAtoms, float *selAtoms, int sel_size,
-                    int *out, float *cellDims, float distance )
+void compWithin( float *allAtoms, int nbrAtoms, int nbrFrames, int *selAtoms, int sel_size,
+                    int *out, float *cellDims, float distance, int frame )
 {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    int tx = threadIdx.x;
 
-    __shared__ float s_sel[3*BLOCK_SIZE];
+    int refIdx = 0;
+    
     if(idx < sel_size)
     {
-        s_sel[3*tx] = selAtoms[3*idx];
-        s_sel[3*tx + 1] = selAtoms[3*idx + 1];
-        s_sel[3*tx + 2] = selAtoms[3*idx + 2];
-    }
+        refIdx = 3 * nbrFrames * selAtoms[idx] + 3 * frame;
+        atomicExch( &out[ selAtoms[idx]*nbrFrames + frame], 1 );
+    
 
-    __syncthreads();
-
-
-    for(int atom=(nbrAtoms+powf(-1, idx)*nbrAtoms) / 2; atom < nbrAtoms && atom > -1; atom += powf(-1, idx+1))
-    {
-        if(out[atom] == 0 && idx < sel_size)
+        for(int atom=(nbrAtoms+powf(-1, idx)*nbrAtoms) / 2; 
+                atom < nbrAtoms && atom > -1; 
+                atom += powf(-1, idx+1))
         {
-            // Computes distances for given timestep and atom
-            float dist_x = allAtoms[3 * atom] - s_sel[3 * tx];
-            float dist_y = allAtoms[3 * atom + 1] - s_sel[3 * tx + 1];
-            float dist_z = allAtoms[3 * atom + 2] - s_sel[3 * tx + 2];
+            if(out[nbrFrames*atom + frame] == 0)
+            {
+                // Computes distances for given timestep and atom
+                float dist_x = allAtoms[3 * nbrFrames * atom + 3*frame] - allAtoms[refIdx];
+                float dist_y = allAtoms[3 * nbrFrames * atom + 3*frame + 1] - allAtoms[refIdx + 1];
+                float dist_z = allAtoms[3 * nbrFrames * atom + 3*frame + 2] - allAtoms[refIdx + 2];
 
-            // Applying PBC corrections
-            dist_x = dist_x - cellDims[0] * round( dist_x / cellDims[0] );
-            dist_y = dist_y - cellDims[1] * round( dist_y / cellDims[1] );
-            dist_z = dist_z - cellDims[2] * round( dist_z / cellDims[2] );
+                // Applying PBC corrections
+                dist_x = dist_x - cellDims[3*frame] * roundf( dist_x / cellDims[3*frame] );
+                dist_y = dist_y - cellDims[3*frame+1] * roundf( dist_y / cellDims[3*frame+1] );
+                dist_z = dist_z - cellDims[3*frame+2] * roundf( dist_z / cellDims[3*frame+2] );
 
 
-            float dist = sqrtf(dist_x*dist_x + dist_y*dist_y + dist_z*dist_z); 
+                float dist = sqrtf(dist_x*dist_x + dist_y*dist_y + dist_z*dist_z); 
 
-            if(dist <= distance)
-                atomicExch(&out[atom], 1);
+                if(dist <= distance)
+                    atomicExch(&out[atom*nbrFrames + frame], 1);
+            }
         }
     }
-
-    __syncthreads();
 
 }
 
@@ -63,39 +62,42 @@ void compWithin( float *allAtoms, int nbrAtoms, float *selAtoms, int sel_size,
 
 
 
-void cu_getWithin_wrapper(  float *allAtoms, int nbrAtoms, float *selAtoms, int sel_size,
+void cu_getWithin_wrapper(  float *allAtoms, int nbrAtoms, int nbrFrames, int *selAtoms, int sel_size,
                                 float *cellDims, int *out, float distance )
 {
     // Copying atom1 matrix on GPU memory
     float *cu_allAtoms;
-    size_t size = 3 * nbrAtoms * sizeof(float);
+    size_t size = 3 * nbrAtoms * nbrFrames * sizeof(float);
     gpuErrchk( cudaMalloc(&cu_allAtoms, size) );
     gpuErrchk( cudaMemcpy(cu_allAtoms, allAtoms, size, cudaMemcpyHostToDevice) );
 
     // Copying atoms2 matrix on GPU memory
-    float *cu_selAtoms;
-    size = 3 * sel_size * sizeof(float);
+    int *cu_selAtoms;
+    size = sel_size * sizeof(int);
     gpuErrchk( cudaMalloc(&cu_selAtoms, size) );
     gpuErrchk( cudaMemcpy(cu_selAtoms, selAtoms, size, cudaMemcpyHostToDevice) );
 
     //Copying cellDims on GPU memory
     float *cu_cellDims;
-    size = 3 * sizeof(float);
+    size = 3 * nbrFrames * sizeof(float);
     gpuErrchk( cudaMalloc(&cu_cellDims, size) );
     gpuErrchk( cudaMemcpy(cu_cellDims, cellDims, size, cudaMemcpyHostToDevice) );
 
     // Copying out matrix on GPU memory
     int *cu_out;
-    size = nbrAtoms * sizeof(int);
+    size = nbrAtoms * nbrFrames * sizeof(int);
     gpuErrchk( cudaMalloc(&cu_out, size) );
     gpuErrchk( cudaMemset(cu_out, 0, size) );
 
 
-    int nbrBlocks = ceil( sel_size / BLOCK_SIZE );
+    int nbrBlocks = ceilf( (float)sel_size / BLOCK_SIZE );
 
-    compWithin<<<nbrBlocks, BLOCK_SIZE>>>(cu_allAtoms, nbrAtoms, cu_selAtoms, sel_size, 
-                                                                    cu_out, cu_cellDims, distance);
-    gpuErrchk( cudaDeviceSynchronize() );
+    for(int frame=0; frame < nbrFrames; ++frame)
+    {
+        compWithin<<<nbrBlocks, BLOCK_SIZE>>>(cu_allAtoms, nbrAtoms, nbrFrames, cu_selAtoms, sel_size, 
+                                                                cu_out, cu_cellDims, distance, frame);
+        gpuErrchk( cudaDeviceSynchronize() );
+    }
 
 
     gpuErrchk( cudaMemcpy(out, cu_out, size, cudaMemcpyDeviceToHost) );

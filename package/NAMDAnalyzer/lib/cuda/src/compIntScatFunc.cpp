@@ -1,4 +1,4 @@
-#include "compIntScatFunc.h"
+#include "../../libFunc.h"
 
 void cu_compIntScatFunc_wrapper(float *atomPos, int atomPos_dim0, int atomPos_dim1, int atomPos_dim2, 
                                 float *qVecs, int qVecs_dim0, int qVecs_dim1, int qVecs_dim2, 

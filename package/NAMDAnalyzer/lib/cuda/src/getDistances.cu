@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <math.h>
 
 #include <cuda.h>
 #include <cuda_runtime.h>
@@ -24,7 +25,7 @@ void compDistances( float *atoms1, int atoms1_size, float *atoms2, int atoms2_si
     int row = blockIdx.y * BLOCK_SIZE + ty;
     int col = blockIdx.x * BLOCK_SIZE + tx;
 
-    if(row < atoms1_size && col < atoms2_size)
+    if( row < atoms1_size && col < atoms2_size )
     {
         // Computes distances for given timestep and atom
         float dist_x = atoms2[3 * col] - atoms1[3 * row];
@@ -32,9 +33,9 @@ void compDistances( float *atoms1, int atoms1_size, float *atoms2, int atoms2_si
         float dist_z = atoms2[3 * col + 2] - atoms1[3 * row + 2];
 
         // Applying PBC corrections
-        dist_x = dist_x - cellDims[0] * round( dist_x / cellDims[0] );
-        dist_y = dist_y - cellDims[1] * round( dist_y / cellDims[1] );
-        dist_z = dist_z - cellDims[2] * round( dist_z / cellDims[2] );
+        dist_x = dist_x - cellDims[0] * roundf( dist_x / cellDims[0] );
+        dist_y = dist_y - cellDims[1] * roundf( dist_y / cellDims[1] );
+        dist_z = dist_z - cellDims[2] * roundf( dist_z / cellDims[2] );
 
 
         out[row*atoms2_size + col] = sqrtf(dist_x*dist_x + dist_y*dist_y + dist_z*dist_z); 
@@ -76,7 +77,7 @@ void cu_getDistances_wrapper(  float *atoms1, int atoms1_size, float *atoms2, in
     gpuErrchk( cudaMemcpy(cu_cellDims, cellDims, size_cellDims, cudaMemcpyHostToDevice) );
 
     dim3 dimBlock( BLOCK_SIZE, BLOCK_SIZE, 1 );
-    dim3 dimGrid( ceil(atoms1_size/BLOCK_SIZE) + 1, ceil(atoms2_size/BLOCK_SIZE) + 1, 1);
+    dim3 dimGrid( ceil( (float)atoms2_size/BLOCK_SIZE), ceil( (float)atoms1_size/BLOCK_SIZE), 1);
 
 
     compDistances<<<dimGrid, dimBlock>>>(cu_atoms1, atoms1_size, cu_atoms2, atoms2_size, cu_out, cu_cellDims);

@@ -1,12 +1,16 @@
-from Cython.Build import cythonize
-import numpy as np
-
 import os
 
 from setuptools import setup
 from setuptools import Extension
 from setuptools import Command
 from setuptools.command.build_ext import build_ext
+
+from Cython.Build import cythonize
+from Cython.Compiler import Options
+Options._directive_defaults['language_level'] = 3
+
+import numpy as np
+
 
 with open('../README.md', 'r') as f:
     description = f.read()
@@ -38,7 +42,6 @@ class build_ext_subclass( build_ext ):
 
 
 
-
 packagesList = [    'NAMDAnalyzer.dataManipulation',
                     'NAMDAnalyzer.dataParsers',
                     'NAMDAnalyzer.dataAnalysis',
@@ -47,33 +50,15 @@ packagesList = [    'NAMDAnalyzer.dataManipulation',
 
 
 #_Defines extensions
-pycompIntScatFunc_ext   = Extension( "NAMDAnalyzer.lib.pycompIntScatFunc", 
+pylibFuncs_ext   = Extension( "NAMDAnalyzer.lib.pylibFuncs", 
                                    [srcPath + "compIntScatFunc.cpp", 
-                                    pyxPath + "pycompIntScatFunc.pyx"],
+                                    srcPath + "getDistances.cpp", 
+                                    srcPath + "getHydrogenBonds.cpp", 
+                                    srcPath + "getWithin.cpp", 
+                                    "NAMDAnalyzer/lib/" + "libFunc.pyx"],
                                    language='c++',
                                    include_dirs=[srcPath, np.get_include()])
 
-
-pygetDistances_ext      = Extension( "NAMDAnalyzer.lib.pygetDistances", 
-                                   [pyxPath + "pygetDistances.pyx", 
-                                    srcPath + "getDistances.cpp"],
-                                   include_dirs=[srcPath,  np.get_include()],
-                                   language='c++')
-
-
-pygetWithin_ext         = Extension( "NAMDAnalyzer.lib.pygetWithin", 
-                                   [pyxPath + "pygetWithin.pyx", srcPath + "getWithin.cpp"],
-                                   include_dirs=[srcPath,  np.get_include()],
-                                   language='c++')
-
-pygetCOM_ext            = Extension( "NAMDAnalyzer.lib.pygetCenterOfMass", 
-                                    [pyxPath + "pygetCenterOfMass.pyx"],
-                                    include_dirs=[np.get_include()] ) 
-
-
-pysetCOMAligned_ext     = Extension( "NAMDAnalyzer.lib.pysetCenterOfMassAligned", 
-                                    [pyxPath + "pysetCenterOfMassAligned.pyx"],
-                                    include_dirs=[np.get_include()] ) 
 
 
 
@@ -88,10 +73,6 @@ setup(  name='NAMDAnalyzer',
         url='github.com/kpounot/NAMDAnalyzer',
         py_modules=['NAMDAnalyzer.Dataset'],
         packages=packagesList,
-        ext_modules=cythonize( [pygetWithin_ext,
-                                pygetDistances_ext,
-                                pygetCOM_ext,
-                                pysetCOMAligned_ext,
-                                pycompIntScatFunc_ext]),
+        ext_modules=cythonize( [pylibFuncs_ext]),
         cmdclass={'build_ext': build_ext_subclass})
 

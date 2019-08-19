@@ -1,9 +1,4 @@
-#include <cstdio>
-#include <cmath>
-#include <list>
-#include <omp.h>
-
-#include "getDistances.h"
+#include "../../libFunc.h"
 
 
 void cu_getDistances_wrapper(  float *atoms1, int atoms1_size, float *atoms2, int atoms2_size,

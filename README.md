@@ -4,28 +4,16 @@ Python based routines for molecular dynamics simulation analysis from NAMD
 
 ## Installation:
 
-### Unix
-Change compiler to unix in the setup.cfg file.
-
+### Unix and Windows
 To install it within your python distribution, use 
 
-    make 
+    make [build] (for openMP version) or [build_cuda] (for CUDA accelerated version - recommended) 
     make install
 
 or
     
-    python3 setup.py build
+    python3 setup.py [build, build_cuda]
     python3 setup.py install
-
-
-### Windows
-MinGW is necessary to compile C and cython routines.
-Change compiler to mingw32 i nthe setup.cfg file.
-
-To install it within your python distribution, use 
-
-    mingw32-make.exe 
-    mingw32-make.exe install
 
 
 ## Start the interpreter:
