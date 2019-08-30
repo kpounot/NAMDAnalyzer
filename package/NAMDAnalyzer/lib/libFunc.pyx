@@ -3,6 +3,8 @@ import numpy as np
 cimport numpy as np
 cimport cython
 
+from cython.parallel import prange
+
 np.import_array()
 
 
@@ -10,14 +12,8 @@ cdef extern from "libFunc.h":
     void getHydrogenBonds(  float *acceptors, int size_acceptors, int nbrFrames,
                             float *donors, int size_donors,
                             float *hydrogens, int size_hydrogens, 
-                            float *cellDims, float *out, int size_out, int maxTime, int step, int nbrTimeOri,
+                            float *out, int maxTime, int step, int nbrTimeOri,
                             float maxR, float minAngle, int continuous);
-
-
-    void getRadialNbrDensity(  float *sel1, int size_sel1, int nbrFrames, 
-                                    float *sel2, int size_sel2,
-                                    float *cellDims, float *out, int size_out, 
-                                    float maxR, float dr );
 
 
     void compIntScatFunc(float *atomPos, int atomPos_dim0, int atomPos_dim1, int atomPos_dim2, 
@@ -26,11 +22,14 @@ cdef extern from "libFunc.h":
                          int nbrTS, int nbrTimeOri);
 
 
-    void getDistances(float *sel1, int size_sel1, float *sel2, int size_sel2, float *cellDims, float *out);
+    void getDistances(float *maxSel, int maxSize, float *minSel, int minSize, 
+                      float *out, float *cellDims, int sameSel);
 
 
     void getWithin(float *allAtoms, int nbrAtoms, int nbrFrames,
-                    int *selAtoms, int sel_dim0, float *cellDims, int *out, float distance);
+                    int *selAtoms, int sel_dim0,
+                    int *out, float *cellDims, float distance);
+
 
 
 
@@ -74,14 +73,16 @@ def py_getCenterOfMass(np.ndarray[float, ndim=3] allAtoms, np.ndarray[double, nd
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def py_getDistances( np.ndarray[float, ndim=2, mode="c"] sel1 not None,
-                     np.ndarray[float, ndim=2, mode="c"] sel2 not None,
+def py_getDistances( np.ndarray[float, ndim=2, mode="c"] maxSel not None,
+                     np.ndarray[float, ndim=2, mode="c"] minSel not None,
+                     np.ndarray[float, ndim=2, mode="c"] out not None,
                      np.ndarray[float, ndim=1, mode="c"] cellDims not None,
-                     np.ndarray[float, ndim=2, mode="c"] out not None):
-    getDistances(<float*> np.PyArray_DATA(sel1), int(sel1.shape[0]),
-                 <float*> np.PyArray_DATA(sel2), int(sel2.shape[0]), 
-                 <float*> np.PyArray_DATA(cellDims), 
-                 <float*> np.PyArray_DATA(out) )
+                     int sameSel):
+    getDistances(<float*> np.PyArray_DATA(maxSel), int(maxSel.shape[0]),
+                 <float*> np.PyArray_DATA(minSel), int(minSel.shape[0]), 
+                 <float*> np.PyArray_DATA(out),
+                 <float*> np.PyArray_DATA(cellDims),
+                 sameSel)
 
 
 
@@ -90,14 +91,12 @@ def py_getDistances( np.ndarray[float, ndim=2, mode="c"] sel1 not None,
 def py_getHydrogenBonds( np.ndarray[float, ndim=3, mode="c"] acceptors not None, nbrFrames,
                          np.ndarray[float, ndim=3, mode="c"] donors not None,
                          np.ndarray[float, ndim=3, mode="c"] hydrogens not None,
-                         np.ndarray[float, ndim=2, mode="c"] cellDims not None,
                          np.ndarray[float, ndim=1, mode="c"] out not None,
                          maxTime, step, nbrTimeOri, maxR, minAngle, continuous):
     getHydrogenBonds(<float*> np.PyArray_DATA(acceptors), int(acceptors.shape[0]), nbrFrames, 
                         <float*> np.PyArray_DATA(donors), int(donors.shape[0]), 
                         <float*> np.PyArray_DATA(hydrogens), int(hydrogens.shape[0]), 
-                        <float*> np.PyArray_DATA(cellDims), 
-                        <float*> np.PyArray_DATA(out), int(out.size),
+                        <float*> np.PyArray_DATA(out),
                         maxTime, step, nbrTimeOri, maxR, minAngle, continuous)
 
 
@@ -107,14 +106,15 @@ def py_getHydrogenBonds( np.ndarray[float, ndim=3, mode="c"] acceptors not None,
 @cython.wraparound(False)
 def py_getWithin( np.ndarray[float, ndim=3, mode="c"] allAtoms not None,
                   np.ndarray[int, ndim=1, mode="c"] selAtoms not None,
-                  np.ndarray[float, ndim=2, mode="c"] cellDims not None,
                   np.ndarray[int, ndim=2, mode="c"] out not None,
+                  np.ndarray[float, ndim=2, mode="c"] cellDims not None,
                   float distance ):
 
     getWithin(<float*> np.PyArray_DATA(allAtoms), int(allAtoms.shape[0]), int(allAtoms.shape[1]),
               <int*> np.PyArray_DATA(selAtoms), int(selAtoms.shape[0]), 
-              <float*> np.PyArray_DATA(cellDims), 
-              <int *> np.PyArray_DATA(out), float(distance) )
+              <int*> np.PyArray_DATA(out), <float*> np.PyArray_DATA(cellDims),  float(distance) )
+
+
 
 
 
@@ -130,5 +130,32 @@ def py_setCenterOfMassAligned(np.ndarray[float, ndim=3] allAtoms, np.ndarray[dou
 
     for i in range(nbrFrames):
         allAtoms[:,i] = allAtoms[:,i] - COM[i]
+
+
+
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def py_cdf(np.ndarray[float, ndim=1, mode="c"] dist not None, 
+           np.ndarray[float, ndim=1, mode="c"] out not None, 
+           float maxR, float dr, int normFactor):
+    """ Given a distances array, computes the cumulative radial distribution with bins given 
+        by range(0, maxR, dr). """
+
+
+    cdef int d
+    cdef int size_dist = dist.size
+    cdef int size_out  = out.size 
+    cdef float r
+    cdef int rId
+
+    for d in range(size_dist):
+
+        r = dist[d]
+        rId = int(r / dr)
+
+        if rId < size_out:
+            out[rId] += 1 / normFactor
 
 

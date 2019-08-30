@@ -1,4 +1,4 @@
-import os
+import os, sys
 
 from setuptools import setup
 from setuptools import Extension
@@ -23,16 +23,24 @@ cudaSrcPath = "NAMDAnalyzer/lib/cuda/src/"
 
 
 try:
-    if os.environ['OS'] == 'Windows_NT':
-        cudaPath = os.environ['CUDA_PATH'] #_Using the default installation key in Path variable
+    if 'win32' in sys.platform:
+        cudaPath    = os.environ['CUDA_PATH'] #_Using the default installation key in Path variable
         cudaInclude = cudaPath + "\\include"
         cudaLib     = cudaPath + "\\lib\\x64"
-        ext         = "obj"
+        libPrefix   = ''
+        libExt      = '.lib'
+        Xcompiler   = ''
     else:
-        cudaPath    = "usr/" 
+        nvccPath    = os.popen('which nvcc').read().strip()
+        cudaPath    = nvccPath[:nvccPath.find('/bin/nvcc')] 
         cudaInclude = cudaPath + "/include"
-        cudaLib     = cudaPath + "/lib64"
-        ext         = "o"
+        cudaLib     = os.popen('locate libcuda.so').read().split()
+        for libfile in cudaLib:
+            if '64'in libfile:
+                cudaLib = libfile[:libfile.find('/libcuda.so')]
+        libPrefix   = 'lib'
+        libExt      = '.a'
+        Xcompiler   = "-Xcompiler '-fPIC'"
 except KeyError:
     print("\n\nError: Couldn't locate CUDA path, please intall it or add it to PATH variable\n\n")
     
@@ -40,8 +48,10 @@ except KeyError:
 
 #_The following is used to compile with openmp with both mingGW and msvc
 copt =  {'msvc'     : ['/openmp', '/Ox', '/fp:fast'],
-         'mingw32'  : ['-fopenmp','-O3','-ffast-math','-march=native'] }
-lopt =  {'mingw32'  : ['-fopenmp']}
+         'mingw32'  : ['-fopenmp','-ffast-math','-march=native'], 
+         'unix'     : ['-fopenmp','-ffast-math','-march=native'] }
+lopt =  {'mingw32'  : ['-fopenmp'],
+         'unix'     : ['-fopenmp']}
 
 
 
@@ -51,7 +61,11 @@ def preprocessNVCC(path):
 
     for f in os.listdir(path):
        if f[-3:] == '.cu':
-            os.system("nvcc -lib -o %s.lib %s" % ('NAMDAnalyzer/lib/cuda/' + f[:-3], path + f))
+            os.system("nvcc %s -lib -o %s%s%s %s" % (  Xcompiler,
+                                                        'NAMDAnalyzer/lib/cuda/' + libPrefix, 
+                                                        f[:-3],
+                                                        libExt, 
+                                                        path + f))
 
 
 
@@ -89,11 +103,12 @@ pylibFuncs_ext   = Extension( "NAMDAnalyzer.lib.pylibFuncs",
                                     cudaSrcPath + "getWithin.cpp", 
                                     "NAMDAnalyzer/lib/" + "libFunc.pyx"],
                                    library_dirs=["NAMDAnalyzer/lib/cuda", cudaLib],
-                                   libraries=['compIntScatFunc',
-                                              'getDistances',
-                                              'getHydrogenBonds',
-                                              'getWithin',
-                                              'cuda', 'cudart'],
+                                   extra_objects=[
+                                        'NAMDAnalyzer/lib/cuda/%scompIntScatFunc%s' % (libPrefix, libExt),
+                                        'NAMDAnalyzer/lib/cuda/%sgetDistances%s' % (libPrefix, libExt),
+                                        'NAMDAnalyzer/lib/cuda/%sgetHydrogenBonds%s' % (libPrefix, libExt),
+                                        'NAMDAnalyzer/lib/cuda/%sgetWithin%s' % (libPrefix, libExt) ],
+                                   libraries=['cuda', 'cudart'],
                                    language='c++',
                                    include_dirs=[cudaSrcPath, np.get_include(), cudaInclude])
 

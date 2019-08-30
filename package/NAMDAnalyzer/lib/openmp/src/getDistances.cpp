@@ -6,43 +6,85 @@
 #include "../../libFunc.h"
 
 
-void getDistances(float *sel1, int size_sel1, float *sel2, int size_sel2, float *cellDims, float *out)
+void compDistances(float *maxSel, int maxSize, float *minSel, int minSize, 
+                  float *out, float *cellDims)
+{
+    int max_idx, min_idx;
+
+    float cD_x = cellDims[0];
+    float cD_y = cellDims[1];
+    float cD_z = cellDims[2];
+
+    #pragma omp parallel for private(max_idx, min_idx)
+    for(max_idx=0; max_idx < maxSize; ++max_idx)
+    {
+        for(min_idx=0; min_idx < minSize; ++min_idx)
+        {
+            // Computes distances for given timestep and atom
+            float dist_x = minSel[3 * min_idx] - maxSel[3 * max_idx];
+            float dist_y = minSel[3 * min_idx + 1] - maxSel[3 * max_idx + 1];
+            float dist_z = minSel[3 * min_idx + 2] - maxSel[3 * max_idx + 2];
+
+            // Apply PBC conditions
+            dist_x = dist_x - cD_x * roundf( dist_x / cD_x );
+            dist_y = dist_y - cD_y * roundf( dist_y / cD_y );
+            dist_z = dist_z - cD_z * roundf( dist_z / cD_z );
+
+            out[max_idx * minSize + min_idx] = sqrt(dist_x*dist_x + dist_y*dist_y + dist_z*dist_z); 
+
+        } // minSel loop
+    } // maxSel loop
+}
+
+
+void compDistances_same(float *maxSel, int maxSize, float *minSel, int minSize, 
+                        float *out, float *cellDims)
+{
+    float cD_x = cellDims[0];
+    float cD_y = cellDims[1];
+    float cD_z = cellDims[2];
+
+    int min_idx;
+
+    #pragma omp parallel for private(min_idx)
+    for(int max_idx=0; max_idx < maxSize; ++max_idx)
+    {
+        for(min_idx=max_idx+1; min_idx < minSize; ++min_idx)
+        {
+            // Computes distances for given timestep and atom
+            float dist_x = minSel[3 * min_idx] - maxSel[3 * max_idx];
+            float dist_y = minSel[3 * min_idx + 1] - maxSel[3 * max_idx + 1];
+            float dist_z = minSel[3 * min_idx + 2] - maxSel[3 * max_idx + 2];
+
+            // Apply PBC conditions
+            dist_x = dist_x - cD_x * roundf( dist_x / cD_x );
+            dist_y = dist_y - cD_y * roundf( dist_y / cD_y );
+            dist_z = dist_z - cD_z * roundf( dist_z / cD_z );
+
+            out[max_idx * minSize + min_idx] = sqrt(dist_x*dist_x + dist_y*dist_y + dist_z*dist_z); 
+
+        } // minSel loop
+    } // maxSel loop
+}
+
+
+
+void getDistances(float *maxSel, int maxSize, float *minSel, int minSize, 
+                  float *out, float *cellDims, int sameSel)
 {
     /*  The function computes, for each atom in sel, the distance with all other atoms in atomPos.
      *  Then, Periodic Boundary Conditions (PBC) are applied using cell dimensions in cellDims.
      *
-     *  Input:  sel1        -> first selection of atoms coordinates
-     *          size_sel1   -> size of sel1 list, in number of elements
-     *          sel2        -> second selection of atom coordinates, distances with sel1 will be computed
-     *          size_sel2   -> size of sel2 list, in number of elements
-     *          cellDims    -> dimensions of the periodic cell to apply periodic boundary conditions
+     *  Input:  maxSel      -> first selection of atoms coordinates (biggest dimension)
+     *          maxSize     -> size of maxSel list, in number of elements
+     *          minSel      -> second selection of atom coordinates, distances with sel1 will be computed
+     *          minSize     -> size of minSel list, in number of elements
      *          out         -> output matrix to store the result */
 
 
-
-    for(int sel1_idx=0; sel1_idx < size_sel1; ++sel1_idx)
-    {
-
-        #pragma omp parallel for
-        for(int sel2_idx=0; sel2_idx < size_sel2; ++sel2_idx)
-        {
-            // Computes distances for given timestep and atom
-            float dist_x = sel2[3 * sel2_idx] - sel1[3 * sel1_idx];
-            float dist_y = sel2[3 * sel2_idx + 1] - sel1[3 * sel1_idx + 1];
-            float dist_z = sel2[3 * sel2_idx + 2] - sel1[3 * sel1_idx + 2];
-
-            // Applying PBC corrections
-            dist_x = dist_x - cellDims[0] * round( dist_x / cellDims[0] );
-            dist_y = dist_y - cellDims[1] * round( dist_y / cellDims[1] );
-            dist_z = dist_z - cellDims[2] * round( dist_z / cellDims[2] );
-
-
-            out[sel1_idx * size_sel2 + sel2_idx] = sqrt(dist_x*dist_x + dist_y*dist_y + dist_z*dist_z); 
-
-        } // sel2 loop
-
-
-    } // sel1 loop
+    if(sameSel == 0)
+        compDistances(maxSel, maxSize, minSel, minSize, out, cellDims);
+    else
+        compDistances_same(maxSel, maxSize, minSel, minSize, out, cellDims);
 
 }
-

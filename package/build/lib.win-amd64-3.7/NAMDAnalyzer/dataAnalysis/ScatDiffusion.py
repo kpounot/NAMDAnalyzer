@@ -9,7 +9,7 @@ from scipy.optimize import root
 
 from ..helpersFunctions import ConstantsAndModels as CM 
 
-from ..lib.pycompIntScatFunc import py_compIntScatFunc
+from ..lib.pylibFuncs import py_compIntScatFunc
 from ..dataParsers.HydroproReader import HydroproReader
 
 

@@ -16,79 +16,129 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=t
    }
 }
 
+
+
 __global__
-void compDistances( float *atoms1, int atoms1_size, float *atoms2, int atoms2_size,
-                    float *out, float *cellDims )
+void d_getDistances(float *maxSel, int maxSize, float *minSel, int minSize, float *out, float *cellDims)
 {
-    int tx  = threadIdx.x;
-    int ty  = threadIdx.y;
-    int row = blockIdx.y * BLOCK_SIZE + ty;
-    int col = blockIdx.x * BLOCK_SIZE + tx;
+    int row = blockIdx.x * BLOCK_SIZE + threadIdx.x;
+    int col = blockIdx.y * BLOCK_SIZE + threadIdx.y;
 
-    if( row < atoms1_size && col < atoms2_size )
+    float cD_x = cellDims[0];
+    float cD_y = cellDims[1];
+    float cD_z = cellDims[2];
+
+    if(row < maxSize && col < minSize)
     {
-        // Computes distances for given timestep and atom
-        float dist_x = atoms2[3 * col] - atoms1[3 * row];
-        float dist_y = atoms2[3 * col + 1] - atoms1[3 * row + 1];
-        float dist_z = atoms2[3 * col + 2] - atoms1[3 * row + 2];
+        float dist_x = maxSel[3 * row] - minSel[3*col];
+        float dist_y = maxSel[3 * row + 1] - minSel[3*col + 1];
+        float dist_z = maxSel[3 * row + 2] - minSel[3*col + 2];
 
-        // Applying PBC corrections
-        dist_x = dist_x - cellDims[0] * roundf( dist_x / cellDims[0] );
-        dist_y = dist_y - cellDims[1] * roundf( dist_y / cellDims[1] );
-        dist_z = dist_z - cellDims[2] * roundf( dist_z / cellDims[2] );
+        // Apply PBC conditions
+        dist_x = dist_x - cD_x * roundf( dist_x / cD_x );
+        dist_y = dist_y - cD_y * roundf( dist_y / cD_y );
+        dist_z = dist_z - cD_z * roundf( dist_z / cD_z );
 
+        float dist = sqrtf(dist_x*dist_x + dist_y*dist_y + dist_z*dist_z);
 
-        out[row*atoms2_size + col] = sqrtf(dist_x*dist_x + dist_y*dist_y + dist_z*dist_z); 
+        out[row*minSize+col] = dist;
     }
 
-    __syncthreads();
+}
+
+
+__global__
+void d_getDistances_same(float *maxSel, int maxSize, float *minSel, 
+                         int minSize, float *out, float *cellDims)
+{
+    int idx = blockIdx.x * BLOCK_SIZE + threadIdx.x;
+
+
+    int n = minSize;
+    int row = 0;
+    while( idx - n >= 0)
+    {
+        row += 1;
+        n   += minSize - row;
+    }
+
+    int col = minSize - 1 - ( n - idx );
+
+    float cD_x = cellDims[0];
+    float cD_y = cellDims[1];
+    float cD_z = cellDims[2];
+
+    if(row < maxSize && col < minSize)
+    {
+        float dist_x = maxSel[3 * row] - minSel[3*col];
+        float dist_y = maxSel[3 * row + 1] - minSel[3*col + 1];
+        float dist_z = maxSel[3 * row + 2] - minSel[3*col + 2];
+
+        // Apply PBC conditions
+        dist_x = dist_x - cD_x * roundf( dist_x / cD_x );
+        dist_y = dist_y - cD_y * roundf( dist_y / cD_y );
+        dist_z = dist_z - cD_z * roundf( dist_z / cD_z );
+
+        float dist = sqrtf(dist_x*dist_x + dist_y*dist_y + dist_z*dist_z);
+
+        out[row*minSize+col] = dist;
+    }
 
 }
 
 
 
 
-
-void cu_getDistances_wrapper(  float *atoms1, int atoms1_size, float *atoms2, int atoms2_size,
-                                float *cellDims, float *out )
+void cu_getDistances_wrapper(float *maxSel, int maxSize, float *minSel, 
+                             int minSize, float *out, float *cellDims, int sameSel)
 {
-    // Copying atom1 matrix on GPU memory
-    float *cu_atoms1;
-    size_t size1 = 3 * atoms1_size * sizeof(float);
-    gpuErrchk( cudaMalloc(&cu_atoms1, size1) );
-    gpuErrchk( cudaMemcpy(cu_atoms1, atoms1, size1, cudaMemcpyHostToDevice) );
+    // Copying maxSel matrix on GPU memory
+    float *cu_maxSel;
+    size_t size = 3 * maxSize * sizeof(float);
+    gpuErrchk( cudaMalloc(&cu_maxSel, size) );
+    gpuErrchk( cudaMemcpy(cu_maxSel, maxSel, size, cudaMemcpyHostToDevice) );
 
-    // Copying atoms2 matrix on GPU memory
-    float *cu_atoms2;
-    size_t size2 = 3 * atoms2_size * sizeof(float);
-    gpuErrchk( cudaMalloc(&cu_atoms2, size2) );
-    gpuErrchk( cudaMemcpy(cu_atoms2, atoms2, size2, cudaMemcpyHostToDevice) );
+    // Copying minSel matrix on GPU memory
+    float *cu_minSel;
+    size = 3 * minSize * sizeof(float);
+    gpuErrchk( cudaMalloc(&cu_minSel, size) );
+    gpuErrchk( cudaMemcpy(cu_minSel, minSel, size, cudaMemcpyHostToDevice) );
+
+    // Copying cellDims matrix on GPU memory
+    float *cu_cellDims;
+    size = 3 * sizeof(float);
+    gpuErrchk( cudaMalloc(&cu_cellDims, size) );
+    gpuErrchk( cudaMemcpy(cu_cellDims, cellDims, size, cudaMemcpyHostToDevice) );
 
     // Copying out matrix on GPU memory
     float *cu_out;
-    size_t size_out = atoms1_size * atoms2_size * sizeof(float);
-    gpuErrchk( cudaMalloc(&cu_out, size_out) );
-    gpuErrchk( cudaMemset(cu_out, 0, size_out) );
-
-    //Copying cellDims on GPU memory
-    float *cu_cellDims;
-    size_t size_cellDims = 3 * sizeof(float);
-    gpuErrchk( cudaMalloc(&cu_cellDims, size_cellDims) );
-    gpuErrchk( cudaMemcpy(cu_cellDims, cellDims, size_cellDims, cudaMemcpyHostToDevice) );
-
-    dim3 dimBlock( BLOCK_SIZE, BLOCK_SIZE, 1 );
-    dim3 dimGrid( ceil( (float)atoms2_size/BLOCK_SIZE), ceil( (float)atoms1_size/BLOCK_SIZE), 1);
+    size = maxSize * minSize * sizeof(float);
+    gpuErrchk( cudaMalloc(&cu_out, size) );
+    gpuErrchk( cudaMemset(cu_out, 0, size) );
 
 
-    compDistances<<<dimGrid, dimBlock>>>(cu_atoms1, atoms1_size, cu_atoms2, atoms2_size, cu_out, cu_cellDims);
-    gpuErrchk( cudaDeviceSynchronize() );
+    if(sameSel == 0)
+    {
+        dim3 dimBlock( BLOCK_SIZE, BLOCK_SIZE, 1 );
+        dim3 dimGrid( ceil( (float)maxSize/BLOCK_SIZE), ceil( (float)minSize/BLOCK_SIZE), 1);
+
+        d_getDistances<<<dimGrid, dimBlock>>>(cu_maxSel, maxSize, cu_minSel, minSize, cu_out, cu_cellDims);
+        gpuErrchk( cudaDeviceSynchronize() );
+    }
+    else
+    {
+        int nbrBlocks = ceilf( (maxSize * ((float)maxSize - 1) / 2) / 512 );
+
+        d_getDistances_same<<<nbrBlocks, 512>>>(cu_maxSel, maxSize, cu_minSel, 
+                                                   minSize, cu_out, cu_cellDims);
+        gpuErrchk( cudaDeviceSynchronize() );
+    }
 
 
-    gpuErrchk( cudaMemcpy(out, cu_out, size_out, cudaMemcpyDeviceToHost) );
+    // Copying result back into host memory
+    gpuErrchk( cudaMemcpy(out, cu_out, size, cudaMemcpyDeviceToHost) );
 
-
-    cudaFree(cu_atoms1);
-    cudaFree(cu_atoms2);
+    cudaFree(cu_maxSel);
+    cudaFree(cu_minSel);
     cudaFree(cu_out);
-    cudaFree(cu_cellDims);
 }

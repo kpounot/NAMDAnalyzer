@@ -1,3 +1,4 @@
+cuda_setup.py
 setup.py
 NAMDAnalyzer/Dataset.py
 NAMDAnalyzer/__init__.py
@@ -10,9 +11,8 @@ NAMDAnalyzer/lib/openmp/src/compIntScatFunc.cpp
 NAMDAnalyzer/lib/openmp/src/getDistances.cpp
 NAMDAnalyzer/lib/openmp/src/getHydrogenBonds.cpp
 NAMDAnalyzer/lib/openmp/src/getWithin.cpp
-NAMDAnalyzer/dataAnalysis/EscapeTime.py
 NAMDAnalyzer/dataAnalysis/HydrogenBonds.py
-NAMDAnalyzer/dataAnalysis/RetentionTime.py
+NAMDAnalyzer/dataAnalysis/ResidenceTime.py
 NAMDAnalyzer/dataAnalysis/Rotations.py
 NAMDAnalyzer/dataAnalysis/ScatDiffusion.py
 NAMDAnalyzer/dataAnalysis/__init__.py
@@ -27,6 +27,7 @@ NAMDAnalyzer/dataParsers/dcdParser.py
 NAMDAnalyzer/dataParsers/dcdReader.py
 NAMDAnalyzer/dataParsers/logParser.py
 NAMDAnalyzer/dataParsers/logReader.py
+NAMDAnalyzer/dataParsers/old_dcdReader.py
 NAMDAnalyzer/dataParsers/pdbParser.py
 NAMDAnalyzer/dataParsers/pdbReader.py
 NAMDAnalyzer/dataParsers/psfParser.py
@@ -40,7 +41,12 @@ NAMDAnalyzer/helpersFunctions/__init__.py
 NAMDAnalyzer/helpersFunctions/batchMatrix.py
 NAMDAnalyzer/lib/__init__.py
 NAMDAnalyzer/lib/libFunc.cpp
+NAMDAnalyzer/lib/cuda/src/compIntScatFunc.cpp
+NAMDAnalyzer/lib/cuda/src/getDistances.cpp
+NAMDAnalyzer/lib/cuda/src/getHydrogenBonds.cpp
+NAMDAnalyzer/lib/cuda/src/getWithin.cpp
 NAMDAnalyzer/lib/openmp/src/compIntScatFunc.cpp
 NAMDAnalyzer/lib/openmp/src/getDistances.cpp
 NAMDAnalyzer/lib/openmp/src/getHydrogenBonds.cpp
 NAMDAnalyzer/lib/openmp/src/getWithin.cpp
+NAMDAnalyzer/lib/openmp/src/withinPreSorting.cpp

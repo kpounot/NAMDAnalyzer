@@ -6,28 +6,37 @@ init:
 
 
 build: setup.py 
+ifeq ($(OS), Windows_NT)
 	python setup.py build
+else
+	python3 setup.py build
+endif
 
 build_cuda: cuda_setup.py
+ifeq ($(OS), Windows_NT)
 	python cuda_setup.py build
+else
+	python3 cuda_setup.py build
+endif
 
 
 .PHONY: install
 install:
+ifeq ($(OS), Windows_NT)
 	python setup.py install
+else
+	python3 setup.py install
+endif
 
-.PHONY: cuda_install
-cuda_install:
-	python cuda_setup.py install
 
 
 .PHONY: clean
 clean:
 ifeq ($(OS), Windows_NT)
 	rmdir /S /Q build  
-	cd NAMDAnalyzer/lib/cython_pyx/ && del *.c *.cpp
+	cd NAMDAnalyzer/lib/ && del *.c *.cpp
 else
 	rm -rf build  
-	rm NAMDAnalyzer/lib/cython_pyx/*.c NAMDAnalyzer/lib/cython_pyx/*.cpp
+	rm NAMDAnalyzer/lib/*.c NAMDAnalyzer/lib/*.cpp
 endif
 

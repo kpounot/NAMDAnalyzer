@@ -4,13 +4,13 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 
-from ..lib.pygetHydrogenBonds import py_getHydrogenBonds
+from ..lib.pylibFuncs import py_getHydrogenBonds
 
 
 class HydrogenBonds:
 
-    def __init__(self, data, acceptors='hbacceptors', donors='hbdonors', maxTime=50, nbrTimeOri=20, 
-                                                                        step=1, maxR=2.5, minAngle=130):
+    def __init__(self, data, acceptors='hbacceptors', donors='hbdonors', hydrogens=None, 
+                                    maxTime=50, nbrTimeOri=20, step=1, maxR=2.5, minAngle=130):
         """ This class defines methods to compute hydrogen bonds auto-correlation functions. 
             
             Some plotting methods are also available to quicly check the results. 
@@ -18,12 +18,14 @@ class HydrogenBonds:
             Input:  data        -> a Dataset class instance containing trajectories data 
                     acceptors   -> selection of acceptors atoms for hydrogen bonds (string)
                     donors      -> selection of donors atoms for hydrogen bonds (string)
+                    hydrogens   -> selection of hydrogens bound to donors (optional, if None, hydrogens
+                                    will be guessed from donors list)
                     maxTime     -> maximum time interval to be used for correlation in number of frames
                                     (optional, default 100)
                     step        -> number of frames between each time interval points (optional, default 1) 
                     nbrTimeOri  -> number of time origins to be averaged over (optional, default 25)
                     maxR        -> maximum distance to allow for hydrogen bonding, angström 
-                                    (optional, default 2.5 - acceptor-hydrogen distance)
+                                    (optional, default 2.8 - acceptor-hydrogen distance)
                     minAngle    -> minimum angle to allow for hydrogen bonding (optional, default 130) 
                     
             References: - D.C. Rapaport (1983): Hydrogen bonds in water, 
@@ -35,6 +37,7 @@ class HydrogenBonds:
 
         self.acceptors  = acceptors
         self.donors     = donors
+        self.hydrogens  = hydrogens
 
         self.step       = step
         self.maxTime    = maxTime
@@ -42,7 +45,7 @@ class HydrogenBonds:
         self.maxR       = maxR
         self.minAngle   = minAngle
 
-        self.times = None
+        self.times = np.arange(0, maxTime, step)
 
         self.cc = np.ascontiguousarray( np.zeros( self.times.size ), dtype='float32' )
         self.ic = np.ascontiguousarray( np.zeros( self.times.size ), dtype='float32' )
@@ -101,7 +104,7 @@ class HydrogenBonds:
             self.ic *= 0
 
 
-        self.times = ( np.arange(0, self.maxTime, self.step, dtype=int) 
+        self.times = ( np.arange(0, self.maxTime, self.step, dtype='int32') 
                                 * self.data.dcdFreq[0] * self.data.timestep * 1e12 )
 
         #_To store final result for each time interval
@@ -116,19 +119,20 @@ class HydrogenBonds:
             corr *= 0 #_Reset corr to its initial state
 
             #_Updating selection for each time origin
-            acceptors           = self.data.selection( self.acceptors + ' frame %i' % frame)
-            donors, hydrogens   = self._processDonors( self.donors + ' frame %i' % frame)
+            acceptors = self.data.selection( self.acceptors + ' frame %i' % frame)
 
+            if self.hydrogens is None:
+                donors, hydrogens   = self._processDonors( self.donors + ' frame %i' % frame)
+            else:
+                donors = self.data.selection( self.donors + ' frame %i' % frame)
+                hydrogens = self.data.selection( self.hydrogens + ' frame %i' % frame)
 
-            #_Get cell dimensions for given frame and make array contiguous
-            cellDims = np.ascontiguousarray(self.data.cellDims[frame:frame+self.maxTime:self.step], 
-                                                                                        dtype='float32')
-
+    
             py_getHydrogenBonds(self.data.dcdData[acceptors, frame:frame+self.maxTime:self.step], 
                                 self.times.size,
                                 self.data.dcdData[donors, frame:frame+self.maxTime:self.step], 
                                 self.data.dcdData[hydrogens, frame:frame+self.maxTime:self.step], 
-                                cellDims, corr, self.maxTime,
+                                corr, self.maxTime,
                                 self.step, self.nbrTimeOri, self.maxR, self.minAngle, continuous)
 
 

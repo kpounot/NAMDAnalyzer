@@ -11,6 +11,8 @@ Options._directive_defaults['language_level'] = 3
 
 import numpy as np
 
+import site
+
 
 with open('../README.md', 'r') as f:
     description = f.read()
@@ -20,9 +22,11 @@ pyxPath = "NAMDAnalyzer/lib/cython_pyx/"
 srcPath = "NAMDAnalyzer/lib/openmp/src/" 
 
 #_The following is used to compile with openmp with both mingGW and msvc
-copt =  {   'msvc': ['/openmp', '/Ox', '/fp:fast']  ,
-            'mingw32' : ['-fopenmp','-O3','-ffast-math','-march=native'] }
-lopt =  {'mingw32' : ['-fopenmp'] }
+copt =  {'msvc': ['/openmp', '/Ox', '/fp:fast']  ,
+         'mingw32'  : ['-fopenmp','-ffast-math','-march=native'] ,
+         'unix'     : ['-fopenmp','-ffast-math','-march=native'] }
+lopt =  {'mingw32'  : ['-fopenmp'],
+         'unix'     : ['-fopenmp'] }
 
 
 
@@ -37,7 +41,6 @@ class build_ext_subclass( build_ext ):
             for e in self.extensions:
                 e.extra_link_args = lopt[ c ]
         build_ext.build_extensions(self)
-
 
 
 

@@ -15,6 +15,8 @@ class DCDReader:
         self.dcdFreq    = None
         self.stride     = stride
 
+        self.startIds   = None
+
 
 
     def importDCDFile(self, dcdFile):

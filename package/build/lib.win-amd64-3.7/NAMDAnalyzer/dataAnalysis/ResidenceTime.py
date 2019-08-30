@@ -5,9 +5,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-class RetentionTime:
+class ResidenceTime:
 
-    def __init__(self, data, sel, tMax=50, step=1, dPhi=0.5, axis='z', nbrTimeOri=20):
+    def __init__(self, data, sel, tMax=25, step=1, nbrTimeOri=20):
         """ This class defines methods to compute retention time of atoms in a certain region.
             This determines how fast atoms in sel2 can leave the vicinity of sel1.
             
@@ -34,7 +34,7 @@ class RetentionTime:
 #---------------------------------------------
 #_Computation methods
 #---------------------------------------------
-    def compRetentionTime(self):
+    def compResidenceTime(self):
         """ For each frame in the range of tMax with given step, the number of atoms in selected region
             is computed and divided by the number of atoms at time origin. The result is averaged over
             multiple time origins. """
@@ -55,7 +55,6 @@ class RetentionTime:
             
             for tIdx, keepIdx in enumerate(sel):
                 corr[tIdx] += np.intersect1d(sel[0], keepIdx).size
-                corr[tIdx] /= self.nbrTimeOri
 
 
         self.retTime = corr / corr[0]
@@ -68,7 +67,7 @@ class RetentionTime:
 #---------------------------------------------
 #_Plotting methods
 #---------------------------------------------
-    def plotRetentionTime(self):
+    def plotResidenceTime(self):
         """ Used to quickly plot retention time. """
 
 

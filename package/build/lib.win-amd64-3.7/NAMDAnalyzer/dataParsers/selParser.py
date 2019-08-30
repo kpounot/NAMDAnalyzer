@@ -87,21 +87,21 @@ class SelParser:
 
                 for fId in range(self.withinList.shape[1]):
                     withinList = np.argwhere(self.withinList[:,fId])[:,0]
-                    self.selection.append( self._parseText(self.selT, withinList) )
+                    self.selection.append( self._parseText(withinList) )
                     self.selT = selT
                     
 
             else:
-                self.selection  = self._parseText(self.selT, self.withinList)
+                self.selection  = self._parseText(self.withinList)
 
         else:
-            self.selection = self._parseText(self.selT)
+            self.selection = self._parseText()
 
 
 
 
 
-    def _parseText(self, frameSel, withinList=None):
+    def _parseText(self, withinList=None):
 
         sel = []
 
@@ -109,11 +109,9 @@ class SelParser:
             sel.append( self._getSameResid(self.selT[self.selT.find('same resid as'):], withinList) )
             withinList = None
 
-
         if re.search('bound to', self.selT):
             sel.append( self._getBoundTo(self.selT[self.selT.find('bound to'):], withinList) )
             withinList = None
-
 
         if self.selT != '':
             sel.append( self._getSelection(self.selT) )
@@ -121,7 +119,7 @@ class SelParser:
 
         if withinList is not None:
             sel.append( withinList )
-
+ 
 
         for selArray in sel:
             sel[0] = np.intersect1d(sel[0], selArray)
@@ -135,15 +133,20 @@ class SelParser:
 
     def _getSelection(self, partialText):
         """ This method is used by parseText to generate the different independent selections from
-            selection text before these are compared using 'and'/'or' operators to generate the 
+            selection text before these are compared using 'and' operators to generate the 
             final selection. """
 
 
         selList = []
 
+
         partialText = partialText.strip().split('and')
 
         for selCmd in partialText:
+            #_Reinitialize selection dict
+            for key, val in self.selKwdDict.items():
+                self.selKwdDict[key] = []
+
             invert=False
 
             if selCmd != '':
@@ -160,7 +163,7 @@ class SelParser:
                 for key in self.selTxtDict.keys():
                     matchRes = re.match(key, selCmd, re.I)
                     if matchRes:
-                        sel = selCmd[matchRes.end():]
+                        sel = selCmd[matchRes.end():].strip()
                         
                         if re.search('[0-9]+:[0-9]+', sel):
                             sel = range(int(sel.split(':')[0]), int(sel.split(':')[1]) + 1)
@@ -170,7 +173,6 @@ class SelParser:
                         self.selKwdDict[self.selTxtDict[key]] = sel
 
                 selList.append( self.dataContext.getSelection(**self.selKwdDict, invert=invert) )
-
 
         for sel in selList:
             selList[0] = np.intersect1d(selList[0], sel)

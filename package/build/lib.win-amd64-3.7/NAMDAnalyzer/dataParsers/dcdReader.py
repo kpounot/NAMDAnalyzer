@@ -34,11 +34,11 @@ class DCDReader:
             #_Get some simulation parameters (frames, steps and dcd frequency)
             record = unpack('i4c9if11i', data)
 
-            self.nbrFrames  = record[5]
-            dcdFreq         = record[7]
-            self.nbrSteps   = record[8]
-            self.timestep   = record[14] * 0.04888e-12 
-            self.cell       = record[15] #_Whether cell dimensions are given
+            self.nbrFrames  = int(record[5])
+            dcdFreq         = int(record[7])
+            self.nbrSteps   = int(record[8])
+            self.timestep   = float(record[14] * 0.04888e-12) 
+            self.cell       = bool(record[15]) #_Whether cell dimensions are given
 
 
             #_Get next record size to skip it (title)

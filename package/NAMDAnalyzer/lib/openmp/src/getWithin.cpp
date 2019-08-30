@@ -6,8 +6,8 @@
 #include "../../libFunc.h"
 
 
-void getWithin(float *allAtoms, int nbrAtoms, float *selAtoms, int sel_dim0, float *cellDims,
-                                                                                    int *out, float distance)
+void getWithin(float *allAtoms, int nbrAtoms, int nbrFrames, int *selAtoms, 
+                int sel_dim0, int *out, float *cellDims, float distance)
 {
     /*  The function computes, for each atom in sel, the distance with all other atoms in atomPos.
      *  Then, Periodic Boundary Conditions (PBC) are applied using cell dimensions in cellDims.
@@ -28,45 +28,62 @@ void getWithin(float *allAtoms, int nbrAtoms, float *selAtoms, int sel_dim0, flo
 
     float squaredDist = distance*distance;
 
+    int frame, atomId;
+    
+    for(frame=0; frame < nbrFrames; ++frame)
+    { 
+        for(int i=0; i < sel_dim0; ++i)
+            out[ selAtoms[i] * nbrFrames + frame ] = 1;
 
-    for(int selAtom=0; selAtom < sel_dim0; ++selAtom)
-    {
+        float cD_x = cellDims[3*frame];
+        float cD_y = cellDims[3*frame + 1];
+        float cD_z = cellDims[3*frame + 2];
 
-        #pragma omp parallel for
-        for(int atomId=0; atomId < nbrAtoms; ++atomId)
+        #pragma omp parallel for private(atomId)
+        for(int selId=0; selId < sel_dim0; ++selId)
         {
+            float sel_x = allAtoms[3*nbrFrames*selAtoms[selId] + 3*frame];
+            float sel_y = allAtoms[3*nbrFrames*selAtoms[selId] + 3*frame + 1];
+            float sel_z = allAtoms[3*nbrFrames*selAtoms[selId] + 3*frame + 2];
 
-            if(out[atomId] == 0) // Only executes following if this atom was not found yet
+            for(atomId=0; atomId < nbrAtoms; ++atomId)
             {
-                // Computes distances for given timestep and atom
-                float dist_0 = allAtoms[3 * atomId] - selAtoms[3*selAtom];
-                float dist_1 = allAtoms[3 * atomId + 1] - selAtoms[3*selAtom+1];
-                float dist_2 = allAtoms[3 * atomId + 2] - selAtoms[3*selAtom+2];
+                float atom_x = allAtoms[3*nbrFrames*atomId + 3*frame];
+                float atom_y = allAtoms[3*nbrFrames*atomId + 3*frame + 1];
+                float atom_z = allAtoms[3*nbrFrames*atomId + 3*frame + 2];
 
-            
-                // Applying PBC corrections
-                dist_0 = abs(dist_0) - cellDims[0] * round( abs(dist_0) / cellDims[0] );
-                dist_1 = abs(dist_1) - cellDims[1] * round( abs(dist_1) / cellDims[1] );
-                dist_2 = abs(dist_2) - cellDims[2] * round( abs(dist_2) / cellDims[2] );
-
-
-                if(dist_0 > distance || dist_1 > distance || dist_2 > distance) 
-                    continue;
-
-
-                float dr = dist_0*dist_0 + dist_1*dist_1 + dist_2*dist_2;
-
-
-                if(dr <= squaredDist) 
+                // Only executes following if this atom was not found yet
+                if(out[ atomId * nbrFrames + frame ] == 0) 
                 {
-                    out[atomId] = 1;
+                    // Computes distances for given timestep and atom
+                    float dist_x = atom_x - sel_x;
+                    float dist_y = atom_y - sel_y;
+                    float dist_z = atom_z - sel_z;
+                
+                    // Apply PBC conditions
+                    dist_x = dist_x - cD_x * roundf( dist_x / cD_x );
+                    if(dist_x > distance)
+                        continue;
+
+                    dist_y = dist_y - cD_y * roundf( dist_y / cD_y );
+                    if(dist_y > distance)
+                        continue;
+
+                    dist_z = dist_z - cD_z * roundf( dist_z / cD_z );
+
+                    float dr = dist_x*dist_x + dist_y*dist_y + dist_z*dist_z;
+
+                    if(dr <= squaredDist) 
+                    {
+                        #pragma omp critical
+                        out[ atomId * nbrFrames + frame ] = 1;
+                        break;
+                    }
                 }
-            }
 
-        } // atoms indices loop
-
-
-    } // sel atoms loop
+            } // atoms indices loop
+        } // sel loop
+    } // frames loop
 
 }
 

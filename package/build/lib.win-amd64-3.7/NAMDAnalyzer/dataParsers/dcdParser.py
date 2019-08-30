@@ -12,13 +12,13 @@ from scipy.spatial.transform import Rotation as R
 from ..lib.pylibFuncs import (  py_getWithin, 
                                 py_getCenterOfMass,
                                 py_setCenterOfMassAligned,
-                                py_getDistances )
+                                py_getDistances,
+                                py_cdf )
 
 
 from ..dataManipulation import molFit_quaternions as molFit_q
 from .dcdReader import DCDReader
 from .psfParser import NAMDPSF
-
 
 
 class NAMDDCD(DCDReader, NAMDPSF):
@@ -74,7 +74,12 @@ class NAMDDCD(DCDReader, NAMDPSF):
                     sel2    -> second selection for distance calculation with sel1 (default -> all)
                     frame   -> frame to be used for computation
 
-            Returns a matrix containing pairwise distances if memory allows it. """
+            Returns a matrix containing pairwise distances if memory allows it with sel1 being 
+            arranged row-wise and sel2 column-wise. """
+
+        
+        if sel1 and sel2:
+            sameSel = 1
 
 
         #_Get the indices corresponding to the selection
@@ -92,24 +97,21 @@ class NAMDDCD(DCDReader, NAMDPSF):
             sel2 = self.selection(sel2)
 
         if sel2 is None:
-            sel2 = self.getSelection()
+            sameSel = 1
+
 
 
         #_Gets atom coordinates
         sel1 = self.dcdData[sel1,frame]
         sel2 = self.dcdData[sel2,frame]
 
-
         out = np.zeros((sel1.shape[0], sel2.shape[0]), dtype='float32')
 
+        cellDims = np.ascontiguousarray(self.cellDims[frame], dtype='float32')
 
-        #_Get cell dimensions for given frame and make array contiguous
-        cellDims    = np.ascontiguousarray(self.cellDims[frame], dtype='float32')
+        py_getDistances(sel1, sel2, out, cellDims, sameSel)
 
-
-        py_getDistances(sel1, sel2, cellDims, out)
-
-
+        
         return out
 
 
@@ -141,16 +143,16 @@ class NAMDDCD(DCDReader, NAMDPSF):
         else:
             nbrFrames = len(frame)
 
-    
-        frameAll    = np.ascontiguousarray(self.dcdData[:,frame], dtype='float32') 
 
-        #_Get cell dimensions for given frame and make array contiguous
-        cellDims    = np.ascontiguousarray(self.cellDims[frame], dtype='float32')
+        #_Gets all atoms coordinates along x axis with their respective indices
+        allAtoms = np.ascontiguousarray(self.dcdData[:,frame], dtype='float32')
+
+        cellDims = np.ascontiguousarray(self.cellDims[frame], dtype='float32')
 
         #_Initialize boolean array for atom selection
-        keepIdx = np.zeros( (self.nbrAtoms, nbrFrames), dtype=int)
+        keepIdx = np.zeros( (allAtoms.shape[0], nbrFrames), dtype='int32')
 
-        py_getWithin(frameAll, usrSel.astype('int32'), cellDims, keepIdx, distance)
+        py_getWithin(allAtoms, usrSel.astype('int32'), keepIdx, cellDims, distance)
 
         if keepIdx.shape[1] == 1:
             keepIdx = keepIdx.flatten()
@@ -187,14 +189,11 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
         usrSel      = np.ascontiguousarray(COM, dtype='float32')
 
-        #_Get cell dimensions for given frame and make array contiguous
-        cellDims    = np.ascontiguousarray(self.cellDims[frame], dtype='float32')
-
         #_Initialize boolean array for atom selection
-        keepIdx     = np.zeros(self.dcdData.shape[0], dtype=int)
+        keepIdx     = np.zeros(self.dcdData.shape[0], dtype='int32')
 
 
-        py_getWithin(frameAll, usrSel, cellDims, keepIdx, distance)
+        py_getWithin(frameAll, usrSel, keepIdx, distance)
 
 
         if outSel is not None:
@@ -270,6 +269,9 @@ class NAMDDCD(DCDReader, NAMDPSF):
         self.dcdData[selection, frames] = dcdData
 
 
+        self.COMAligned = True
+
+
         print("Done\n")
 
 
@@ -302,6 +304,29 @@ class NAMDDCD(DCDReader, NAMDPSF):
         self.dcdData[outSel, frames] = molFit_q.applyRotation(self.dcdData[outSel, frames], q)
 
         print("Done\n")
+
+
+
+    def setPBC(self, selection='all', frames=slice(0,None)):
+        """ This method applies periodic boundary conditions on all selected atom
+            coordinates for each frame selected. """
+
+        if isinstance(selection, str):
+            selection = self.selection(selection)
+
+        if not self.COMAligned: #_Get center of mass to keep trace of center of mass motion
+            com = self.getCenterOfMass(selection, frames)
+
+
+        self.dcdData[selection, frames] -= ( self.cellDims[frames] *
+                                            np.floor( self.dcdData[selection, frames] 
+                                            / self.cellDims[frames] ) )
+
+
+        if not self.COMAligned:
+            self.dcdData[selection, frames] += com
+
+        
 
 
 
@@ -474,6 +499,8 @@ class NAMDDCD(DCDReader, NAMDPSF):
         alignData = self.getAlignedCenterOfMass(selection, frames)
 
         alignData = molFit_q.alignAllMol(alignData)
+
+        alignData = molFit_q.applyRotation(self.dcdData[outSel, frames], q)
         
         return alignData
 
@@ -486,8 +513,7 @@ class NAMDDCD(DCDReader, NAMDPSF):
             drift corrections if no global angular momentum is present. 
 
             Input:  selection   -> either string or array of indices for selected atoms
-                    frames      -> either None to select all frames, an int, or a slice object
-            """
+                    frames      -> either None to select all frames, an int, or a slice object """
 
 
         #_Get the indices corresponding to the selection
@@ -507,10 +533,25 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
 
 
+    def getPBC(self, selection='all', frames=slice(0,None)):
+        """ This method applies periodic boundary conditions on all selected atom
+            coordinates for each frame selected. """
+
+        if isinstance(selection, str):
+            selection = self.selection(selection)
 
 
+        dcdData = np.copy(self.dcdData[selection, frames])
 
-    def getRadialNumberDensity(self, sel1, sel2, dr=0.1, maxR=10, frames=slice(0, None)):
+        dcdData -= ( self.cellDims[frames] * np.floor( dcdData / self.cellDims[frames] ) )
+
+
+        return dcdData
+
+ 
+
+
+    def getRadialNumberDensity(self, sel1, sel2, dr=0.1, maxR=10, frames=None):
         """ Computes the radial density distribution from center of mass of selected atoms 
             using the given dr interval.
 
@@ -521,7 +562,7 @@ class NAMDDCD(DCDReader, NAMDPSF):
                                 r + dr divided by the total number of sel2 atoms within maxR
                     maxR    ->  maximum radius to be used
                     frames  ->  frames to be averaged on, should be a range 
-                                                                (default None, every 10 frames are used) """
+                                (default None, every 10 frames are used) """
 
 
         radii  = np.arange(dr, maxR, dr) #_Gets x-axis values
@@ -532,23 +573,20 @@ class NAMDDCD(DCDReader, NAMDPSF):
         frames = np.array(frames)
 
         density = np.zeros( radii.size, dtype='float32' )
-        
+
         
         for frameId, frame in enumerate(frames):
             print('Processing frame %i of %i...' % (frameId+1, len(frames)), end='\r')
 
             dist = self.getDistances(sel1, sel2, frame).flatten()
-            dist = dist[dist > 0]
 
-            for rIdx, r in enumerate(radii[::-1]):
-                dist = dist[dist < r]
-                density[-(rIdx+1)] += dist.size / len(frames)
-                
+            py_cdf(dist, density, maxR, dr, frames.size) 
+
             
-        density /= ( 4 * np.pi * radii**2 * dr )
+        density[0] -= density[0]
 
+        density /= (4 * np.pi * radii**2 * dr)
 
-        density[1:] = density[1:] - density[:-1]
 
         return radii, density / np.sum(density)
 

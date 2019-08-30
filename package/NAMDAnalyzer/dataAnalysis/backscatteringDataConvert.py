@@ -11,7 +11,7 @@ from threading import Thread
 
 from ..helpersFunctions import ConstantsAndModels as CM 
 
-from ..lib.pycompIntScatFunc import py_compIntScatFunc
+from ..lib.pylibFuncs import py_compIntScatFunc
 
 
 

@@ -102,5 +102,5 @@ if __name__ == '__main__':
 
     fileList = sys.argv[1:]
 
-    data = NAMDAnalyzer(*fileList)
+    data = Dataset(*fileList)
 
