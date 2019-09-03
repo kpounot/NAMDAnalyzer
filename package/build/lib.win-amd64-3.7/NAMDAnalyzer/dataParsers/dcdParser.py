@@ -77,10 +77,11 @@ class NAMDDCD(DCDReader, NAMDPSF):
             Returns a matrix containing pairwise distances if memory allows it with sel1 being 
             arranged row-wise and sel2 column-wise. """
 
-        
-        if sel1 and sel2:
-            sameSel = 1
 
+        sameSel = 0
+        
+        if sel1 == sel2:
+            sameSel = 1
 
         #_Get the indices corresponding to the selection
         if type(sel1) == str:
@@ -92,13 +93,17 @@ class NAMDDCD(DCDReader, NAMDPSF):
             sel1 = self.getSelection()
 
         if type(sel2) == str:
-            if re.search('within', sel2):
+            if sel2 == sel1:
+                sel2 = np.copy(sel1)
+            elif re.search('within', sel2):
                 sel2 + ' frame %i' % frame
-            sel2 = self.selection(sel2)
+                sel2 = self.selection(sel2)
+            else:
+                sel2 = self.selection(sel2)
 
         if sel2 is None:
+            sel2 = np.copy(sel1)
             sameSel = 1
-
 
 
         #_Gets atom coordinates

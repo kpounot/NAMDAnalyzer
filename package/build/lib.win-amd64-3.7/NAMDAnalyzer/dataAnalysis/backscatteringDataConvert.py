@@ -60,15 +60,12 @@ class BackScatData:
         qValList = np.array(qValList)
         self.qVals = qValList
 
-
-
         #_Align center of mass if necessary
         if alignCOM:
             self.dataset.setCenterOfMassAligned(selection, frames)
 
 
         atomPos = self.dataset.dcdData[selection, frames]
-
 
         #_Computes random q vectors
         qArray = []
@@ -78,7 +75,6 @@ class BackScatData:
 
         qArray = np.array(qArray)
         qArray = np.ascontiguousarray(qArray, dtype=np.float32)
-
 
 
         corr = np.zeros( (qArray.shape[0], 2*nbrTS), dtype=np.float32 ) 
@@ -93,7 +89,7 @@ class BackScatData:
         print("Computing intermediate scattering function...\n")
 
         py_compIntScatFunc(atomPos, qArray, corr, nbrTS, nbrTimeOri)
-            
+
         #_Convert to complex array
         corr = corr[:,::2] + 1j*corr[:,1::2]
 

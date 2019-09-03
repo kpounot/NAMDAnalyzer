@@ -93,9 +93,13 @@ class NAMDDCD(DCDReader, NAMDPSF):
             sel1 = self.getSelection()
 
         if type(sel2) == str:
-            if re.search('within', sel2):
+            if sel2 == sel1:
+                sel2 = np.copy(sel1)
+            elif re.search('within', sel2):
                 sel2 + ' frame %i' % frame
-            sel2 = self.selection(sel2)
+                sel2 = self.selection(sel2)
+            else:
+                sel2 = self.selection(sel2)
 
         if sel2 is None:
             sel2 = np.copy(sel1)
