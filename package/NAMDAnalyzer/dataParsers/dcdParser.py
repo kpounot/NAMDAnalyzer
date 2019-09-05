@@ -5,7 +5,7 @@ import re
 from collections import namedtuple
 
 import matplotlib.pyplot as plt
-from matplotlib import cm, colors
+from matplotlib import cm, colors, colorbar
 from mpl_toolkits.mplot3d.axes3d import Axes3D
 from scipy.spatial.transform import Rotation as R
 
@@ -37,7 +37,7 @@ class NAMDDCD(DCDReader, NAMDPSF):
         if dcdFile:
             self.importDCDFile(dcdFile)
 
-        self.COMAligned = False #_To check if center of mass were aligned
+        self.COMAligned = np.zeros( self.nbrFrames ).astype(bool) #_To check if center of mass were aligned
 
 
     def appendCoordinates(self, coor):
@@ -67,8 +67,8 @@ class NAMDDCD(DCDReader, NAMDPSF):
 #---------------------------------------------
 #_Distances and within selections
 #---------------------------------------------
-    def getDistances(self, sel1=None, sel2=None, frame=-1):
-        """ Selects all atoms that within the given distance of the given selection and frame.
+    def getDistances(self, sel1, sel2=None, frame=-1):
+        """ Computes pair-wise distances between sel1 and sel2.
     
             Input:  sel1    -> first selection of atoms used for distance calculation with sel2 (default -> all)
                     sel2    -> second selection for distance calculation with sel1 (default -> all)
@@ -80,8 +80,9 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
         sameSel = 0
         
-        if sel1 == sel2:
-            sameSel = 1
+        if isinstance(sel1, str) and isinstance(sel2, str):
+            if set(sel1.split(' ')) == set(sel2.split(' ')):
+                sameSel = 1
 
         #_Get the indices corresponding to the selection
         if type(sel1) == str:
@@ -89,11 +90,8 @@ class NAMDDCD(DCDReader, NAMDPSF):
                 sel1 + ' frame %i' % frame
             sel1 = self.selection(sel1)
 
-        if sel1 is None:
-            sel1 = self.getSelection()
-
         if type(sel2) == str:
-            if sel2 == sel1:
+            if sameSel:
                 sel2 = np.copy(sel1)
             elif re.search('within', sel2):
                 sel2 + ' frame %i' % frame
@@ -118,6 +116,36 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
         
         return out
+
+
+
+
+
+
+    def getAveragedDistances(self, sel1, sel2=None, frames=None):
+        """ Computes distances between sel1 and sel2, averaged over all selected frames.
+    
+            Input:  sel1    -> first selection of atoms used for distance calculation with sel2 (default -> all)
+                    sel2    -> second selection for distance calculation with sel1 (default -> all)
+                    frame   -> frame to be used for computation
+
+            Returns a matrix containing pairwise distances if memory allows it with sel1 being 
+            arranged row-wise and sel2 column-wise. """
+
+        
+        if frames is None:
+            frames = np.arange(0, self.nbrFrames, 1)
+
+
+        dist = self.getDistances(sel1, sel2, frame=frames[0])
+
+        for idx, frame in enumerate(frames[1:]):
+            print('Processing frame %i of %i...' % (idx+2, len(frames)), end='\r')
+            dist += self.getDistances(sel1, sel2, frame=frame) / len(frames)
+
+        
+        return dist
+
 
 
 
@@ -260,6 +288,11 @@ class NAMDDCD(DCDReader, NAMDPSF):
         if type(selection) == str:
             selection = self.selection(selection)
 
+        
+        if self.COMAligned[frames]:
+            return
+
+
         print("\nAligning center of mass of selected atoms...\n")
 
         centerOfMass = self.getCenterOfMass(selection, frames)
@@ -274,7 +307,8 @@ class NAMDDCD(DCDReader, NAMDPSF):
         self.dcdData[selection, frames] = dcdData
 
 
-        self.COMAligned = True
+        if selection == 'all':
+            self.COMAligned[frames] = True
 
 
         print("Done\n")
@@ -756,3 +790,69 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
         return plt.show(block=False)
 
+
+
+    def plotAveragedDistances(self, sel1, sel2=None, frames=None, startDist=None, maxDist=10, step=2,
+                              lwStep=0.8):
+        """ Computes averaged distances between sel1 and sel2, then plot the result on a 
+            parallel plot in a residue-wise manner.
+
+            Both selections need to be the same for all frames used, so 'within' 
+            keyword cannot be used here.
+
+            Input:  sel1    -> first selection of atoms for ditance computation
+                    sel2    -> second selection of atoms (optional, if None, sel1 is used)
+                    frames  -> frames to be used for averaging
+                    maxDist -> maximum distance to use for the plot
+                    step    -> step between each distance bin, each of them will be plotted on a color
+                               and line width scale. 
+                    lwStep  -> line width step for plotting, each bin will be plotted with a 
+                               linewidth being ( maxDist / bin max edge ) * lwStep """
+
+        dist = self.getAveragedDistances(sel1, sel2, frames)
+
+
+        if isinstance(sel1, str):
+            sel1 = self.selection(sel1)
+
+        if sel2 is None:
+            sel2 = np.copy(sel1)
+        elif isinstance(sel2, str):
+            sel2 = self.selection(sel2)
+
+
+        if startDist is None:
+            startDist = step
+
+        rList  = np.arange( maxDist, startDist, -step )
+
+        cmap = cm.get_cmap('hot')
+        norm = colors.Normalize(startDist, maxDist)
+
+        fig, ax = plt.subplots(1, 2, gridspec_kw={'width_ratios':[1,25]})
+
+
+        pairs = []
+        for idx, r in enumerate(rList):
+            keep = np.argwhere( dist < r )
+            keep = np.column_stack( (sel1[keep[:,0]], sel2[keep[:,1]]) )
+    
+            if keep.ndim == 2:
+                #_Keeps only on index per residue
+                resPairs = np.unique( self.psfData.atoms[keep][:,:,2], axis=0 ).astype(int)
+
+                ax[1].plot( [0, 1], resPairs.T, lw=(maxDist/r)*lwStep, color=cmap( norm(r) ) )
+
+        ax[1].set_ylabel('Residue number')
+        ax[1].set_xlim(0,1)
+        ax[1].xaxis.set_ticks([], [])
+        ax[1].tick_params(labelright=True, labelleft=True)
+
+        cb = colorbar.ColorbarBase(ax[0], cmap=cmap, norm=norm)
+        ax[0].yaxis.set_ticks_position('left')
+        ax[0].yaxis.set_label_position('left')
+        ax[0].set_ylabel('Distance [$\AA$]')
+
+
+        return fig.show()
+                        

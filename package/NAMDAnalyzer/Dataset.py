@@ -32,7 +32,6 @@ class Dataset(NAMDDCD):
             self.importFile(f)
 
 
-
     def getPSF(self, fileList):
         """ This method checks for a psf file in the file list given as __init__ arguments.
             Returns the .psf file path if found, returns None otherwise. """

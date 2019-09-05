@@ -62,7 +62,7 @@ class BackScatData:
 
         #_Align center of mass if necessary
         if alignCOM:
-            self.dataset.setCenterOfMassAligned(selection, frames)
+            self.dataset.setCenterOfMassAligned('all', frames)
 
 
         atomPos = self.dataset.dcdData[selection, frames]
@@ -187,10 +187,10 @@ class BackScatData:
 
         #_ALign center of masses if required
         if alignCOM:
-            self.dataset.setCenterOfMassAligned(selection, frames)
+            self.dataset.setCenterOfMassAligned('all', frames)
 
 
-        atomPos = self.dataset.dcdData[selection, frames].astype('float16')
+        atomPos = self.dataset.dcdData[selection, frames].astype('float32')
 
 
         #_Computes intermediate scattering function for one timestep, averaged over time origins
