@@ -46,8 +46,6 @@ data.logData.plotDataSeries('TEMP KINETIC TOTAL', begin=501)
 data.logData.plotDataDistribution('KINETIC', binSize=20)
 
 
-
-
 ```
 
 Outputs of previous code:
@@ -56,6 +54,9 @@ Outputs of previous code:
     <tr>
         <td>
             <img src="/doc/fig/log_dataSeries.png" width="300">
+        </td>
+        <td>
+            <img src="/doc/fig/log_dataDist.png" width="300">
         </td>
     </tr>
 </table>
