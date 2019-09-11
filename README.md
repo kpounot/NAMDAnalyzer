@@ -39,7 +39,17 @@ data = nda.Dataset('20190326_fss_tip4p_prelax.out') #_Import log file
 
 #_Another log file can be append to the imported one using data.logData.appendLOG() method  
 
-#_To plot data series using keywords given in data.logData.etitle
-data.logData.plotDataSeries('TEMP KINETIC TOTAL')
-```
+#_To plot data series using keywords given in data.logData.etitle, removing first 500 frames of minimization
+data.logData.plotDataSeries('TEMP KINETIC TOTAL', begin=501)
+
+#_To plot data distribution
+data.logData.plotDataDistribution('KINETIC', binSize=20)
+
+
+
+
+```
+
+Example output of previous code:
+![log_dataSeries](/doc/fig/log_dataSeries.png)
 

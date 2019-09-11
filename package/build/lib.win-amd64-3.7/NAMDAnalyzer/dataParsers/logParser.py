@@ -47,9 +47,9 @@ class NAMDLOG(LOGReader):
         #_Add selected columns to a list
         dataSeries = []
         for key in keywords:
-            dataSeries.append( self.logData[self.keywordsDict[key]] )
+            dataSeries.append( self.logData[self.keywordsDict[key]][begin:end] )
 
-        return np.array(dataSeries).transpose()[begin:end]
+        return np.array(dataSeries).transpose()
 
     
     def getDataDistribution(self, keyword, binSize=50, begin=0, end=None):
