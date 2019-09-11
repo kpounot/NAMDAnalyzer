@@ -50,6 +50,6 @@ data.logData.plotDataDistribution('KINETIC', binSize=20)
 
 ```
 
-Example output of previous code:
-![log_dataSeries](/doc/fig/log_dataSeries.png)
+Outputs of previous code:
+![log_dataSeries](/doc/fig/log_dataSeries.png){width=50%}
 
