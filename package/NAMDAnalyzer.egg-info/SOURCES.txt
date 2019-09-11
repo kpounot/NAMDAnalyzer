@@ -39,6 +39,7 @@ NAMDAnalyzer/dataParsers/velReader.py
 NAMDAnalyzer/helpersFunctions/ConstantsAndModels.py
 NAMDAnalyzer/helpersFunctions/__init__.py
 NAMDAnalyzer/helpersFunctions/batchMatrix.py
+NAMDAnalyzer/helpersFunctions/distanceChordDiagram.py
 NAMDAnalyzer/lib/__init__.py
 NAMDAnalyzer/lib/libFunc.cpp
 NAMDAnalyzer/lib/cuda/src/compIntScatFunc.cpp

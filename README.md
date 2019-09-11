@@ -12,8 +12,8 @@ To install it within your python distribution, use
 
 or
     
-    python3 setup.py [build, build_cuda]
-    python3 setup.py install
+    python setup.py [build, build_cuda]
+    python setup.py install
 
 
 ## Start the interpreter:
@@ -23,21 +23,23 @@ Initialization of the ipython console can be done using the following command:
 
 ### Options: 
 
-- -s stride -> use to skip frames when loading a .dcd file. For instance if "-s 5" is provided, only the frames that are multiples of 5 will be loaded.
+- -s stride -> use to skip frames when loading a .dcd file. For instance if "-s 5" is provided, 
+only the frames that are multiples of 5 will be loaded.
 
 ## Usage:
-The program is organized on a master class contained in NAMDAnalyzer.
+The program is organized on a master class contained in NAMDAnalyzer.Dataset.
 
-New files can be loaded using the importFile method.
+#### Open and plot log file data
+To analyze log file, the following can be used:
 
-Each class in dataParser contains an __init__ routine, in which the file is read and data extracted.
-They contain also methods to get access to data in numpy array format,
-and methods to plot data in different ways.
-In addition, plotting methods accept a 'fit=True' and 'model=<modelToUse>' arguments to fit the data, which are extracted 
-from the plot figure and fitted using scipy's curve_fit method using the given model (typically a lambda function).
+'''python
+    import NAMDAnalyzer as nda
 
-The user can also define its own selection of atoms to work with. For this, use the getSelection method of the master class.
-The selections can then be used with several other methods like dcdData.getSTDperAtom.
+    data = nda.Dataset('20190326_fss_tip4p_prelax.out') #_Import log file
+    
+    #_Another log file can be append to the imported one using data.logData.appendLOG() method  
 
-NAMDAnalyzer contains also methods to convert trajectories to Quasi-Elastic Neutron Scattering spectra (in NAMDAnalyzer.dcdData class). 
-These can be used for simulations validation with experimental data.
+    #_To plot data series using keywords given in data.logData.etitle
+    data.logData.plotDataSeries('TEMP KINETIC TOTAL')
+''' 
+
