@@ -33,13 +33,13 @@ The program is organized on a master class contained in NAMDAnalyzer.Dataset.
 To analyze log file, the following can be used:
 
 '''python
-    import NAMDAnalyzer as nda
+import NAMDAnalyzer as nda
 
-    data = nda.Dataset('20190326_fss_tip4p_prelax.out') #_Import log file
-    
-    #_Another log file can be append to the imported one using data.logData.appendLOG() method  
+data = nda.Dataset('20190326_fss_tip4p_prelax.out') #_Import log file
 
-    #_To plot data series using keywords given in data.logData.etitle
-    data.logData.plotDataSeries('TEMP KINETIC TOTAL')
+#_Another log file can be append to the imported one using data.logData.appendLOG() method  
+
+#_To plot data series using keywords given in data.logData.etitle
+data.logData.plotDataSeries('TEMP KINETIC TOTAL')
 ''' 
 
