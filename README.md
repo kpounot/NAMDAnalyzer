@@ -129,3 +129,42 @@ Outputs of previous code:
 </table>
 
 
+#### Analysis of rotations
+
+``` python
+
+import NAMDAnalyzer as nda
+from NAMDAnalyzer.dataAnalysis.Rotations import Rotations
+
+d = nda.Dataset('psfFile.psf', 'dcdFile.dcd')
+
+
+#_To analyze O-H1 water vectors for O being within 3 angstrom of protein region
+rot = Rotations(d, 'name OH2 and within 3 of protein and resid 40:80',
+                   'name H1 and buond to name OH2 and within 3 of protein and resid 40:80',
+                axis='z', nbrTimeOri=20)
+
+rot.compRotationalRelaxation()
+rot.compOrientationalProb()
+
+rot.plotRotationalRelaxation()
+rot.plotOrientationalProb()
+
+```
+
+Outputs of previous code:
+
+<table>
+    <tr>
+        <td>
+            <img src="/doc/fig/rotRelaxation.png" width="250">
+        </td>
+        <td>
+            <img src="/doc/fig/rotOrientationProb.png" width="250">
+        </td>
+    </tr>
+</table>
+
+
+
+
