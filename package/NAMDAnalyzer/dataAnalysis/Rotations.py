@@ -139,8 +139,8 @@ class Rotations:
         fig, ax = plt.subplots()
 
         ax.plot(self.angles, self.rotDensity)
-        ax.set_xlabel('$cos(\\theta)$')
-        ax.set_ylabel('$P(cos(\\theta))$')
+        ax.set_xlabel('$\\theta \ [rad]$')
+        ax.set_ylabel('$P(\\theta)$')
 
         fig.show()
 
