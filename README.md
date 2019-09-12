@@ -45,7 +45,7 @@ data.logData.plotDataSeries('TEMP KINETIC TOTAL', begin=501)
 #_To plot data distribution
 data.logData.plotDataDistribution('KINETIC', binSize=20)
 
-#_Data can be fitted to any model using 
+#_Data can be fitted with any model using 
 data.logData.plotDataDistribution('KINETIC', fit=True, model=your_model_function, p0=init_parameters)
 
 ```
