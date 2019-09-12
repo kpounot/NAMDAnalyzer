@@ -110,18 +110,15 @@ def applyRotation(dcdData, q):
 
     for i in range(1, dcdData.shape[1]):
 
-        #_Obtain the rotation matrix
-        q = get_bestMatrix(q)
-
         #_Generating a data matrix with extra column containing zeros
         tempData = np.zeros( (dcdData[:,i:].shape[0], dcdData[:,i,:].shape[1] + 1) )
         tempData[:, 1:] = dcdData[:,i,:]
 
         #_Applying the rotation
-        tempData = np.dot(qM, tempData.T).T
+        tempData = np.dot(q, tempData.T).T
 
         #_Writing the data back in dcdData
-        dcdData[:,i,:] = tempData[:,1:]
+        dcdData[:,i,:] = tempData[:, 1:]
 
 
     return dcdData

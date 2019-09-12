@@ -76,10 +76,12 @@ class DCDReader:
 
             else:
 
-                recSize = 3 * self.nbrAtoms + 8
+                recSize = 4 * self.nbrAtoms + 8
 
                 for frame in range(self.nbrFrames):
-                    data = f.read(56+3*recSize)
+
+                    data = f.read(3*recSize)
+                    
                     if (frame % self.stride) == 0:
                         frame = int(frame / self.stride) 
                         self.dcdData[:,3*frame]   = unpack('i%ifi' % self.nbrAtoms, data[:recSize])[1:-1]

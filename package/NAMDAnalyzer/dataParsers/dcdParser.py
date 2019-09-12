@@ -539,9 +539,9 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
         alignData = self.getAlignedCenterOfMass(selection, frames)
 
-        alignData = molFit_q.alignAllMol(alignData)
+        q = molFit_q.alignAllMol(alignData)
 
-        alignData = molFit_q.applyRotation(self.dcdData[outSel, frames], q)
+        alignData = molFit_q.applyRotation(self.dcdData[selection, frames], q)
         
         return alignData
 
@@ -713,7 +713,7 @@ class NAMDDCD(DCDReader, NAMDPSF):
             If mergeXYZ is True, then it computes the distance to the origin first. """
 
         rmsd = self.getRMSDperAtom(selection, align, frames, mergeXYZ)
-        xRange = self.timestep * np.cumsum(self.dcdFreq[frames])
+        xRange = np.arange(rmsd.size)
 
         if mergeXYZ:
             plt.plot(xRange, rmsd)

@@ -32,7 +32,7 @@ only the frames that are multiples of 5 will be loaded.
 ## Usage:
 The program is organized on a master class contained in NAMDAnalyzer.Dataset.
 
-#### Open and plot log file data
+#### Open log file and plot data
 To analyze log file, the following can be used:
 
 ``` python
@@ -42,10 +42,50 @@ data = nda.Dataset('20190326_fss_tip4p_prelax.out') #_Import log file
 
 #_Another log file can be append to the imported one using data.logData.appendLOG() method  
 
-#_To plot data series using keywords given in data.logData.etitle
-data.logData.plotDataSeries('TEMP KINETIC TOTAL')
+#_To plot data series using keywords given in data.logData.etitle, removing first 500 frames of minimization
+data.logData.plotDataSeries('TEMP KINETIC TOTAL', begin=501)
+
+#_To plot data distribution
+data.logData.plotDataDistribution('KINETIC', binSize=20)
+
+#_Data can be fitted to any model using 
+data.logData.plotDataDistribution('KINETIC', fit=True, model=your_model_function, p0=init_parameters)
+
 ```
 
+Outputs of previous code:
+
+<table>
+    <tr>
+        <td>
+            <img src="/doc/fig/log_dataSeries.png" width="250">
+        </td>
+        <td>
+            <img src="/doc/fig/log_dataDist.png" width="250">
+        </td>
+    </tr>
+</table>
+
+
+
+#### Load trajectories, selection, and analysis
+
+``` python
+
+import NAMDAnalyzer as nda
+
+d = nda.Dataset('psfFile.psf', 'dcdFile.dcd')
+
+#_Trajectories can be append to already loaded ones using either d.appendDCD('dcdFile.dcd')
+#_or d.appendCoordinates('pdbFile.pdb').
+
+#_To compute RMSD per atom for molecules aligned in all frames
+d.getRMSDperAtom(selection='protein and segname V1', align=True, frames=slice(0, None))
+
+#_To compute and plot RMSD per atom for molecules aligned in all frames
+d.plotRMSDperAtom(selection='protein and segname V1', align=True, frames=slice(0, None))
+
+```
 
 Home-page: github.com/kpounot/NAMDAnalyzer
 Author: Kevin Pounot
