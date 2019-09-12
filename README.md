@@ -253,7 +253,7 @@ plt.show()
 #_To compute and plot incoherent intermediate function, EISF and inoherent scattering 
 #_function for water hydrogens with 200 time steps
 
-bs.compScatteringFunc(qVals, nbrTimeOri=50, selection='waterH', alignCom=True, nbrTS=200)
+bs.compScatteringFunc(qVals, nbrTimeOri=50, selection='waterH', alignCOM=True, nbrTS=200)
 
 bs.plotIntermediateFunc()
 bs.plotEISF()
