@@ -39,7 +39,6 @@ class NAMDDCD(DCDReader, NAMDPSF):
         if dcdFile:
             self.importDCDFile(dcdFile)
 
-        self.COMAligned = np.zeros( self.nbrFrames ).astype(bool) #_To check if center of mass were aligned
 
 
     def appendCoordinates(self, coor):
@@ -291,7 +290,7 @@ class NAMDDCD(DCDReader, NAMDPSF):
             selection = self.selection(selection)
 
         
-        if self.COMAligned[frames]:
+        if np.all(self.COMAligned[frames]):
             return
 
 
@@ -309,7 +308,7 @@ class NAMDDCD(DCDReader, NAMDPSF):
         self.dcdData[selection, frames] = dcdData
 
 
-        if selection == 'all':
+        if selection.size == self.nbrAtoms:
             self.COMAligned[frames] = True
 
 
@@ -355,7 +354,7 @@ class NAMDDCD(DCDReader, NAMDPSF):
         if isinstance(selection, str):
             selection = self.selection(selection)
 
-        if not self.COMAligned: #_Get center of mass to keep trace of center of mass motion
+        if not np.all(self.COMAligned[frames]): #_Get center of mass to keep trace of center of mass motion
             com = self.getCenterOfMass(selection, frames)
 
 
@@ -364,7 +363,7 @@ class NAMDDCD(DCDReader, NAMDPSF):
                                             / self.cellDims[frames] ) )
 
 
-        if not self.COMAligned:
+        if not np.all(self.COMAligned[frames]):
             self.dcdData[selection, frames] += com
 
         

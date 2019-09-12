@@ -16,6 +16,9 @@ class DCDReader:
         self.stride     = stride
 
 
+        self.COMAligned = None #_To check if center of mass were aligned
+
+
 
     def importDCDFile(self, dcdFile):
         """ Imports a new file and store the result in self.dcdData.
@@ -109,6 +112,9 @@ class DCDReader:
         self.nbrFrames = int(np.ceil(self.nbrFrames / self.stride)) 
 
 
+        self.COMAligned = np.zeros( self.nbrFrames ).astype(bool) #_To check if center of mass were aligned
+
+
         data = None
 
 
@@ -137,5 +143,8 @@ class DCDReader:
         self.dcdFreq    = np.append(tempdcdFreq, self.dcdFreq)
         self.nbrFrames  += tempData.nbrFrames
         self.nbrSteps   += tempData.nbrSteps
+
+
+        self.COMAligned = np.zeros( self.nbrFrames ).astype(bool) #_To check if center of mass were aligned
 
 

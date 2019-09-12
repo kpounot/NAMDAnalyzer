@@ -193,8 +193,11 @@ class BackScatData:
         atomPos = self.dataset.dcdData[selection, frames].astype('float32')
 
 
+        oriSlice = slice(frameNbr, None) if frameNbr > 0 else slice(0, None)
+        endSlice = slice(0, -frameNbr) if frameNbr > 0 else slice(0, None)
+
         #_Computes intermediate scattering function for one timestep, averaged over time origins
-        displacement = np.sum((atomPos[:,frameNbr:] - atomPos[:,:-frameNbr])**2, axis=2)
+        displacement = np.sum((atomPos[:,oriSlice] - atomPos[:,endSlice])**2, axis=2)
 
 
         self.MSD = displacement.mean(), displacement.std()
