@@ -141,7 +141,7 @@ d = nda.Dataset('psfFile.psf', 'dcdFile.dcd')
 
 #_To analyze O-H1 water vectors for O being within 3 angstrom of protein region
 rot = Rotations(d, 'name OH2 and within 3 of protein and resid 40:80',
-                   'name H1 and buond to name OH2 and within 3 of protein and resid 40:80',
+                   'name H1 and bound to name OH2 and within 3 of protein and resid 40:80',
                 axis='z', nbrTimeOri=20)
 
 rot.compRotationalRelaxation()
