@@ -13,7 +13,8 @@ from ..lib.pylibFuncs import (  py_getWithin,
                                 py_getCenterOfMass,
                                 py_setCenterOfMassAligned,
                                 py_getDistances,
-                                py_cdf )
+                                py_cdf,
+                                py_getParallelBackend )
 
 
 from ..dataManipulation import molFit_quaternions as molFit_q
@@ -21,6 +22,9 @@ from .dcdReader import DCDReader
 from .psfParser import NAMDPSF
 
 from ..helpersFunctions.distanceChordDiagram import ChordDiag
+
+from ..kdTree.getWithin_kdTree import getWithin_kdTree
+
 
 
 class NAMDDCD(DCDReader, NAMDPSF):
@@ -39,6 +43,8 @@ class NAMDDCD(DCDReader, NAMDPSF):
         if dcdFile:
             self.importDCDFile(dcdFile)
 
+
+        self.parallelBackend = py_getParallelBackend()
 
 
     def appendCoordinates(self, coor):
@@ -185,8 +191,12 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
         #_Initialize boolean array for atom selection
         keepIdx = np.zeros( (allAtoms.shape[0], nbrFrames), dtype='int32')
+    
+        if self.parallelBackend == 2 or usrSel.size <= 200:
+            py_getWithin(allAtoms, usrSel.astype('int32'), keepIdx, cellDims, distance)
+        else:
+            getWithin_kdTree(allAtoms, usrSel.astype('int32'), keepIdx, cellDims, distance)
 
-        py_getWithin(allAtoms, usrSel.astype('int32'), keepIdx, cellDims, distance)
 
         if keepIdx.shape[1] == 1:
             keepIdx = keepIdx.flatten()

@@ -32,6 +32,8 @@ class Dataset(NAMDDCD):
             self.importFile(f)
 
 
+
+
     def getPSF(self, fileList):
         """ This method checks for a psf file in the file list given as __init__ arguments.
             Returns the .psf file path if found, returns None otherwise. """
@@ -42,7 +44,7 @@ class Dataset(NAMDDCD):
                     self.fileList.pop(idx)
                     return dataFile
 
-            raise Exception("No .psf file found. Please load one to initialize NAMDAnalyzer.")
+            raise Exception("No .psf file found. Methods related to trajectories won't work properly.")
         
         except Exception as inst:
             print(inst)

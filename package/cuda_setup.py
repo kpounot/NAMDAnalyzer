@@ -92,6 +92,7 @@ packagesList = [    'NAMDAnalyzer.dataManipulation',
                     'NAMDAnalyzer.dataParsers',
                     'NAMDAnalyzer.dataAnalysis',
                     'NAMDAnalyzer.lib',
+                    'NAMDAnalyzer.kdTree',
                     'NAMDAnalyzer.helpersFunctions' ]
 
 
@@ -101,6 +102,7 @@ pylibFuncs_ext   = Extension( "NAMDAnalyzer.lib.pylibFuncs",
                                     cudaSrcPath + "getDistances.cpp", 
                                     cudaSrcPath + "getHydrogenBonds.cpp", 
                                     cudaSrcPath + "getWithin.cpp", 
+                                    cudaSrcPath + "getParallelBackend.cpp", 
                                     "NAMDAnalyzer/lib/" + "libFunc.pyx"],
                                    library_dirs=["NAMDAnalyzer/lib/cuda", cudaLib],
                                    extra_objects=[
@@ -115,7 +117,7 @@ pylibFuncs_ext   = Extension( "NAMDAnalyzer.lib.pylibFuncs",
 
 
 setup(  name='NAMDAnalyzer',
-        version='alpha',
+        version='1.0',
         description=description,
         author='Kevin Pounot',
         author_email='kpounot@hotmail.fr',

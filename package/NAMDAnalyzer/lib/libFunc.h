@@ -29,4 +29,7 @@ void getWithin(float *allAtoms, int nbrAtoms, int nbrFrames,
                 int *out, float *cellDims, float distance);
 
 
+int getParallelBackend();
+
+
 #endif

@@ -31,6 +31,9 @@ cdef extern from "libFunc.h":
                     int *out, float *cellDims, float distance);
 
 
+    int getParallelBackend();
+
+
 
 
 @cython.boundscheck(False)
@@ -159,3 +162,7 @@ def py_cdf(np.ndarray[float, ndim=1, mode="c"] dist not None,
             out[rId] += 1 / normFactor
 
 
+
+def py_getParallelBackend():
+
+    return getParallelBackend()

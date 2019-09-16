@@ -49,6 +49,7 @@ packagesList = [    'NAMDAnalyzer.dataManipulation',
                     'NAMDAnalyzer.dataParsers',
                     'NAMDAnalyzer.dataAnalysis',
                     'NAMDAnalyzer.lib',
+                    'NAMDAnalyzer.kdTree',
                     'NAMDAnalyzer.helpersFunctions' ]
 
 
@@ -58,6 +59,7 @@ pylibFuncs_ext   = Extension( "NAMDAnalyzer.lib.pylibFuncs",
                                     srcPath + "getDistances.cpp", 
                                     srcPath + "getHydrogenBonds.cpp", 
                                     srcPath + "getWithin.cpp", 
+                                    srcPath + "getParallelBackend.cpp", 
                                     "NAMDAnalyzer/lib/" + "libFunc.pyx"],
                                    language='c++',
                                    include_dirs=[srcPath, np.get_include()])
@@ -69,7 +71,7 @@ pylibFuncs_ext   = Extension( "NAMDAnalyzer.lib.pylibFuncs",
 
 
 setup(  name='NAMDAnalyzer',
-        version='alpha',
+        version='1.0',
         description=description,
         author='Kevin Pounot',
         author_email='kpounot@hotmail.fr',
