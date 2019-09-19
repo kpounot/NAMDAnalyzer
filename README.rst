@@ -76,10 +76,10 @@ Outputs of previous code:
     <table>
         <tr>
             <td>
-                <img src="./docs/fig/log_dataSeries.png" width=25%>
+                <img src="./docs/fig/log_dataSeries.png">
             </td>
             <td>
-                <img src="./docs/fig/log_dataDist.png" width=25%>
+                <img src="./docs/fig/log_dataDist.png">
             </td>
         </tr>
     </table>
@@ -137,16 +137,16 @@ Outputs of previous code:
     <table>
         <tr>
             <td>
-                <img src="./docs/fig/ubq_rmsdPerAtom.png" width=25%>
+                <img src="./docs/fig/ubq_rmsdPerAtom.png">
             </td>
             <td>
-                <img src="./docs/fig/radialDistWater.png" width=25%>
+                <img src="./docs/fig/radialDistWater.png">
             </td>
             <td>
-                <img src="./docs/fig/averagedDistances_parallel.png" width=25%>
+                <img src="./docs/fig/averagedDistances_parallel.png">
             </td>
             <td>
-                <img src="./docs/fig/averagedDistances_chord.png" width=25%>
+                <img src="./docs/fig/averagedDistances_chord.png">
             </td>
         </tr>
     </table>
@@ -184,10 +184,10 @@ Outputs of previous code:
     <table>
         <tr>
             <td>
-                <img src="./docs/fig/rotRelaxation.png" width=25%>
+                <img src="./docs/fig/rotRelaxation.png">
             </td>
             <td>
-                <img src="./docs/fig/rotOrientationProb.png" width=25%>
+                <img src="./docs/fig/rotOrientationProb.png">
             </td>
         </tr>
     </table>
@@ -232,10 +232,10 @@ Outputs of previous code:
     <table>
         <tr>
             <td>
-                <img src="./docs/fig/hbContinuous.png" width=25%>
+                <img src="./docs/fig/hbContinuous.png">
             </td>
             <td>
-                <img src="./docs/fig/hbIntermittent.png" width=25%>
+                <img src="./docs/fig/hbIntermittent.png">
             </td>
         </tr>
     </table>
@@ -298,16 +298,16 @@ Outputs of previous code:
     <table>
         <tr>
             <td>
-                <img src="./docs/fig/msd.png" width=25%>
+                <img src="./docs/fig/msd.png">
             </td>
             <td>
-                <img src="./docs/fig/bs_interFunc.png" width=25%>
+                <img src="./docs/fig/bs_interFunc.png">
             </td>
             <td>
-                <img src="./docs/fig/bs_EISF.png" width=25%>
+                <img src="./docs/fig/bs_EISF.png">
             </td>
             <td>
-                <img src="./docs/fig/bs_scatFunc.png" width=25%>
+                <img src="./docs/fig/bs_scatFunc.png">
             </td>
         </tr>
     </table>
