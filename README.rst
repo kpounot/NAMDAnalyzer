@@ -43,6 +43,7 @@ Open log file and plot data
 To analyze log file, the following can be used:
 
 .. code-block:: python
+
     import NAMDAnalyzer as nda
 
     data = nda.Dataset('20190326_fss_tip4p_prelax.out') #_Import log file
