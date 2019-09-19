@@ -62,7 +62,7 @@ To analyze log file, the following can be used:
 Outputs of previous code:
 
 .. image:: ./docs/fig/log_dataSeries.png
-   :scale: 25 %
+   :width: 200 px
 
 .. image:: ./docs/fig/log_dataDist.png
-   :scale: 25 %
+   :width: 200 px
