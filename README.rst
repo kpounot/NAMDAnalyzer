@@ -289,16 +289,16 @@ Outputs of previous code:
 
     <tr>
         <td>
-            <img src="./docs/fig/msd.png" width=25%>
+            <img src="./docs/fig/msd.png" width=150>
         </td>
         <td>
-            <img src="./docs/fig/bs_interFunc.png" width=25%>
+            <img src="./docs/fig/bs_interFunc.png" width=150>
         </td>
         <td>
-            <img src="./docs/fig/bs_EISF.png" width=25%>
+            <img src="./docs/fig/bs_EISF.png" width=150>
         </td>
         <td>
-            <img src="./docs/fig/bs_scatFunc.png" width=25%>
+            <img src="./docs/fig/bs_scatFunc.png" width=150>
         </td>
     </tr>
 
