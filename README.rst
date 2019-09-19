@@ -80,7 +80,7 @@ Outputs of previous code:
         <td>
             <img src="./docs/fig/log_dataDist.png" width=25%>
         </td>
-    <tr>
+    </tr>
 
 
 
@@ -145,7 +145,7 @@ Outputs of previous code:
         <td>
             <img src="./docs/fig/averagedDistances_chord.png" width=25%>
         </td>
-    <tr>
+    </tr>
 
 
 
@@ -184,7 +184,7 @@ Outputs of previous code:
         <td>
             <img src="./docs/fig/rotOrientationProb.png" width=25%>
         </td>
-    <tr>
+    </tr>
 
 
 
@@ -230,7 +230,7 @@ Outputs of previous code:
         <td>
             <img src="./docs/fig/hbIntermittent.png" width=25%>
         </td>
-    <tr>
+    </tr>
 
 
 
@@ -300,5 +300,5 @@ Outputs of previous code:
         <td>
             <img src="./docs/fig/bs_scatFunc.png" width=25%>
         </td>
-    <tr>
+    </tr>
 
