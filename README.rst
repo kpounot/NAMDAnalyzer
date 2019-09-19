@@ -75,10 +75,10 @@ Outputs of previous code:
 
     <tr>
         <td>
-            <img src="./docs/fig/log_dataSeries.png">
+            <img src="./docs/fig/log_dataSeries.png" width=24%>
         </td>
         <td>
-            <img src="./docs/fig/log_dataSeries.png">
+            <img src="./docs/fig/log_dataDist.png" width=24%>
         </td>
     <tr>
 
