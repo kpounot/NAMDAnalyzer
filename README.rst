@@ -36,8 +36,9 @@ Initialization of the ipython console can be done using the following command:
 
 Options: 
 
-- -s stride -> use to skip frames when loading a .dcd file. For instance if "-s 5" is provided, 
-               only the frames that are multiples of 5 will be loaded.
+- -s --stride 
+    use to skip frames when loading a .dcd file. For instance if "-s 5" is provided, 
+    only the frames that are multiples of 5 will be loaded.
 
 
 Usage:
