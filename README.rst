@@ -71,11 +71,17 @@ To analyze log file, the following can be used:
 Outputs of previous code:
 +++++++++++++++++++++++++
 
-.. image:: ./docs/fig/log_dataSeries.png
-   :width: 25 %
+.. raw:: html
 
-.. image:: ./docs/fig/log_dataDist.png
-   :width: 25%
+    <tr>
+        <td>
+            <img src="./docs/fig/log_dataSeries.png">
+        </td>
+        <td>
+            <img src="./docs/fig/log_dataSeries.png">
+        </td>
+    <tr>
+
 
 
 Load trajectories, selection, and analysis
