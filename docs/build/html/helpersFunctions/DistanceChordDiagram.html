@@ -1,0 +1,166 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>DistanceChordDiagram module &#8212; NAMDAnalyzer 1.0 documentation</title>
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="KDTree" href="../kdTree/index.html" />
+    <link rel="prev" title="Constant and models definitions" href="ConstantsAndModels.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../kdTree/index.html" title="KDTree"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="ConstantsAndModels.html" title="Constant and models definitions"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">NAMDAnalyzer 1.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../modules.html" >Dataset</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="index.html" accesskey="U">Helpers functions</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-DistanceChordDiagram">
+<span id="distancechorddiagram-module"></span><h1>DistanceChordDiagram module<a class="headerlink" href="#module-DistanceChordDiagram" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="DistanceChordDiagram.ChordDiag">
+<em class="property">class </em><code class="sig-prename descclassname">DistanceChordDiagram.</code><code class="sig-name descname">ChordDiag</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">sel1</em>, <em class="sig-param">sel2=None</em>, <em class="sig-param">frames=None</em>, <em class="sig-param">startDist=None</em>, <em class="sig-param">maxDist=10</em>, <em class="sig-param">step=2</em>, <em class="sig-param">lwStep=1.2</em>, <em class="sig-param">resList=None</em>, <em class="sig-param">labelStep=5</em><span class="sig-paren">)</span><a class="headerlink" href="#DistanceChordDiagram.ChordDiag" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class provides methods to draw a chord diagram from pairwise
+distance matrix. Distances are binned and they form the edges that
+link the nodes that represent the residue in the protein.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> – <a class="reference internal" href="../modules.html#Dataset.Dataset" title="Dataset.Dataset"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dataset</span></code></a> class instance</p></li>
+<li><p><strong>sel1</strong> – first selection of atoms for distance computation</p></li>
+<li><p><strong>sel2</strong> – second selection of atoms (optional, if None, sel1 is used)</p></li>
+<li><p><strong>frames</strong> – frames to be used for averaging</p></li>
+<li><p><strong>maxDist</strong> – maximum distance to use for the plot</p></li>
+<li><p><strong>step</strong> – step between each distance bin, each of them will be plotted on a color
+and line width scale</p></li>
+<li><p><strong>lwStep</strong> – line width step for plotting, each bin will be plotted with a 
+linewidth being ( maxDist / bin max edge ) * lwStep</p></li>
+<li><p><strong>resList</strong> – list of residue indices (optional, if None, will be guessed from file)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="method">
+<dt id="DistanceChordDiagram.ChordDiag.process">
+<code class="sig-name descname">process</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#DistanceChordDiagram.ChordDiag.process" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build the chord diagram based on class attributes.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="DistanceChordDiagram.ChordDiag.show">
+<code class="sig-name descname">show</code><span class="sig-paren">(</span><em class="sig-param">xlim=None</em>, <em class="sig-param">ylim=(0.0</em>, <em class="sig-param">1.05)</em><span class="sig-paren">)</span><a class="headerlink" href="#DistanceChordDiagram.ChordDiag.show" title="Permalink to this definition">¶</a></dt>
+<dd><p>Show the builded chord diagram.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>xlim</strong> – tuple of angular limits in radians to be given to matplotlib axes instance.</p></li>
+<li><p><strong>ylim</strong> – tuple of radial limits in radians to be given to matplotlib axes instance.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">DistanceChordDiagram module</a><ul>
+<li><a class="reference internal" href="#classes">Classes</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="ConstantsAndModels.html"
+                        title="previous chapter">Constant and models definitions</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../kdTree/index.html"
+                        title="next chapter">KDTree</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/helpersFunctions/DistanceChordDiagram.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../kdTree/index.html" title="KDTree"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="ConstantsAndModels.html" title="Constant and models definitions"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">NAMDAnalyzer 1.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../modules.html" >Dataset</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="index.html" >Helpers functions</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2019, Kevin Pounot.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.2.0.
+    </div>
+  </body>
+</html>

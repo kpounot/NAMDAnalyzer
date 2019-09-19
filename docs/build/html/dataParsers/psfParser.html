@@ -1,0 +1,183 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>psfParser module &#8212; NAMDAnalyzer 1.0 documentation</title>
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="psfReader module" href="psfReader.html" />
+    <link rel="prev" title="pdbReader module" href="pdbReader.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="psfReader.html" title="psfReader module"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="pdbReader.html" title="pdbReader module"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">NAMDAnalyzer 1.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../modules.html" >Dataset</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="index.html" accesskey="U">dataParsers</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-psfParser">
+<span id="psfparser-module"></span><h1>psfParser module<a class="headerlink" href="#module-psfParser" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="psfParser.NAMDPSF">
+<em class="property">class </em><code class="sig-prename descclassname">psfParser.</code><code class="sig-name descname">NAMDPSF</code><span class="sig-paren">(</span><em class="sig-param">psfFile=None</em><span class="sig-paren">)</span><a class="headerlink" href="#psfParser.NAMDPSF" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class is used for .psf file reading.</p>
+<dl class="method">
+<dt id="psfParser.NAMDPSF.getAtomsMasses">
+<code class="sig-name descname">getAtomsMasses</code><span class="sig-paren">(</span><em class="sig-param">selection</em><span class="sig-paren">)</span><a class="headerlink" href="#psfParser.NAMDPSF.getAtomsMasses" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the column corresponding to atoms masses as an 1D array of float.</p>
+<p>Input:  selection   -&gt; a selection of atom indices</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="psfParser.NAMDPSF.getBoundAtoms">
+<code class="sig-name descname">getBoundAtoms</code><span class="sig-paren">(</span><em class="sig-param">selection</em><span class="sig-paren">)</span><a class="headerlink" href="#psfParser.NAMDPSF.getBoundAtoms" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the bound atoms for each atom in the given selection.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="psfParser.NAMDPSF.getHBAcceptors">
+<code class="sig-name descname">getHBAcceptors</code><span class="sig-paren">(</span><em class="sig-param">keepList</em><span class="sig-paren">)</span><a class="headerlink" href="#psfParser.NAMDPSF.getHBAcceptors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Identifies all possible hydrogen bond acceptors in the given index list, and returns only 
+those that correspond to atoms not bound to an hydrogen.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="psfParser.NAMDPSF.getHBDonors">
+<code class="sig-name descname">getHBDonors</code><span class="sig-paren">(</span><em class="sig-param">keepList</em><span class="sig-paren">)</span><a class="headerlink" href="#psfParser.NAMDPSF.getHBDonors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Identifies all possible hydrogen bond donors in the given inde list, and returns only those that
+correspond to atoms bound to an hydrogen.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="psfParser.NAMDPSF.getSameResidueAs">
+<code class="sig-name descname">getSameResidueAs</code><span class="sig-paren">(</span><em class="sig-param">selection</em><span class="sig-paren">)</span><a class="headerlink" href="#psfParser.NAMDPSF.getSameResidueAs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given the provided selection, selects all others atoms that are present in the same residues and
+returns an updated selection.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="psfParser.NAMDPSF.getSelection">
+<code class="sig-name descname">getSelection</code><span class="sig-paren">(</span><em class="sig-param">selText='all'</em>, <em class="sig-param">segName=None</em>, <em class="sig-param">resID=None</em>, <em class="sig-param">resName=None</em>, <em class="sig-param">atom=None</em>, <em class="sig-param">index=None</em>, <em class="sig-param">invert=False</em><span class="sig-paren">)</span><a class="headerlink" href="#psfParser.NAMDPSF.getSelection" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method returns an list of index corresponding to the ones that have been selected 
+using the ‘selText’ argument and the indices list.</p>
+<dl class="simple">
+<dt>Possible selText are:   - all</dt><dd><ul class="simple">
+<li><p>protein</p></li>
+<li><p>backbone</p></li>
+<li><p>protH or proteinH</p></li>
+<li><p>protNonExchH</p></li>
+<li><p>water</p></li>
+<li><p>waterH</p></li>
+<li><p>hydrogen</p></li>
+<li><p>hbdonors</p></li>
+<li><p>hbacceptors</p></li>
+</ul>
+</dd>
+<dt>For segName, resNbr, resName, atom:  - segment id, or list of segment id</dt><dd><ul class="simple">
+<li><p>any residue number, or list of residue number</p></li>
+<li><p>any residue name, or list of residue names</p></li>
+<li><p>any atom name, or list of atom names</p></li>
+</ul>
+</dd>
+</dl>
+<p>Argument index should be a list, which can be generated with range in case of a range.</p>
+<p>Some NOT… arguments can be provided as well to eliminate some entries.</p>
+<p>In case the user wants to the protein and a given segment id, the following argument can
+be entered [‘protein’, ‘segID_name’]. Then, for every selection, the index lists are 
+compared and only the indices that appear in all lists are kept.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="pdbReader.html"
+                        title="previous chapter">pdbReader module</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="psfReader.html"
+                        title="next chapter">psfReader module</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/dataParsers/psfParser.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="psfReader.html" title="psfReader module"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="pdbReader.html" title="pdbReader module"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">NAMDAnalyzer 1.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../modules.html" >Dataset</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="index.html" >dataParsers</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2019, Kevin Pounot.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.2.0.
+    </div>
+  </body>
+</html>

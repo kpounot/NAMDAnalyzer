@@ -71,11 +71,11 @@ To analyze log file, the following can be used:
 Outputs of previous code:
 +++++++++++++++++++++++++
 
-.. image:: ./docs/fig/log_dataSeries.png
-   :width: 25 %
+.. image:: ../fig/log_dataSeries.png
+   :width: 24 %
 
-.. image:: ./docs/fig/log_dataDist.png
-   :width: 25%
+.. image:: ../fig/log_dataDist.png
+   :width: 24%
 
 
 Load trajectories, selection, and analysis
@@ -124,14 +124,14 @@ Load trajectories, selection, and analysis
 Outputs of previous code:
 +++++++++++++++++++++++++
 
-.. image:: ./docs/fig/ubq_rmsdPerAtom.png
-   :width: 25 %
-.. image:: ./docs/fig/radialDistWater.png
-   :width: 25 %
-.. image:: ./docs/fig/averagedDistances_parallel.png
-   :width: 25 %
-.. image:: ./docs/fig/averagedDistances_chord.png
-   :width: 25 %
+.. image:: ../fig/ubq_rmsdPerAtom.png
+   :width: 24 %
+.. image:: ../fig/radialDistWater.png
+   :width: 24 %
+.. image:: ../fig/averagedDistances_parallel.png
+   :width: 24 %
+.. image:: ../fig/averagedDistances_chord.png
+   :width: 24 %
 
 
 
@@ -161,10 +161,10 @@ Analysis of rotations
 Outputs of previous code:
 +++++++++++++++++++++++++
 
-.. image:: ./docs/fig/rotRelaxation.png
-   :width: 25 %
-.. image:: ./docs/fig/rotOrientationProb.png
-   :width: 25 %
+.. image:: ../fig/rotRelaxation.png
+   :width: 24 %
+.. image:: ../fig/rotOrientationProb.png
+   :width: 24 %
 
 
 
@@ -201,10 +201,10 @@ Analysis of hydrogen bonds
 Outputs of previous code:
 +++++++++++++++++++++++++
 
-.. image:: ./docs/fig/hbContinuous.png
-   :width: 25 %
-.. image:: ./docs/fig/hbIntermittent.png
-   :width: 25 %
+.. image:: ../fig/hbContinuous.png
+   :width: 24 %
+.. image:: ../fig/hbIntermittent.png
+   :width: 24 %
 
 
 
@@ -258,12 +258,12 @@ Mean-squared displacement and neutron backscattering
 Outputs of previous code:
 +++++++++++++++++++++++++
 
-.. image:: ./docs/fig/msd.png
-   :width: 25 %
-.. image:: ./docs/fig/bs_interFunc.png
-   :width: 25 %
-.. image:: ./docs/fig/bs_EISF.png
-   :width: 25 %
-.. image:: ./docs/fig/bs_scatFunc.png
-   :width: 25 %
+.. image:: ../fig/msd.png
+   :width: 24 %
+.. image:: ../fig/bs_interFunc.png
+   :width: 24 %
+.. image:: ../fig/bs_EISF.png
+   :width: 24 %
+.. image:: ../fig/bs_scatFunc.png
+   :width: 24 %
 

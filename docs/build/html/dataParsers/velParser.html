@@ -1,0 +1,145 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>velParser module &#8212; NAMDAnalyzer 1.0 documentation</title>
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="velReader module" href="velReader.html" />
+    <link rel="prev" title="selParser module" href="selParser.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="velReader.html" title="velReader module"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="selParser.html" title="selParser module"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">NAMDAnalyzer 1.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../modules.html" >Dataset</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="index.html" accesskey="U">dataParsers</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-velParser">
+<span id="velparser-module"></span><h1>velParser module<a class="headerlink" href="#module-velParser" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="velParser.NAMDVEL">
+<em class="property">class </em><code class="sig-prename descclassname">velParser.</code><code class="sig-name descname">NAMDVEL</code><span class="sig-paren">(</span><em class="sig-param">parent</em>, <em class="sig-param">velFile=None</em><span class="sig-paren">)</span><a class="headerlink" href="#velParser.NAMDVEL" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class contains methods for velocity file analysis.</p>
+<dl class="method">
+<dt id="velParser.NAMDVEL.getKineticEnergyDistribution">
+<code class="sig-name descname">getKineticEnergyDistribution</code><span class="sig-paren">(</span><em class="sig-param">selection='all'</em>, <em class="sig-param">binSize=0.1</em><span class="sig-paren">)</span><a class="headerlink" href="#velParser.NAMDVEL.getKineticEnergyDistribution" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method can be used to compute the kinetic energy distribution without plotting it.
+This method requires a .psf to be loaded to have access to atom masses</p>
+<dl class="simple">
+<dt>Input:  selection   -&gt; atom selection from psf data</dt><dd><p>binSize     -&gt; the size of the bin</p>
+</dd>
+<dt>Output: numpy 2D array containing the bin mean value (first column)</dt><dd><p>and the corresponding density (second column)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="velParser.NAMDVEL.plotKineticEnergyDistribution">
+<code class="sig-name descname">plotKineticEnergyDistribution</code><span class="sig-paren">(</span><em class="sig-param">selection='all'</em>, <em class="sig-param">binSize=0.1</em>, <em class="sig-param">fit=False</em>, <em class="sig-param">model=None</em>, <em class="sig-param">p0=None</em><span class="sig-paren">)</span><a class="headerlink" href="#velParser.NAMDVEL.plotKineticEnergyDistribution" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method calls pylab’s hist method is used to plot the distribution.
+This method requires a .psf to be loaded to have access to atom masses</p>
+<dl class="simple">
+<dt>Input:  binSize -&gt; the size of the bin. Determine the width of each rectangle of the histogram </dt><dd><p>begin   -&gt; start index for data
+end     -&gt; end index for data
+fit     -&gt; if set to True, use the given model in scipy’s curve_fit method and plot it
+model   -&gt; model to be used for the fit 
+p0      -&gt; starting parameter for fitting</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="selParser.html"
+                        title="previous chapter">selParser module</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="velReader.html"
+                        title="next chapter">velReader module</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/dataParsers/velParser.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="velReader.html" title="velReader module"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="selParser.html" title="selParser module"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">NAMDAnalyzer 1.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../modules.html" >Dataset</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="index.html" >dataParsers</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2019, Kevin Pounot.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.2.0.
+    </div>
+  </body>
+</html>

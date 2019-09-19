@@ -1,0 +1,408 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>periodic_kdtree module &#8212; NAMDAnalyzer 1.0 documentation</title>
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="License" href="../license.html" />
+    <link rel="prev" title="getWithin_kdTree module" href="getWithin_kdTree.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../license.html" title="License"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="getWithin_kdTree.html" title="getWithin_kdTree module"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">NAMDAnalyzer 1.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../modules.html" >Dataset</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="index.html" accesskey="U">KDTree</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-periodic_kdtree">
+<span id="periodic-kdtree-module"></span><h1>periodic_kdtree module<a class="headerlink" href="#module-periodic_kdtree" title="Permalink to this headline">¶</a></h1>
+<p>This is the periodicCKDTree class was written by Patrick Varilly.</p>
+<p>Some minor modifications were done to make it work with Python 3</p>
+<p>See <a class="reference external" href="https://github.com/patvarilly/periodic_kdtree">https://github.com/patvarilly/periodic_kdtree</a></p>
+<div class="section" id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="periodic_kdtree.PeriodicCKDTree">
+<em class="property">class </em><code class="sig-prename descclassname">periodic_kdtree.</code><code class="sig-name descname">PeriodicCKDTree</code><span class="sig-paren">(</span><em class="sig-param">bounds</em>, <em class="sig-param">data</em>, <em class="sig-param">leafsize=10</em><span class="sig-paren">)</span><a class="headerlink" href="#periodic_kdtree.PeriodicCKDTree" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cython kd-tree for quick nearest-neighbor lookup with periodic boundaries</p>
+<p>See scipy.spatial.ckdtree for details on kd-trees.</p>
+<p>Searches with periodic boundaries are implemented by mapping all
+initial data points to one canonical periodic image, building an
+ordinary kd-tree with these points, then querying this kd-tree multiple
+times, if necessary, with all the relevant periodic images of the
+query point.</p>
+<p>Note that to ensure that no two distinct images of the same point
+appear in the results, it is essential to restrict the maximum
+distance between a query point and a data point to half the smallest
+box dimension.</p>
+<dl class="method">
+<dt id="periodic_kdtree.PeriodicCKDTree.count_neighbors">
+<code class="sig-name descname">count_neighbors</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">other</em>, <em class="sig-param">r</em>, <em class="sig-param">p=2.</em>, <em class="sig-param">weights=None</em>, <em class="sig-param">cumulative=True</em><span class="sig-paren">)</span><a class="headerlink" href="#periodic_kdtree.PeriodicCKDTree.count_neighbors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Count how many nearby pairs can be formed. (pair-counting)</p>
+<p>Count the number of pairs (x1,x2) can be formed, with x1 drawn
+from self and x2 drawn from <code class="docutils literal notranslate"><span class="pre">other</span></code>, and where
+<code class="docutils literal notranslate"><span class="pre">distance(x1,</span> <span class="pre">x2,</span> <span class="pre">p)</span> <span class="pre">&lt;=</span> <span class="pre">r</span></code>.</p>
+<p>Data points on self and other are optionally weighted by the <code class="docutils literal notranslate"><span class="pre">weights</span></code>
+argument. (See below)</p>
+<p>The algorithm we implement here is based on <a class="footnote-reference brackets" href="#id7" id="id1">1</a>. See notes for further discussion.</p>
+<dl class="simple">
+<dt>other<span class="classifier">cKDTree instance</span></dt><dd><p>The other tree to draw points from, can be the same tree as self.</p>
+</dd>
+<dt>r<span class="classifier">float or one-dimensional array of floats</span></dt><dd><p>The radius to produce a count for. Multiple radii are searched with
+a single tree traversal.
+If the count is non-cumulative(<code class="docutils literal notranslate"><span class="pre">cumulative=False</span></code>), <code class="docutils literal notranslate"><span class="pre">r</span></code> defines
+the edges of the bins, and must be non-decreasing.</p>
+</dd>
+<dt>p<span class="classifier">float, optional</span></dt><dd><p>1&lt;=p&lt;=infinity.
+Which Minkowski p-norm to use.
+Default 2.0.
+A finite large p may cause a ValueError if overflow can occur.</p>
+</dd>
+<dt>weights<span class="classifier">tuple, array_like, or None, optional</span></dt><dd><p>If None, the pair-counting is unweighted.
+If given as a tuple, weights[0] is the weights of points in <code class="docutils literal notranslate"><span class="pre">self</span></code>, and
+weights[1] is the weights of points in <code class="docutils literal notranslate"><span class="pre">other</span></code>; either can be None to
+indicate the points are unweighted.
+If given as an array_like, weights is the weights of points in <code class="docutils literal notranslate"><span class="pre">self</span></code>
+and <code class="docutils literal notranslate"><span class="pre">other</span></code>. For this to make sense, <code class="docutils literal notranslate"><span class="pre">self</span></code> and <code class="docutils literal notranslate"><span class="pre">other</span></code> must be the
+same tree. If <code class="docutils literal notranslate"><span class="pre">self</span></code> and <code class="docutils literal notranslate"><span class="pre">other</span></code> are two different trees, a <code class="docutils literal notranslate"><span class="pre">ValueError</span></code>
+is raised.
+Default: None</p>
+</dd>
+<dt>cumulative<span class="classifier">bool, optional</span></dt><dd><p>Whether the returned counts are cumulative. When cumulative is set to <code class="docutils literal notranslate"><span class="pre">False</span></code>
+the algorithm is optimized to work with a large number of bins (&gt;10) specified
+by <code class="docutils literal notranslate"><span class="pre">r</span></code>. When <code class="docutils literal notranslate"><span class="pre">cumulative</span></code> is set to True, the algorithm is optimized to work
+with a small number of <code class="docutils literal notranslate"><span class="pre">r</span></code>. Default: True</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>result<span class="classifier">scalar or 1-D array</span></dt><dd><p>The number of pairs. For unweighted counts, the result is integer.
+For weighted counts, the result is float.
+If cumulative is False, <code class="docutils literal notranslate"><span class="pre">result[i]</span></code> contains the counts with
+<code class="docutils literal notranslate"><span class="pre">(-inf</span> <span class="pre">if</span> <span class="pre">i</span> <span class="pre">==</span> <span class="pre">0</span> <span class="pre">else</span> <span class="pre">r[i-1])</span> <span class="pre">&lt;</span> <span class="pre">R</span> <span class="pre">&lt;=</span> <span class="pre">r[i]</span></code></p>
+</dd>
+</dl>
+<p>Pair-counting is the basic operation used to calculate the two point
+correlation functions from a data set composed of position of objects.</p>
+<p>Two point correlation function measures the clustering of objects and
+is widely used in cosmology to quantify the large scale structure
+in our Universe, but it may be useful for data analysis in other fields
+where self-similar assembly of objects also occur.</p>
+<p>The Landy-Szalay estimator for the two point correlation function of
+<code class="docutils literal notranslate"><span class="pre">D</span></code> measures the clustering signal in <code class="docutils literal notranslate"><span class="pre">D</span></code>. <a class="footnote-reference brackets" href="#id8" id="id2">2</a></p>
+<p>For example, given the position of two sets of objects,</p>
+<ul class="simple">
+<li><p>objects <code class="docutils literal notranslate"><span class="pre">D</span></code> (data) contains the clustering signal, and</p></li>
+<li><p>objects <code class="docutils literal notranslate"><span class="pre">R</span></code> (random) that contains no signal,</p></li>
+</ul>
+<div class="math notranslate nohighlight">
+\[\xi(r) = \frac{&lt;D, D&gt; - 2 f &lt;D, R&gt; + f^2&lt;R, R&gt;}{f^2&lt;R, R&gt;},\]</div>
+<p>where the brackets represents counting pairs between two data sets
+in a finite bin around <code class="docutils literal notranslate"><span class="pre">r</span></code> (distance), corresponding to setting
+<cite>cumulative=False</cite>, and <code class="docutils literal notranslate"><span class="pre">f</span> <span class="pre">=</span> <span class="pre">float(len(D))</span> <span class="pre">/</span> <span class="pre">float(len(R))</span></code> is the
+ratio between number of objects from data and random.</p>
+<p>The algorithm implemented here is loosely based on the dual-tree
+algorithm described in <a class="footnote-reference brackets" href="#id7" id="id3">1</a>. We switch between two different
+pair-cumulation scheme depending on the setting of <code class="docutils literal notranslate"><span class="pre">cumulative</span></code>.
+The computing time of the method we use when for
+<code class="docutils literal notranslate"><span class="pre">cumulative</span> <span class="pre">==</span> <span class="pre">False</span></code> does not scale with the total number of bins.
+The algorithm for <code class="docutils literal notranslate"><span class="pre">cumulative</span> <span class="pre">==</span> <span class="pre">True</span></code> scales linearly with the
+number of bins, though it is slightly faster when only
+1 or 2 bins are used. <a class="footnote-reference brackets" href="#id11" id="id4">5</a>.</p>
+<p>As an extension to the naive pair-counting,
+weighted pair-counting counts the product of weights instead
+of number of pairs.
+Weighted pair-counting is used to estimate marked correlation functions
+(<a class="footnote-reference brackets" href="#id9" id="id5">3</a>, section 2.2),
+or to properly calculate the average of data per distance bin
+(e.g. <a class="footnote-reference brackets" href="#id10" id="id6">4</a>, section 2.1 on redshift).</p>
+<dl class="footnote brackets">
+<dt class="label" id="id7"><span class="brackets">1</span><span class="fn-backref">(<a href="#id1">1</a>,<a href="#id3">2</a>)</span></dt>
+<dd><p>Gray and Moore,
+“N-body problems in statistical learning”,
+Mining the sky, 2000,
+<a class="reference external" href="https://arxiv.org/abs/astro-ph/0012333">https://arxiv.org/abs/astro-ph/0012333</a></p>
+</dd>
+<dt class="label" id="id8"><span class="brackets"><a class="fn-backref" href="#id2">2</a></span></dt>
+<dd><p>Landy and Szalay,
+“Bias and variance of angular correlation functions”,
+The Astrophysical Journal, 1993,
+<a class="reference external" href="http://adsabs.harvard.edu/abs/1993ApJ...412...64L">http://adsabs.harvard.edu/abs/1993ApJ…412…64L</a></p>
+</dd>
+<dt class="label" id="id9"><span class="brackets"><a class="fn-backref" href="#id5">3</a></span></dt>
+<dd><p>Sheth, Connolly and Skibba,
+“Marked correlations in galaxy formation models”,
+Arxiv e-print, 2005,
+<a class="reference external" href="https://arxiv.org/abs/astro-ph/0511773">https://arxiv.org/abs/astro-ph/0511773</a></p>
+</dd>
+<dt class="label" id="id10"><span class="brackets"><a class="fn-backref" href="#id6">4</a></span></dt>
+<dd><p>Hawkins, et al.,
+“The 2dF Galaxy Redshift Survey: correlation functions,
+peculiar velocities and the matter density of the Universe”,
+Monthly Notices of the Royal Astronomical Society, 2002,
+<a class="reference external" href="http://adsabs.harvard.edu/abs/2003MNRAS.346...78H">http://adsabs.harvard.edu/abs/2003MNRAS.346…78H</a></p>
+</dd>
+<dt class="label" id="id11"><span class="brackets"><a class="fn-backref" href="#id4">5</a></span></dt>
+<dd><p><a class="reference external" href="https://github.com/scipy/scipy/pull/5647#issuecomment-168474926">https://github.com/scipy/scipy/pull/5647#issuecomment-168474926</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="periodic_kdtree.PeriodicCKDTree.query">
+<code class="sig-name descname">query</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">k=1</em>, <em class="sig-param">eps=0</em>, <em class="sig-param">p=2</em>, <em class="sig-param">distance_upper_bound=inf</em><span class="sig-paren">)</span><a class="headerlink" href="#periodic_kdtree.PeriodicCKDTree.query" title="Permalink to this definition">¶</a></dt>
+<dd><p>Query the kd-tree for nearest neighbors</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> – array_like, last dimension self.m
+An array of points to query.</p></li>
+<li><p><strong>k</strong> – integer
+The number of nearest neighbors to return.</p></li>
+<li><p><strong>eps</strong> – non-negative float
+Return approximate nearest neighbors; the kth returned value 
+is guaranteed to be no further than (1+eps) times the 
+distance to the real k-th nearest neighbor.</p></li>
+<li><p><strong>p</strong> – float, 1&lt;=p&lt;=infinity
+Which Minkowski p-norm to use. 
+1 is the sum-of-absolute-values “Manhattan” distance
+2 is the usual Euclidean distance
+infinity is the maximum-coordinate-difference distance</p></li>
+<li><p><strong>distance_upper_bound</strong> – nonnegative float
+Return only neighbors within this distance.  This is used to prune
+tree searches, so if you are doing a series of nearest-neighbor
+queries, it may help to supply the distance to the nearest neighbor
+of the most recent point.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns d</dt>
+<dd class="field-even"><p>array of floats
+The distances to the nearest neighbors. 
+If x has shape tuple+(self.m,), then d has shape tuple+(k,).
+Missing neighbors are indicated with infinite distances.</p>
+</dd>
+<dt class="field-odd">Returns i</dt>
+<dd class="field-odd"><p>ndarray of ints
+The locations of the neighbors in self.data.
+If <cite>x</cite> has shape tuple+(self.m,), then <cite>i</cite> has shape tuple+(k,).
+Missing neighbors are indicated with self.n.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="periodic_kdtree.PeriodicCKDTree.query_ball_point">
+<code class="sig-name descname">query_ball_point</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">r</em>, <em class="sig-param">p=2.0</em>, <em class="sig-param">eps=0</em><span class="sig-paren">)</span><a class="headerlink" href="#periodic_kdtree.PeriodicCKDTree.query_ball_point" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find all points within distance r of point(s) x.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> – array_like, shape tuple + (self.m,)
+The point or points to search for neighbors of.</p></li>
+<li><p><strong>r</strong> – positive float
+The radius of points to return.</p></li>
+<li><p><strong>p</strong> – float, optional
+Which Minkowski p-norm to use.  Should be in the range [1, inf].</p></li>
+<li><p><strong>eps</strong> – nonnegative float, optional
+Approximate search. Branches of the tree are not explored if their
+nearest points are further than <code class="docutils literal notranslate"><span class="pre">r</span> <span class="pre">/</span> <span class="pre">(1</span> <span class="pre">+</span> <span class="pre">eps)</span></code>, and branches are
+added in bulk if their furthest points are nearer than
+<code class="docutils literal notranslate"><span class="pre">r</span> <span class="pre">*</span> <span class="pre">(1</span> <span class="pre">+</span> <span class="pre">eps)</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>list or array of lists
+If <cite>x</cite> is a single point, returns a list of the indices of the
+neighbors of <cite>x</cite>. If <cite>x</cite> is an array of points, returns an object
+array of shape tuple containing lists of neighbors.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Notes</dt><dd><p>If you have many points whose neighbors you want to find, you may
+save substantial amounts of time by putting them in a
+PeriodicCKDTree and using query_ball_tree.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="periodic_kdtree.PeriodicCKDTree.query_ball_tree">
+<code class="sig-name descname">query_ball_tree</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">other</em>, <em class="sig-param">r</em>, <em class="sig-param">p=2.</em>, <em class="sig-param">eps=0</em><span class="sig-paren">)</span><a class="headerlink" href="#periodic_kdtree.PeriodicCKDTree.query_ball_tree" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find all pairs of points whose distance is at most r</p>
+<dl class="simple">
+<dt>other<span class="classifier">cKDTree instance</span></dt><dd><p>The tree containing points to search against.</p>
+</dd>
+<dt>r<span class="classifier">float</span></dt><dd><p>The maximum distance, has to be positive.</p>
+</dd>
+<dt>p<span class="classifier">float, optional</span></dt><dd><p>Which Minkowski norm to use.  <cite>p</cite> has to meet the condition
+<code class="docutils literal notranslate"><span class="pre">1</span> <span class="pre">&lt;=</span> <span class="pre">p</span> <span class="pre">&lt;=</span> <span class="pre">infinity</span></code>.
+A finite large p may cause a ValueError if overflow can occur.</p>
+</dd>
+<dt>eps<span class="classifier">float, optional</span></dt><dd><p>Approximate search.  Branches of the tree are not explored
+if their nearest points are further than <code class="docutils literal notranslate"><span class="pre">r/(1+eps)</span></code>, and
+branches are added in bulk if their furthest points are nearer
+than <code class="docutils literal notranslate"><span class="pre">r</span> <span class="pre">*</span> <span class="pre">(1+eps)</span></code>.  <cite>eps</cite> has to be non-negative.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>results<span class="classifier">list of lists</span></dt><dd><p>For each element <code class="docutils literal notranslate"><span class="pre">self.data[i]</span></code> of this tree, <code class="docutils literal notranslate"><span class="pre">results[i]</span></code> is a
+list of the indices of its neighbors in <code class="docutils literal notranslate"><span class="pre">other.data</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="periodic_kdtree.PeriodicCKDTree.query_pairs">
+<code class="sig-name descname">query_pairs</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">r</em>, <em class="sig-param">p=2.</em>, <em class="sig-param">eps=0</em><span class="sig-paren">)</span><a class="headerlink" href="#periodic_kdtree.PeriodicCKDTree.query_pairs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find all pairs of points whose distance is at most r.</p>
+<dl class="simple">
+<dt>r<span class="classifier">positive float</span></dt><dd><p>The maximum distance.</p>
+</dd>
+<dt>p<span class="classifier">float, optional</span></dt><dd><p>Which Minkowski norm to use.  <code class="docutils literal notranslate"><span class="pre">p</span></code> has to meet the condition
+<code class="docutils literal notranslate"><span class="pre">1</span> <span class="pre">&lt;=</span> <span class="pre">p</span> <span class="pre">&lt;=</span> <span class="pre">infinity</span></code>.
+A finite large p may cause a ValueError if overflow can occur.</p>
+</dd>
+<dt>eps<span class="classifier">float, optional</span></dt><dd><p>Approximate search.  Branches of the tree are not explored
+if their nearest points are further than <code class="docutils literal notranslate"><span class="pre">r/(1+eps)</span></code>, and
+branches are added in bulk if their furthest points are nearer
+than <code class="docutils literal notranslate"><span class="pre">r</span> <span class="pre">*</span> <span class="pre">(1+eps)</span></code>.  <cite>eps</cite> has to be non-negative.</p>
+</dd>
+<dt>output_type<span class="classifier">string, optional</span></dt><dd><p>Choose the output container, ‘set’ or ‘ndarray’. Default: ‘set’</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>results<span class="classifier">set or ndarray</span></dt><dd><p>Set of pairs <code class="docutils literal notranslate"><span class="pre">(i,j)</span></code>, with <code class="docutils literal notranslate"><span class="pre">i</span> <span class="pre">&lt;</span> <span class="pre">j</span></code>, for which the corresponding
+positions are close. If output_type is ‘ndarray’, an ndarry is
+returned instead of a set.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="periodic_kdtree.PeriodicCKDTree.sparse_distance_matrix">
+<code class="sig-name descname">sparse_distance_matrix</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">other</em>, <em class="sig-param">max_distance</em>, <em class="sig-param">p=2.</em><span class="sig-paren">)</span><a class="headerlink" href="#periodic_kdtree.PeriodicCKDTree.sparse_distance_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute a sparse distance matrix</p>
+<p>Computes a distance matrix between two cKDTrees, leaving as zero
+any distance greater than max_distance.</p>
+<p>other : cKDTree</p>
+<p>max_distance : positive float</p>
+<dl class="simple">
+<dt>p<span class="classifier">float, 1&lt;=p&lt;=infinity</span></dt><dd><p>Which Minkowski p-norm to use.
+A finite large p may cause a ValueError if overflow can occur.</p>
+</dd>
+<dt>output_type<span class="classifier">string, optional</span></dt><dd><p>Which container to use for output data. Options: ‘dok_matrix’,
+‘coo_matrix’, ‘dict’, or ‘ndarray’. Default: ‘dok_matrix’.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>result<span class="classifier">dok_matrix, coo_matrix, dict or ndarray</span></dt><dd><p>Sparse matrix representing the results in “dictionary of keys”
+format. If a dict is returned the keys are (i,j) tuples of indices.
+If output_type is ‘ndarray’ a record array with fields ‘i’, ‘j’,
+and ‘k’ is returned,</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">periodic_kdtree module</a><ul>
+<li><a class="reference internal" href="#classes">Classes</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="getWithin_kdTree.html"
+                        title="previous chapter">getWithin_kdTree module</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../license.html"
+                        title="next chapter">License</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/kdTree/periodic_kdtree.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../license.html" title="License"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="getWithin_kdTree.html" title="getWithin_kdTree module"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">NAMDAnalyzer 1.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../modules.html" >Dataset</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="index.html" >KDTree</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2019, Kevin Pounot.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.2.0.
+    </div>
+  </body>
+</html>

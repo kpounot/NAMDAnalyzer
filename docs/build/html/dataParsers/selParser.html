@@ -1,0 +1,133 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>selParser module &#8212; NAMDAnalyzer 1.0 documentation</title>
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="velParser module" href="velParser.html" />
+    <link rel="prev" title="psfReader module" href="psfReader.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="velParser.html" title="velParser module"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="psfReader.html" title="psfReader module"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">NAMDAnalyzer 1.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../modules.html" >Dataset</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="index.html" accesskey="U">dataParsers</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-selParser">
+<span id="selparser-module"></span><h1>selParser module<a class="headerlink" href="#module-selParser" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="selParser.SelParser">
+<em class="property">class </em><code class="sig-prename descclassname">selParser.</code><code class="sig-name descname">SelParser</code><span class="sig-paren">(</span><em class="sig-param">dataContext</em>, <em class="sig-param">selT=None</em>, <em class="sig-param">frame=-1</em><span class="sig-paren">)</span><a class="headerlink" href="#selParser.SelParser" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class is used to parse a simple selection text, calls the appropriate functions from 
+<a class="reference internal" href="psfParser.html#psfParser.NAMDPSF" title="psfParser.NAMDPSF"><code class="xref py py-class docutils literal notranslate"><span class="pre">NAMDPSF</span></code></a> and <a class="reference internal" href="dcdParser.html#dcdParser.NAMDDCD" title="dcdParser.NAMDDCD"><code class="xref py py-class docutils literal notranslate"><span class="pre">NAMDDCD</span></code></a>.</p>
+<p>A dataContext is provided to the class, that is simply the <a class="reference internal" href="../modules.html#Dataset.Dataset" title="Dataset.Dataset"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dataset</span></code></a> class, in which psf
+and dcd files are loaded.</p>
+<p>Atom indices are stored for each frame in <em>selection</em> attribute.</p>
+<p>Examples:</p>
+<p>To select hydrogens bound to water oxygens within 3 angstroms of a protein region 
+for a given frame range, use from class <a class="reference internal" href="../modules.html#Dataset.Dataset" title="Dataset.Dataset"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dataset</span></code></a> instance d:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">d</span><span class="o">.</span><span class="n">selection</span><span class="p">(</span><span class="s1">&#39;name H1 H2 and bound to name OH2 and within 3 of protein and resid 40:80 frame 0:100:2&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="selParser.SelParser.process">
+<code class="sig-name descname">process</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selParser.SelParser.process" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse the selection string ‘selText’ by identifying keywords.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="psfReader.html"
+                        title="previous chapter">psfReader module</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="velParser.html"
+                        title="next chapter">velParser module</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/dataParsers/selParser.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="velParser.html" title="velParser module"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="psfReader.html" title="psfReader module"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">NAMDAnalyzer 1.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../modules.html" >Dataset</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="index.html" >dataParsers</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2019, Kevin Pounot.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.2.0.
+    </div>
+  </body>
+</html>
