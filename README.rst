@@ -12,15 +12,15 @@ Unix and Windows
 
 To install it within your python distribution, use 
 
-..code-block:: 
+::
 
     make [build] (for openMP version) or [build_cuda] (for CUDA accelerated version - recommended) 
     make install
 
 or
-    
-..code-block:: 
 
+::
+    
     python setup.py [build, build_cuda]
     python setup.py install
 
@@ -30,14 +30,15 @@ Start the interpreter:
 
 Initialization of the ipython console can be done using the following command:
 
-.. code-block:: 
+:: 
 
     ipython -i <path to NAMDAnalyzer.py> -- <list of files to be loaded> [-s stride]
 
 Options: 
 
-   - -s stride -> use to skip frames when loading a .dcd file. For instance if "-s 5" is provided, 
-   only the frames that are multiples of 5 will be loaded.
+- -s stride -> use to skip frames when loading a .dcd file. For instance if "-s 5" is provided, 
+               only the frames that are multiples of 5 will be loaded.
+
 
 Usage:
 ------
