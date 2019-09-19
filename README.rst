@@ -72,10 +72,10 @@ Outputs of previous code:
 +++++++++++++++++++++++++
 
 .. image:: ./docs/fig/log_dataSeries.png
-   :width: 200 px
+   :width: 25 %
 
 .. image:: ./docs/fig/log_dataDist.png
-   :width: 200 px
+   :width: 25%
 
 
 Load trajectories, selection, and analysis
@@ -125,9 +125,13 @@ Outputs of previous code:
 +++++++++++++++++++++++++
 
 .. image:: ./docs/fig/ubq_rmsdPerAtom.png
+   :width: 25 %
 .. image:: ./docs/fig/radialDistWater.png
+   :width: 25 %
 .. image:: ./docs/fig/averagedDistances_parallel.png
+   :width: 25 %
 .. image:: ./docs/fig/averagedDistances_chord.png
+   :width: 25 %
 
 
 
@@ -158,7 +162,9 @@ Outputs of previous code:
 +++++++++++++++++++++++++
 
 .. image:: ./docs/fig/rotRelaxation.png
+   :width: 25 %
 .. image:: ./docs/fig/rotOrientationProb.png
+   :width: 25 %
 
 
 
@@ -196,7 +202,9 @@ Outputs of previous code:
 +++++++++++++++++++++++++
 
 .. image:: ./docs/fig/hbContinuous.png
+   :width: 25 %
 .. image:: ./docs/fig/hbIntermittent.png
+   :width: 25 %
 
 
 
@@ -251,7 +259,11 @@ Outputs of previous code:
 +++++++++++++++++++++++++
 
 .. image:: ./docs/fig/msd.png
+   :width: 25 %
 .. image:: ./docs/fig/bs_interFunc.png
+   :width: 25 %
 .. image:: ./docs/fig/bs_EISF.png
+   :width: 25 %
 .. image:: ./docs/fig/bs_scatFunc.png
+   :width: 25 %
 
