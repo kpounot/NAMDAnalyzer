@@ -9,7 +9,7 @@ from matplotlib import cm, colors, colorbar
 from mpl_toolkits.mplot3d.axes3d import Axes3D
 from scipy.spatial.transform import Rotation as R
 
-from ..lib.pylibFuncs import (  py_getWithin, 
+from NAMDAnalyzer.lib.pylibFuncs import (  py_getWithin, 
                                 py_getCenterOfMass,
                                 py_setCenterOfMassAligned,
                                 py_getDistances,
@@ -17,20 +17,23 @@ from ..lib.pylibFuncs import (  py_getWithin,
                                 py_getParallelBackend )
 
 
-from ..dataManipulation import molFit_quaternions as molFit_q
-from .dcdReader import DCDReader
-from .psfParser import NAMDPSF
+from NAMDAnalyzer.dataManipulation import molFit_quaternions as molFit_q
+from NAMDAnalyzer.dataParsers.dcdReader import DCDReader
+from NAMDAnalyzer.dataParsers.psfParser import NAMDPSF
 
-from ..helpersFunctions.distanceChordDiagram import ChordDiag
+from NAMDAnalyzer.helpersFunctions.DistanceChordDiagram import ChordDiag
 
-from ..kdTree.getWithin_kdTree import getWithin_kdTree
+from NAMDAnalyzer.kdTree.getWithin_kdTree import getWithin_kdTree
 
 
 
 class NAMDDCD(DCDReader, NAMDPSF):
-    """ This class contains methods for trajectory file analysis. 
-        It's te second class to be called, after NAMDPSF.
-        Here a dcd file is optional and can be added after initialization"""
+    """This class contains methods for trajectory file analysis. 
+
+    It's the second class to be called, after NAMDPSF.
+    Here a dcd file is optional and can be added after initialization
+
+    """
     
     def __init__(self, psfFile, dcdFile=None, stride=1):
     
@@ -48,9 +51,11 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
 
     def appendCoordinates(self, coor):
-        """ Can be used to append a frame with coordinates from a pdb file.
+        """Can be used to append a frame with coordinates from a pdb file.
 
-            coor -> 2D array containing 3D coordinates for each atom. """
+        :arg coor: 2D array containing 3D coordinates for each atom. 
+
+        """
 
         try:
             np.append( self.dcdData, coor[:,np.newaxis,:].astype('float32'), axis=1 )
@@ -75,14 +80,16 @@ class NAMDDCD(DCDReader, NAMDPSF):
 #_Distances and within selections
 #---------------------------------------------
     def getDistances(self, sel1, sel2=None, frame=-1):
-        """ Computes pair-wise distances between sel1 and sel2.
+        """Computes pair-wise distances between sel1 and sel2.
     
-            Input:  sel1    -> first selection of atoms used for distance calculation with sel2 (default -> all)
-                    sel2    -> second selection for distance calculation with sel1 (default -> all)
-                    frame   -> frame to be used for computation
+        :arg sel1: first selection of atoms used for distance calculation with sel2 (default -> all)
+        :arg sel2: second selection for distance calculation with sel1 (default -> all)
+        :arg frame: frame to be used for computation
 
-            Returns a matrix containing pairwise distances if memory allows it with sel1 being 
-            arranged row-wise and sel2 column-wise. """
+        :returns: a matrix containing pairwise distances if memory allows it with sel1 being 
+                  arranged row-wise and sel2 column-wise. 
+
+        """
 
 
         sameSel = 0
@@ -130,14 +137,16 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
 
     def getAveragedDistances(self, sel1, sel2=None, frames=None):
-        """ Computes distances between sel1 and sel2, averaged over all selected frames.
-    
-            Input:  sel1    -> first selection of atoms used for distance calculation with sel2 (default -> all)
-                    sel2    -> second selection for distance calculation with sel1 (default -> all)
-                    frame   -> frame to be used for computation
+        """Computes distances between sel1 and sel2, averaged over all selected frames.
 
-            Returns a matrix containing pairwise distances if memory allows it with sel1 being 
-            arranged row-wise and sel2 column-wise. """
+        Input:  sel1    -> first selection of atoms used for distance calculation with sel2 (default -> all)
+                sel2    -> second selection for distance calculation with sel1 (default -> all)
+                frame   -> frame to be used for computation
+
+        Returns a matrix containing pairwise distances if memory allows it with sel1 being 
+        arranged row-wise and sel2 column-wise. 
+
+        """
 
         
         if frames is None:
@@ -159,15 +168,17 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
 
     def getWithin(self, distance, usrSel, frame=-1):
-        """ Selects all atoms that within the given distance of the given selection and frame.
-    
-            Input:  distance    -> distance in angstrom, within which to select atoms
-                    usrSel      -> initial selection from which distance should be computed
-                    frame       -> frame to be used for atom selection
+        """Selects all atoms that within the given distance of the given selection and frame.
 
-            Returns an array of boolean, set to 1 for each selected atom in simulation in each 
-            selected frame. If the second dimension of the array is one, the output is flattened, and
-            atom indices are returned directly. """
+        Input:  distance    -> distance in angstrom, within which to select atoms
+                usrSel      -> initial selection from which distance should be computed
+                frame       -> frame to be used for atom selection
+
+        Returns an array of boolean, set to 1 for each selected atom in simulation in each 
+        selected frame. If the second dimension of the array is one, the output is flattened, and
+        atom indices are returned directly. 
+
+        """
 
 
         #_Get the indices corresponding to the selection
@@ -210,18 +221,20 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
 
     def getWithinCOM(self, distance, COM, outSel=None, frame=-1, getSameResid=False):
-        """ Selects all atoms that within the given distance of the given selection and frame.
-    
-            Input:  distance    -> distance in angstrom, within which to select atoms
-                    COM         -> Center of mass for the desired frame
-                    outSel      -> specific selection for output. If not None, after all atoms within the
-                                   given distance have been selected, the selected can be restricted
-                                   further using a keyword or a list of indices. Only atoms that are
-                                   present in the 'within' list and in the 'outSel' list are returned.
-                    frame       -> frame number to be used for atom selection
-                    getSameResid-> if True, select all atoms in the same residue before returning the list 
+        """Selects all atoms that within the given distance of the given selection and frame.
 
-            Returns the list of selected atom indices. """
+        Input:  distance    -> distance in angstrom, within which to select atoms
+                COM         -> Center of mass for the desired frame
+                outSel      -> specific selection for output. If not None, after all atoms within the
+                               given distance have been selected, the selected can be restricted
+                               further using a keyword or a list of indices. Only atoms that are
+                               present in the 'within' list and in the 'outSel' list are returned.
+                frame       -> frame number to be used for atom selection
+                getSameResid-> if True, select all atoms in the same residue before returning the list 
+
+        Returns the list of selected atom indices. 
+
+        """
 
 
         #_Get the indices corresponding to the selection
@@ -264,8 +277,10 @@ class NAMDDCD(DCDReader, NAMDPSF):
 #_Data modifiers
 #---------------------------------------------
     def binDCD(self, binSize):
-        """ Binning method for dcd data. The binning is performed along the axis 1 of the dataset,
-            which corresponds to frames dimension. """
+        """Binning method for dcd data. The binning is performed along the axis 1 of the dataset,
+        which corresponds to frames dimension. 
+
+        """
 
         if binSize==1:
             return
@@ -288,10 +303,10 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
 
     def setCenterOfMassAligned(self, selection='all', frames=slice(0,None)):
-        """ Modifies the dcd data by aligning center of mass of all atoms between given frames. 
+        """Modifies the dcd data by aligning center of mass of all atoms between given frames. 
 
-            Input:  selection   -> either string or array of indices for selected atoms
-                    frames      -> either None to select all frames, an int, or a slice object
+        Input:  selection   -> either string or array of indices for selected atoms
+                frames      -> either None to select all frames, an int, or a slice object
         
         """
 
@@ -328,14 +343,16 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
 
     def setAlignedData(self, selection, outSel='all', frames=slice(0, None)):
-        """ This method will fit all atoms between firstAtom and lastAtom for each frame between
-            begin and end, using the first frame for the others to be fitted on. 
-            
-            Input:  selection   -> either string or array of indices, will be used for fitting
-                    outSel      -> either string or array of indices, will be used to apply rotation
-                    frames      -> either None to select all frames, an int, or a slice object
+        """This method will fit all atoms between firstAtom and lastAtom for each frame between
+        begin and end, using the first frame for the others to be fitted on. 
+        
+        Input:  selection   -> either string or array of indices, will be used for fitting
+                outSel      -> either string or array of indices, will be used to apply rotation
+                frames      -> either None to select all frames, an int, or a slice object
 
-            Returns a similar array as the initial dataSet but with aligned coordinates."""
+        Returns a similar array as the initial dataSet but with aligned coordinates.
+
+        """
 
         if type(selection) == str:
             selection = self.selection(selection)
@@ -349,9 +366,9 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
         self.setAlignedCenterOfMass(selection, frames)
 
-        q = molFit_q.alignAllMol(self.dcdData[selection, frames])
+        qM = molFit_q.alignAllMol(self.dcdData[selection, frames])
         
-        self.dcdData[outSel, frames] = molFit_q.applyRotation(self.dcdData[outSel, frames], q)
+        self.dcdData[outSel, frames] = molFit_q.applyRotation(self.dcdData[outSel, frames], qM)
 
         print("Done\n")
 
@@ -359,7 +376,9 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
     def setPBC(self, selection='all', frames=slice(0,None)):
         """ This method applies periodic boundary conditions on all selected atom
-            coordinates for each frame selected. """
+        coordinates for each frame selected. 
+
+        """
 
         if isinstance(selection, str):
             selection = self.selection(selection)
@@ -381,9 +400,11 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
 
     def rotate(self, rotVec, selection, frames=slice(0, None)):
-        """ This method allows to rotate the given selection using the angle/axis representation
-            given by rotVec, whose coordinates represent the axis of rotation and norm gives
-            the rotation magnitude in radians. """
+        """This method allows to rotate the given selection using the angle/axis representation
+        given by rotVec, whose coordinates represent the axis of rotation and norm gives
+        the rotation magnitude in radians. 
+
+        """
 
         #_Get the indices corresponding to the selection
         if type(selection) == str:
@@ -412,14 +433,16 @@ class NAMDDCD(DCDReader, NAMDPSF):
 #_Data analysis methods
 #---------------------------------------------
     def getSTDperAtom(self, selection="all", align=False, frames=slice(0, None), mergeXYZ=True):
-        """ Computes the standard deviation for each atom in selection and for frames between
-            begin and end. 
-            Returns the standard deviation averaged over time.
+        """Computes the standard deviation for each atom in selection and for frames between
+        begin and end. 
+        Returns the standard deviation averaged over time.
 
-            Input: selection -> selected atom, can be a single string or a member of parent's selList
-                   align     -> if True, will try to align all atoms to the ones on the first frame
-                   end       -> last frame to be used + 1
-                   mergeXYZ  -> if True, uses the vector from the origin instead of each projections """
+        Input: selection -> selected atom, can be a single string or a member of parent's selList
+               align     -> if True, will try to align all atoms to the ones on the first frame
+               end       -> last frame to be used + 1
+               mergeXYZ  -> if True, uses the vector from the origin instead of each projections 
+
+        """
 
         #_Get the indices corresponding to the selection
         if type(selection) == str:
@@ -443,13 +466,15 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
 
     def getRMSDperAtom(self, selection="all", align=False, frames=slice(0, None), mergeXYZ=True):
-        """ Computes the RMSD for each atom in selection and for frames between begin and end.
-            Returns the RMSD averaged over time.
+        """Computes the RMSD for each atom in selection and for frames between begin and end.
+        Returns the RMSD averaged over time.
 
-            Input: selection -> selected atom, can be a single string or a member of parent's selList
-                   align     -> if True, will try to align all atoms to the ones on the first frame
-                   frames      -> either None to select all frames, an int, or a slice object
-                   mergeXYZ  -> if True, uses the vector from the origin instead of each projections """
+        Input: selection -> selected atom, can be a single string or a member of parent's selList
+               align     -> if True, will try to align all atoms to the ones on the first frame
+               frames      -> either None to select all frames, an int, or a slice object
+               mergeXYZ  -> if True, uses the vector from the origin instead of each projections 
+
+        """
 
         #_Get the indices corresponding to the selection
         if type(selection) == str:
@@ -473,13 +498,16 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
 
     def getRMSDperFrame(self, selection="all", align=False, frames=slice(0, None), mergeXYZ=True):
-        """ Computes the RMSD for each atom in selection and for frames between begin and end.
-            Returns the RMSD averaged over all selected atoms.
+        """Computes the RMSD for each atom in selection and for frames between begin and end.
 
-            Input: selection -> selected atom, can be a single string or a member of parent's selList
-                   align     -> if True, will try to align all atoms to the ones on the first frame
-                   frames      -> either None to select all frames, an int, or a slice object
-                   mergeXYZ  -> if True, uses the vector from the origin instead of each projections """
+        Input: selection -> selected atom, can be a single string or a member of parent's selList
+               align     -> if True, will try to align all atoms to the ones on the first frame
+               frames      -> either None to select all frames, an int, or a slice object
+               mergeXYZ  -> if True, uses the vector from the origin instead of each projections 
+
+        Returns the RMSD averaged over all selected atoms.
+
+        """
 
         #_Get the indices corresponding to the selection
         if type(selection) == str:
@@ -505,10 +533,12 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
 
     def getCenterOfMass(self, selection, frames=slice(0,None)):
-        """ Computes the center of mass for selected atoms and frames. 
-        
-            Input:  selection   -> either string or array of indices for selected atoms
-                    frames      -> either None to select all frames, an int, or a slice object """
+        """Computes the center of mass for selected atoms and frames. 
+    
+        Input:  selection   -> either string or array of indices for selected atoms
+                frames      -> either None to select all frames, an int, or a slice object 
+
+        """
 
         if type(selection) == str:
             selection = self.selection(selection)
@@ -535,13 +565,15 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
 
     def getAlignedData(self, selection, frames=slice(0, None)):
-        """ This method will fit all atoms between firstAtom and lastAtom for each frame between
-            begin and end, using the first frame for the others to be fitted on. 
-            
-            Input:  selection   -> either string or array of indices for selected atoms
-                    frames      -> either None to select all frames, an int, or a slice object
+        """This method will fit all atoms between firstAtom and lastAtom for each frame between
+        begin and end, using the first frame for the others to be fitted on. 
+        
+        Input:  selection   -> either string or array of indices for selected atoms
+                frames      -> either None to select all frames, an int, or a slice object
 
-            Returns a similar array as the initial dataSet but with aligned coordinates."""
+        Returns a similar array as the initial dataSet but with aligned coordinates.
+
+        """
 
         if type(selection) == str:
             selection = self.selection(selection)
@@ -558,12 +590,14 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
 
     def getAlignedCenterOfMass(self, selection='all', frames=slice(0,None)):
-        """ This method aligns the center of mass of each frame to the origin.
-            It does not perform any fitting for rotations, so that it can be used for center of mass
-            drift corrections if no global angular momentum is present. 
+        """This method aligns the center of mass of each frame to the origin.
+        It does not perform any fitting for rotations, so that it can be used for center of mass
+        drift corrections if no global angular momentum is present. 
 
-            Input:  selection   -> either string or array of indices for selected atoms
-                    frames      -> either None to select all frames, an int, or a slice object """
+        Input:  selection   -> either string or array of indices for selected atoms
+                frames      -> either None to select all frames, an int, or a slice object 
+
+        """
 
 
         #_Get the indices corresponding to the selection
@@ -584,8 +618,10 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
 
     def getPBC(self, selection='all', frames=slice(0,None)):
-        """ This method applies periodic boundary conditions on all selected atom
-            coordinates for each frame selected. """
+        """This method applies periodic boundary conditions on all selected atom
+        coordinates for each frame selected. 
+
+        """
 
         if isinstance(selection, str):
             selection = self.selection(selection)
@@ -602,17 +638,19 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
 
     def getRadialNumberDensity(self, sel1, sel2, dr=0.1, maxR=10, frames=None):
-        """ Computes the radial density distribution from center of mass of selected atoms 
-            using the given dr interval.
+        """Computes the radial density distribution from center of mass of selected atoms 
+        using the given dr interval.
 
-            Input:  sel1    -> first atom selection from which spherical zone will be computed
-                    sel2    -> second selection, only atoms within the spherical zone and corresponding
-                                to this selection will be considered
-                    dr      ->  radius interval, density is computed as the number of atoms between r and
-                                r + dr divided by the total number of sel2 atoms within maxR
-                    maxR    ->  maximum radius to be used
-                    frames  ->  frames to be averaged on, should be a range 
-                                (default None, every 10 frames are used) """
+        Input:  sel1    -> first atom selection from which spherical zone will be computed
+                sel2    -> second selection, only atoms within the spherical zone and corresponding
+                            to this selection will be considered
+                dr      ->  radius interval, density is computed as the number of atoms between r and
+                            r + dr divided by the total number of sel2 atoms within maxR
+                maxR    ->  maximum radius to be used
+                frames  ->  frames to be averaged on, should be a range 
+                            (default None, every 10 frames are used) 
+
+        """
 
 
         radii  = np.arange(dr, maxR, dr) #_Gets x-axis values
@@ -644,15 +682,17 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
 
     def getCOMRadialNumberDensity(self, selection='protH', dr=0.5, maxR=60, frame=-1):
-        """ Computes the radial density distribution from center of mass of selected atoms 
-            using the given dr interval.
+        """Computes the radial density distribution from center of mass of selected atoms 
+        using the given dr interval.
 
-            Input:  selection   ->  atom selection, can be string
-                    dr          ->  radius interval, density is computed as the number of atoms between r and
-                                    r + dr divided by the volume integral in spherical coordinates for unit r
-                                    times the total number of atoms within maximum r
-                    maxR        ->  maximum radius to be used
-                    frame       ->  frame to be used for atom coordinates """
+        Input:  selection   ->  atom selection, can be string
+                dr          ->  radius interval, density is computed as the number of atoms between r and
+                                r + dr divided by the volume integral in spherical coordinates for unit r
+                                times the total number of atoms within maximum r
+                maxR        ->  maximum radius to be used
+                frame       ->  frame to be used for atom coordinates 
+
+        """
 
 
         if type(selection) == str:
@@ -682,10 +722,12 @@ class NAMDDCD(DCDReader, NAMDPSF):
 #_Plotting methods
 #---------------------------------------------
     def plotSTDperAtom(self, selection="all", align=False, frames=slice(0, None), mergeXYZ=True):
-        """ Plot the standard deviation along the axis 0 of dataSet.
-            This makes use of the 'getSTDperAtom method.
+        """Plot the standard deviation along the axis 0 of dataSet.
+        This makes use of the 'getSTDperAtom method.
 
-            If mergeXYZ is True, then computes the distance to the origin first. """
+        If mergeXYZ is True, then computes the distance to the origin first. 
+
+        """
 
         std = self.getSTDperAtom(selection, align, frames, mergeXYZ)
         xRange = self.timestep * np.cumsum(self.dcdFreq[frames])
@@ -716,10 +758,12 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
 
     def plotRMSDperAtom(self, selection="all", align=False, frames=slice(0, None), mergeXYZ=True):
-        """ Plot the RMSD along the axis 0 of dataSet.
-            This makes use of the 'getRMSDperAtom method.
+        """Plot the RMSD along the axis 0 of dataSet.
+        This makes use of the 'getRMSDperAtom method.
 
-            If mergeXYZ is True, then it computes the distance to the origin first. """
+        If mergeXYZ is True, then it computes the distance to the origin first. 
+
+        """
 
         rmsd = self.getRMSDperAtom(selection, align, frames, mergeXYZ)
         xRange = np.arange(rmsd.size)
@@ -750,10 +794,12 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
 
     def plotRMSDperFrame(self, selection="all", align=False, frames=slice(0, None), mergeXYZ=True):
-        """ Plot the RMSD along the axis 1 of dataSet.
-            This makes use of the 'getRMSDperFrame method.
+        """Plot the RMSD along the axis 1 of dataSet.
+        This makes use of the 'getRMSDperFrame method.
 
-            If mergeXYZ is True, then it computes the distance to the origin first. """
+        If mergeXYZ is True, then it computes the distance to the origin first. 
+
+        """
 
         rmsd = self.getRMSDperFrame(selection, align, frames, mergeXYZ)
         xRange = self.timestep * np.cumsum(self.dcdFreq[frames])
@@ -784,9 +830,11 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
 
     def plotCOMRadialNumberDensity(self, selection='protH', dr=1, maxR=60, frame=-1):
-        """ Plot the radial distribution of selected atoms from their center of mass.
+        """Plot the radial distribution of selected atoms from their center of mass.
             
-            Calls the self.getRadialDistribution method to obtain data to plot """
+        Calls the self.getRadialDistribution method to obtain data to plot 
+
+        """
 
         X, density = self.getCOMRadialNumberDensity(selection, dr, maxR, frame)
 
@@ -805,20 +853,22 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
     def plotAveragedDistances_parallelPlot(self, sel1, sel2=None, frames=None, startDist=None, 
                                            maxDist=10, step=2, lwStep=0.8):
-        """ Computes averaged distances between sel1 and sel2, then plot the result on a 
-            parallel plot in a residue-wise manner.
+        """Computes averaged distances between sel1 and sel2, then plot the result on a 
+        parallel plot in a residue-wise manner.
 
-            Both selections need to be the same for all frames used, so 'within' 
-            keyword cannot be used here.
+        Both selections need to be the same for all frames used, so 'within' 
+        keyword cannot be used here.
 
-            Input:  sel1    -> first selection of atoms for ditance computation
-                    sel2    -> second selection of atoms (optional, if None, sel1 is used)
-                    frames  -> frames to be used for averaging
-                    maxDist -> maximum distance to use for the plot
-                    step    -> step between each distance bin, each of them will be plotted on a color
-                               and line width scale. 
-                    lwStep  -> line width step for plotting, each bin will be plotted with a 
-                               linewidth being ( maxDist / bin max edge ) * lwStep """
+        Input:  sel1    -> first selection of atoms for ditance computation
+                sel2    -> second selection of atoms (optional, if None, sel1 is used)
+                frames  -> frames to be used for averaging
+                maxDist -> maximum distance to use for the plot
+                step    -> step between each distance bin, each of them will be plotted on a color
+                           and line width scale. 
+                lwStep  -> line width step for plotting, each bin will be plotted with a 
+                           linewidth being ( maxDist / bin max edge ) * lwStep 
+
+        """
 
         dist = self.getAveragedDistances(sel1, sel2, frames)
 
@@ -870,21 +920,24 @@ class NAMDDCD(DCDReader, NAMDPSF):
     
     def plotAveragedDistances_chordDiagram(self, sel1, sel2=None, frames=None, startDist=None, 
                                             maxDist=10, step=2, lwStep=1.2, resList=None, labelStep=5):
-        """ Computes averaged distances between sel1 and sel2, then plot the result on a 
-            parallel plot in a residue-wise manner.
+        """Computes averaged distances between sel1 and sel2, then plot the result on a 
+        chord diagram in a residue-wise manner.
 
-            Both selections need to be the same for all frames used, so 'within' 
-            keyword cannot be used here.
+        Both selections need to be the same for all frames used, so 'within' 
+        keyword cannot be used here.
 
-            Input:  sel1    -> first selection of atoms for ditance computation
-                    sel2    -> second selection of atoms (optional, if None, sel1 is used)
-                    frames  -> frames to be used for averaging
-                    maxDist -> maximum distance to use for the plot
-                    step    -> step between each distance bin, each of them will be plotted on a color
+        Input:  sel1        -> first selection of atoms for ditance computation
+                sel2        -> second selection of atoms (optional, if None, sel1 is used)
+                frames      -> frames to be used for averaging
+                maxDist     -> maximum distance to use for the plot
+                step        -> step between each distance bin, each of them will be plotted on a color
                                and line width scale. 
-                    lwStep  -> line width step for plotting, each bin will be plotted with a 
+                lwStep      -> line width step for plotting, each bin will be plotted with a 
                                linewidth being ( maxDist / bin max edge ) * lwStep 
-                    resList -> list of residue indices (optional, if None, will be guessed from file) """
+                resList     -> list of residue indices (optional, if None, will be guessed from file) 
+                labelStep   -> step for residue labels (optional, default 5, each 5 residue are indicated)
+
+                """
 
 
         chord = ChordDiag(self, sel1, sel2, frames, startDist, maxDist, step, lwStep, resList, labelStep)

@@ -5,22 +5,37 @@ import IPython
 import re
 
 
-from .dataParsers.dcdParser import NAMDDCD
-from .dataParsers.logParser import NAMDLOG
-from .dataParsers.pdbParser import NAMDPDB
-from .dataParsers.velParser import NAMDVEL
-from .dataParsers.psfParser import NAMDPSF
-from .dataParsers.selParser import SelParser
+from NAMDAnalyzer.dataParsers.dcdParser import NAMDDCD
+from NAMDAnalyzer.dataParsers.logParser import NAMDLOG
+from NAMDAnalyzer.dataParsers.pdbParser import NAMDPDB
+from NAMDAnalyzer.dataParsers.velParser import NAMDVEL
+from NAMDAnalyzer.dataParsers.psfParser import NAMDPSF
+from NAMDAnalyzer.dataParsers.selParser import SelParser
 
 
 class Dataset(NAMDDCD):
-    """ Main class for NAMDAnalyzer. It manages the different data types (psf, dcd, vel,...) """
+    """Main class for NAMDAnalyzer. It manages the different data types (psf, dcd, vel,...) 
+
+    It directly inherits from :class:`.NAMDPSF` and :class:`NAMDDCD` so that all
+    methods from these are directly accessible in :class:`.Dataset` class.
+
+    Attributes *logData*, *velData*, *dcdData*, *psfData* and *pdbData* are available to
+    access dataset loaded rom these files.
+
+    For more information, see:
+       * :class:`.NAMDDCD`
+       * :class:`.NAMDPSF`
+       * :class:`.NAMDLOG`
+       * :class:`.NAMDPDB`
+       * :class:`.NAMDVEL`
+
+    """
 
     def __init__(self, *fileList, stride=1):
 
         self.fileList = list(fileList)
 
-        self.psfFile = self.getPSF(self.fileList) #_Check for .psf file presence
+        self.psfFile = self._getPSF(self.fileList) #_Check for .psf file presence
 
         NAMDDCD.__init__(self, self.psfFile, stride=stride) #_Initialize NAMDDCD 
 
@@ -34,9 +49,11 @@ class Dataset(NAMDDCD):
 
 
 
-    def getPSF(self, fileList):
-        """ This method checks for a psf file in the file list given as __init__ arguments.
-            Returns the .psf file path if found, returns None otherwise. """
+    def _getPSF(self, fileList):
+        """This method checks for a psf file in the file list given as __init__ arguments.
+           Returns the .psf file path if found, returns None otherwise. 
+
+        """
 
         try:
             for idx, dataFile in enumerate(fileList):
@@ -53,12 +70,16 @@ class Dataset(NAMDDCD):
 
 
     def importFile(self, dataFile, fileType=None):
-        """ Method used to import one file.
-            The method automatically stores the corresponding class in NAMDAnalyzer variables like
-            self.logData. If something already exists, it will be overridden.
-            Input:  a single data file (*.log, *.dcd,...)
-                    fileType -> data file type, can be 'log or 'out' for standard NAMD log output, 'dcd',
-                                'vel' or 'pdb'. If None, the file type will be guessed from extension."""
+        """Method used to import one file.
+
+        The method automatically stores the corresponding class in NAMDAnalyzer variables like
+        self.logData. If something already exists, it will be overridden.
+
+        :arg dataFile: a single data file (*.log, *.dcd,...)
+        :arg fileType: data file type, can be 'log or 'out' for standard NAMD log output, 'dcd',
+                       'vel' or 'pdb'. If None, the file type will be guessed from extension.
+
+        """
 
         print("Trying to import file: " + dataFile)
         if fileType=="out" or fileType=="log" or re.search('.log|.out', dataFile):
@@ -90,7 +111,9 @@ class Dataset(NAMDDCD):
 
 
     def selection(self, selT, frame=-1):
-        """ Uses the SelParser to select atoms with a simple string command. """
+        """Uses the :class:`.SelParser` class to select atoms with a simple string command. 
+
+        """
 
         selParser = SelParser(self, selT, frame)
 

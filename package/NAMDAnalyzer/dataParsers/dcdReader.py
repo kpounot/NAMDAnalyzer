@@ -21,8 +21,11 @@ class DCDReader:
 
 
     def importDCDFile(self, dcdFile):
-        """ Imports a new file and store the result in self.dcdData.
-            If something already exists in self.dcdData, it will be deleted. """
+        """Imports a new file and store the result in self.dcdData.
+           
+        If something already exists in self.dcdData, it will be deleted. 
+
+        """
 
         self.dcdFile    = dcdFile
         self.dcdData    = np.array([])
@@ -119,11 +122,14 @@ class DCDReader:
 
 
     def appendDCD(self, dcdFile):
-        """ Method to append trajectory data to the existing loaded data.
-            The .dcd file is opened using dcdParser class, then data are append to the existing
-            dcdData instance. 
+        """Method to append trajectory data to the existing loaded data.
 
-            Input:  a single .dcd trajectory file """
+        The .dcd file is opened using dcdParser class, then data are append to the existing
+        dcdData instance. 
+
+        Input:  a single .dcd trajectory file 
+
+        """
         
         try:
             self.dcdData #_Checking if a dcd file has been loaded already, print an error message if not.

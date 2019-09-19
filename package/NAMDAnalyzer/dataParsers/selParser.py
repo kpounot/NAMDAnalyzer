@@ -4,11 +4,24 @@ import re
 
 
 class SelParser:
-    """ This class is used to parse a simple selection text, calls the appropriate functions from psdParser
-        and dcdParser, and eventually, returns a list of atom indices.
-        
-        A dataContext is provided to the class, that is simply the Dataset class, in which psf
-        and dcd files are loaded. """
+    """This class is used to parse a simple selection text, calls the appropriate functions from 
+    :class:`.NAMDPSF` and :class:`.NAMDDCD`.
+    
+    A dataContext is provided to the class, that is simply the :class:`.Dataset` class, in which psf
+    and dcd files are loaded. 
+
+    Atom indices are stored for each frame in *selection* attribute.
+
+    Examples:
+
+    To select hydrogens bound to water oxygens within 3 angstroms of a protein region 
+    for a given frame range, use from class :class:`.Dataset` instance d: 
+
+    .. code-block:: python
+
+        d.selection('name H1 H2 and bound to name OH2 and within 3 of protein and resid 40:80 frame 0:100:2')
+
+    """
 
 
     def __init__(self, dataContext, selT=None, frame=-1):
@@ -55,7 +68,9 @@ class SelParser:
 
 
     def process(self):
-        """ Parse the selection string 'selText' by identifying keywords. """
+        """Parse the selection string 'selText' by identifying keywords. 
+
+        """
 
         if type(self.selT) != str:
             print('Selection text should be a string instance, the given argument cannot be parsed.')
@@ -132,9 +147,11 @@ class SelParser:
 
 
     def _getSelection(self, partialText):
-        """ This method is used by parseText to generate the different independent selections from
-            selection text before these are compared using 'and' operators to generate the 
-            final selection. """
+        """This method is used by parseText to generate the different independent selections from
+        selection text before these are compared using 'and' operators to generate the 
+        final selection. 
+
+        """
 
 
         selList = []
@@ -183,9 +200,11 @@ class SelParser:
 
 
     def _getSameResid(self, partialSel, withinList=None):
-        """ Used to parse 'same resid as' selection text.
-            Everything after 'same resid as' will be considered.
-            Processes it and returns the rest of the selection. """
+        """Used to parse 'same resid as' selection text.
+        Everything after 'same resid as' will be considered.
+        Processes it and returns the rest of the selection. 
+
+        """
     
         sel = []
 
@@ -223,8 +242,10 @@ class SelParser:
 
 
     def _getWithin(self, partialSel):
-        """ Used specifically to parse within keyword selection. 
-            The 'within' part is processed and the rest of the selection text is returned. """
+        """Used specifically to parse within keyword selection. 
+        The 'within' part is processed and the rest of the selection text is returned. 
+
+        """
 
         partialSel = partialSel[partialSel.find('within'):]
         partialSel = re.sub('within ', '', partialSel).strip()
@@ -263,8 +284,10 @@ class SelParser:
 
 
     def _getBoundTo(self, partialSel, withinList=None):
-        """ Used specifically to parse within keyword selection. 
-            The 'within' part is processed and the rest of the selection text is returned. """
+        """Used specifically to parse within keyword selection. 
+        The 'within' part is processed and the rest of the selection text is returned. 
+
+        """
 
         sel = []
 

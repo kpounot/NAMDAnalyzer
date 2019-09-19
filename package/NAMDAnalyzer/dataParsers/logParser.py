@@ -10,7 +10,7 @@ from scipy.optimize import curve_fit
 
 from collections import namedtuple
 
-from .logReader import LOGReader
+from NAMDAnalyzer.dataParsers.logReader import LOGReader
 
 class NAMDLOG(LOGReader):
     """ This class takes a NAMD output logfile as input. """

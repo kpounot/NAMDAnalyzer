@@ -9,9 +9,9 @@ from scipy.fftpack import fft, fftfreq, fftshift
 
 from threading import Thread
 
-from ..helpersFunctions import ConstantsAndModels as CM 
+from NAMDAnalyzer.helpersFunctions import ConstantsAndModels as CM 
 
-from ..lib.pylibFuncs import py_compIntScatFunc
+from NAMDAnalyzer.lib.pylibFuncs import py_compIntScatFunc
 
 
 

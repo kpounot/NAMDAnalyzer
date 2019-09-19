@@ -7,7 +7,7 @@ from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 from matplotlib import cm, colors
 
-from.velReader import VELReader
+from NAMDAnalyzer.dataParsers.velReader import VELReader
 
 class NAMDVEL(VELReader):
     """ This class contains methods for velocity file analysis. """

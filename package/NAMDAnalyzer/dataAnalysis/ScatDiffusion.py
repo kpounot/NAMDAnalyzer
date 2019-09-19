@@ -7,10 +7,10 @@ from scipy.special import spherical_jn
 from scipy.optimize import root
 
 
-from ..helpersFunctions import ConstantsAndModels as CM 
+from NAMDAnalyzer.helpersFunctions import ConstantsAndModels as CM 
 
-from ..lib.pylibFuncs import py_compIntScatFunc
-from ..dataParsers.HydroproReader import HydroproReader
+from NAMDAnalyzer.lib.pylibFuncs import py_compIntScatFunc
+from NAMDAnalyzer.dataParsers.HydroproReader import HydroproReader
 
 
 

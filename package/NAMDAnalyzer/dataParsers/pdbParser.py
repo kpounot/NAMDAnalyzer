@@ -2,8 +2,8 @@ import os, sys
 import numpy as np
 import re
 
-from .pdbReader import PDBReader
-from .psfParser import NAMDPSF
+from NAMDAnalyzer.dataParsers.pdbReader import PDBReader
+from NAMDAnalyzer.dataParsers.psfParser import NAMDPSF
 
 class NAMDPDB(PDBReader):
     """ This class takes a PDB file as input.

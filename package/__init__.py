@@ -1,2 +1,2 @@
-from core.NAMDAnalyzer import NAMDAnalyzer
+from NAMDAnalyzer.Dataset import Dataset
 

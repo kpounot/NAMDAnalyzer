@@ -43,15 +43,32 @@ def get_bestMatrix(q):
 
 
 def alignAllMol(dcdData):
-    """ This function takes trajectories from .dcd file, and apply the following procedure 
-        for all frame between begin and end and to all atoms between firstAtom and lastAtom:
+    """This function takes trajectories from :class:`.Dataset` *dcdData* attribute, 
+    and apply the following procedure for each frames in *dcdData* array:
 
-        - move center of mass of each molecule to the origin
-        - rotate every molecule to get the best fit with the first frame
-        - return the resulting trajectories on the same format as the initial dcdData 
-        
-        This procedure is based on the Berthold K. P. Horn (1987) and Douglas L. Theobald (2005) papers."""
+    First, computes appropriate dot products are computed with the first frames coordinates
+    Then, the matrix to be solved for eigenvalues and eigenvectors is constructed and solved
 
+
+    :arg dcdData: Array containing trajectory coordinates for wanted frames
+                  with shape (atoms, frames, coordinates)
+    :type dcdData: :class:`.numpy.ndarray`
+
+
+    :returns: A list of 4 by 4 rotation matrices to be applied on *dcdData* array
+
+    
+    This procedure is based on the [Horn_1987]_ and [Theobald_2005]_ papers.
+
+    References:
+
+    .. [Horn_1987] https://doi.org/10.1364/JOSAA.4.000629
+    .. [Theobald_2005] https://doi.org/10.1107/S0108767305015266
+
+    """
+
+
+    qM = []
 
     #_Determines the correct rotations to align the molecules
     for i in range(1, dcdData.shape[1]):
@@ -98,15 +115,15 @@ def alignAllMol(dcdData):
         bestVec = eigvec[:,np.argwhere(eigval == np.max(eigval))[0][0]]
 
         #_Obtain the rotation matrix
-        qM = get_bestMatrix(bestVec)
+        qM.append(get_bestMatrix(bestVec))
 
 
-        return qM
+    return qM
             
 
 
-def applyRotation(dcdData, q):
-    """ Apply a rotation using given quaternion q on given dcd data. """
+def applyRotation(dcdData, qM):
+    """ Apply a rotation using given rotation matrix qM on given dcd data. """
 
     for i in range(1, dcdData.shape[1]):
 
@@ -115,7 +132,7 @@ def applyRotation(dcdData, q):
         tempData[:, 1:] = dcdData[:,i,:]
 
         #_Applying the rotation
-        tempData = np.dot(q, tempData.T).T
+        tempData = np.dot(qM[i], tempData.T).T
 
         #_Writing the data back in dcdData
         dcdData[:,i,:] = tempData[:, 1:]

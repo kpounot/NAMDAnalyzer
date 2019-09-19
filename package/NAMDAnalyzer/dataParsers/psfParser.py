@@ -4,7 +4,7 @@ import re
 
 from collections import namedtuple
 
-from .psfReader import PSFReader
+from NAMDAnalyzer.dataParsers.psfReader import PSFReader
 
 class NAMDPSF(PSFReader):
     """ This class is used for .psf file reading. """

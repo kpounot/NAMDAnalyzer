@@ -1,3 +1,10 @@
+"""
+
+Classes
+^^^^^^^
+
+"""
+
 import numpy as np
 
 import matplotlib.pyplot as plt
@@ -7,21 +14,22 @@ import matplotlib.patches as mpatches
 
 
 class ChordDiag:
-    """ This class provides methods to draw a chord diagram from pairwise
-        distance matrix. Distances are binned and they form teh edges that
-        link the nodes that represent the residue in the protein.
+    """This class provides methods to draw a chord diagram from pairwise
+    distance matrix. Distances are binned and they form the edges that
+    link the nodes that represent the residue in the protein.
 
-        Input:  data    -> Dataset class instance
-                sel1    -> first selection of atoms for ditance computation
-                sel2    -> second selection of atoms (optional, if None, sel1 is used)
-                frames  -> frames to be used for averaging
-                maxDist -> maximum distance to use for the plot
-                step    -> step between each distance bin, each of them will be plotted on a color
-                           and line width scale
-                lwStep  -> line width step for plotting, each bin will be plotted with a 
-                           linewidth being ( maxDist / bin max edge ) * lwStep 
-                resList -> list of residue indices (optional, if None, will be guessed from file) """
+    :arg data: :class:`.Dataset` class instance
+    :arg sel1: first selection of atoms for distance computation
+    :arg sel2: second selection of atoms (optional, if None, sel1 is used)
+    :arg frames: frames to be used for averaging
+    :arg maxDist: maximum distance to use for the plot
+    :arg step: step between each distance bin, each of them will be plotted on a color
+        and line width scale
+    :arg lwStep: line width step for plotting, each bin will be plotted with a 
+        linewidth being ( maxDist / bin max edge ) * lwStep 
+    :arg resList: list of residue indices (optional, if None, will be guessed from file) 
 
+    """
 
 
     def __init__(self, data, sel1, sel2=None, frames=None, startDist=None,
@@ -77,8 +85,10 @@ class ChordDiag:
 
 
     def _getDistMatrixAndPairs(self):
-        """ Computes the distance matrix given the selection(s) and extract the residues
-            pairs that are stored for each distance bin in self.resPairsList. """
+        """Computes the distance matrix given the selection(s) and extract the residues
+        pairs that are stored for each distance bin in self.resPairsList. 
+
+        """
 
         self.dist = self.data.getAveragedDistances(self.sel1, self.sel2, self.frames)
 
@@ -141,6 +151,7 @@ class ChordDiag:
 
 
     def process(self):
+        """ Build the chord diagram based on class attributes. """
 
         if self.dist is None:
             self._getDistMatrixAndPairs()
@@ -170,6 +181,12 @@ class ChordDiag:
 
 
     def show(self, xlim=None, ylim=(0., 1.05)):
+        """ Show the builded chord diagram. 
+
+        :arg xlim: tuple of angular limits in radians to be given to matplotlib axes instance.
+        :arg ylim: tuple of radial limits in radians to be given to matplotlib axes instance.
+
+        """
 
         self.ax.set_xlim(xlim)
         self.ax.set_ylim(ylim)

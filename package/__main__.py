@@ -3,7 +3,7 @@ import sys, os
 import argparse
 
 from NAMDAnalyzer.Dataset import Dataset
-from NAMDAnalyzer.dataAnalysis.backscatteringDataConvert import BackScatData
+from NAMDAnalyzer.dataAnalysis.BackscatteringDataConvert import BackScatData
 from NAMDAnalyzer.dataAnalysis.ScatDiffusion import ScatDiffusion
 from NAMDAnalyzer.dataAnalysis.HydrogenBonds import HydrogenBonds
 from NAMDAnalyzer.dataAnalysis.Rotations import Rotations

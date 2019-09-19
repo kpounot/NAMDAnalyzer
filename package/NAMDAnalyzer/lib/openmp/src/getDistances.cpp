@@ -15,9 +15,9 @@ void compDistances(float *maxSel, int maxSize, float *minSel, int minSize,
     float cD_y = cellDims[1];
     float cD_z = cellDims[2];
 
-    #pragma omp parallel for private(max_idx, min_idx)
     for(max_idx=0; max_idx < maxSize; ++max_idx)
     {
+        #pragma omp parallel for 
         for(min_idx=0; min_idx < minSize; ++min_idx)
         {
             // Computes distances for given timestep and atom
@@ -46,9 +46,9 @@ void compDistances_same(float *maxSel, int maxSize, float *minSel, int minSize,
 
     int min_idx;
 
-    #pragma omp parallel for private(min_idx)
     for(int max_idx=0; max_idx < maxSize; ++max_idx)
     {
+        #pragma omp parallel for 
         for(min_idx=max_idx+1; min_idx < minSize; ++min_idx)
         {
             // Computes distances for given timestep and atom

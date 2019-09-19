@@ -1,9 +1,13 @@
+from struct import *
+
 import numpy as np
 
 cimport numpy as np
 cimport cython
 
 from cython.parallel import prange
+
+from libcpp.string cimport string
 
 np.import_array()
 
@@ -166,3 +170,5 @@ def py_cdf(np.ndarray[float, ndim=1, mode="c"] dist not None,
 def py_getParallelBackend():
 
     return getParallelBackend()
+
+
