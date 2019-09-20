@@ -25,6 +25,12 @@ or
     python setup.py install
 
 
+Full documentation:
+-------------------
+
+See https://namdanalyzer.readthedocs.io/en/latest/index.html
+
+
 Start the interpreter:
 ----------------------
 
