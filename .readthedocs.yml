@@ -20,4 +20,4 @@ formats: all
 python:
   version: 3
   install:
-    - requirements: package/requirements.txt
+    - requirements: docs/source/requirements.txt
