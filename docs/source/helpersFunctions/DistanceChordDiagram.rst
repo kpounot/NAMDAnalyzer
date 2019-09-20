@@ -1,5 +1,5 @@
-DistanceChordDiagram module
-===========================
+DistanceChordDiagram
+====================
 
 .. automodule:: DistanceChordDiagram
    :members:

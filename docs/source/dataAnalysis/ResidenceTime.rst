@@ -1,5 +1,5 @@
-ResidenceTime module
-====================
+ResidenceTime
+=============
 
 .. automodule:: ResidenceTime
    :members:

@@ -1,5 +1,5 @@
-logReader module
-================
+logReader
+=========
 
 .. automodule:: logReader
    :members:

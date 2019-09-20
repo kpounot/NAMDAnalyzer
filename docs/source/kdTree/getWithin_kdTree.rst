@@ -1,5 +1,5 @@
-getWithin_kdTree module
-=======================
+getWithin_kdTree
+================
 
 .. automodule:: getWithin_kdTree
    :members:

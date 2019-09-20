@@ -1,5 +1,5 @@
-Rotations module
-================
+Rotations
+=========
 
 .. automodule:: Rotations
    :members:

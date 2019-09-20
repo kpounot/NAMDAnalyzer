@@ -1,5 +1,5 @@
-velParser module 
-================
+velParser 
+=========
 
 .. automodule:: velParser
    :members:

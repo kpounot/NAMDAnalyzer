@@ -1,5 +1,5 @@
-ScatDiffusion module
-====================
+ScatDiffusion
+=============
 
 .. automodule:: ScatDiffusion
    :members:

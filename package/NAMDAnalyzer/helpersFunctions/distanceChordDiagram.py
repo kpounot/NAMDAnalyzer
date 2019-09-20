@@ -14,20 +14,20 @@ import matplotlib.patches as mpatches
 
 
 class ChordDiag:
-    """This class provides methods to draw a chord diagram from pairwise
-    distance matrix. Distances are binned and they form the edges that
-    link the nodes that represent the residue in the protein.
+    """ This class provides methods to draw a chord diagram from pairwise
+        distance matrix. Distances are binned and they form the edges that
+        link the nodes that represent the residue in the protein.
 
-    :arg data: :class:`.Dataset` class instance
-    :arg sel1: first selection of atoms for distance computation
-    :arg sel2: second selection of atoms (optional, if None, sel1 is used)
-    :arg frames: frames to be used for averaging
-    :arg maxDist: maximum distance to use for the plot
-    :arg step: step between each distance bin, each of them will be plotted on a color
-        and line width scale
-    :arg lwStep: line width step for plotting, each bin will be plotted with a 
-        linewidth being ( maxDist / bin max edge ) * lwStep 
-    :arg resList: list of residue indices (optional, if None, will be guessed from file) 
+        :arg data: :class:`.Dataset` class instance
+        :arg sel1: first selection of atoms for distance computation
+        :arg sel2: second selection of atoms (optional, if None, sel1 is used)
+        :arg frames: frames to be used for averaging
+        :arg maxDist: maximum distance to use for the plot
+        :arg step: step between each distance bin, each of them will be plotted on a color
+            and line width scale
+        :arg lwStep: line width step for plotting, each bin will be plotted with a 
+            linewidth being ( maxDist / bin max edge ) * lwStep 
+        :arg resList: list of residue indices (optional, if None, will be guessed from file) 
 
     """
 
@@ -85,8 +85,8 @@ class ChordDiag:
 
 
     def _getDistMatrixAndPairs(self):
-        """Computes the distance matrix given the selection(s) and extract the residues
-        pairs that are stored for each distance bin in self.resPairsList. 
+        """ Computes the distance matrix given the selection(s) and extract the residues
+            pairs that are stored for each distance bin in self.resPairsList. 
 
         """
 
@@ -183,8 +183,8 @@ class ChordDiag:
     def show(self, xlim=None, ylim=(0., 1.05)):
         """ Show the builded chord diagram. 
 
-        :arg xlim: tuple of angular limits in radians to be given to matplotlib axes instance.
-        :arg ylim: tuple of radial limits in radians to be given to matplotlib axes instance.
+            :arg xlim: tuple of angular limits in radians to be given to matplotlib axes instance.
+            :arg ylim: tuple of radial limits in radians to be given to matplotlib axes instance.
 
         """
 

@@ -1,3 +1,10 @@
+"""
+
+Classes
+^^^^^^^
+
+"""
+
 import sys
 
 import numpy as np
@@ -6,21 +13,21 @@ import matplotlib.pyplot as plt
 
 
 class Rotations:
+    """ This class defines methods to compute rotational relaxation and orientation probabilities. 
+        
+        Some plotting methods are also available to quicly check the results. 
+        
+        :arg data:        a Dataset class instance containing trajectories data 
+        :arg sel1:        first selection corresponding to one end of each vector
+        :arg sel2:        second selection for vectors, should be of same size as sel1
+        :arg tMax:        maximum number of frames to be used 
+        :arg step:        time interval between each computed vectors
+        :arg dPhi:        angular bin size for orientational probability (in degrees)
+        :arg axis:        reference axis for orientation probabilities
+        :arg nbrTimeOri:  number of time origins to be averaged over (optional, default 25) """
+
 
     def __init__(self, data, sel1, sel2, tMax=100, step=1, dPhi=0.5, axis='z', nbrTimeOri=20):
-        """ This class defines methods to compute rotational relaxation and orientation probabilities. 
-            
-            Some plotting methods are also available to quicly check the results. 
-            
-            Input:  data        -> a Dataset class instance containing trajectories data 
-                    sel1        -> first selection corresponding to one end of each vector
-                    sel2        -> second selection for vectors, should be of same size as sel1
-                    tMax        -> maximum number of frames to be used 
-                    step        -> time interval between each computed vectors
-                    dPhi        -> angular bin size for orientational probability (in degrees)
-                    axis        -> reference axis for orientation probabilities
-                    nbrTimeOri  -> number of time origins to be averaged over (optional, default 25) """
-
                                                                                                             
         self.data       = data
         self.sel1       = sel1
@@ -47,9 +54,13 @@ class Rotations:
             This is averaged over multiple time origins and the obtained correlation is stored
             in self.rotRelax variable. 
             
-            References: - Yu-ling Yeh and Chung-Yuan Mou (1999). Orientational Relaxation 
-                          Dynamics of Liquid Water Studied by Molecular Dynamics Simulation, 
-                          J. Phys. Chem. B 1999, 103, 3699-3705. """
+            References: 
+                
+                - Yu-ling Yeh and Chung-Yuan Mou (1999). Orientational Relaxation 
+                  Dynamics of Liquid Water Studied by Molecular Dynamics Simulation, 
+                  J. Phys. Chem. B 1999, 103, 3699-3705. 
+
+        """
 
 
         self.times  = ( np.arange(0, self.tMax, self.step, dtype=int) 
@@ -84,7 +95,9 @@ class Rotations:
         """ Compute the probability for the vector between sel1 and sel2 to be in a 
             particular orientation.
             The angle is computed with respect to a given axis. 
-            Averaging is performed for each frame between 0 and tMax with given step. """
+            Averaging is performed for each frame between 0 and tMax with given step. 
+
+        """
 
         if self.axis=='x':
             ref = np.array( [[[1, 0, 0]]] )

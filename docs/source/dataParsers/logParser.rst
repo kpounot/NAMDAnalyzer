@@ -1,5 +1,5 @@
-logParser module
-================
+logParser
+=========
 
 .. automodule:: logParser
    :members:

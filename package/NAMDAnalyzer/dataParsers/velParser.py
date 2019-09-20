@@ -1,3 +1,10 @@
+"""
+
+Classes
+^^^^^^^
+
+"""
+
 import os, sys
 import numpy as np
 import re
@@ -10,7 +17,14 @@ from matplotlib import cm, colors
 from NAMDAnalyzer.dataParsers.velReader import VELReader
 
 class NAMDVEL(VELReader):
-    """ This class contains methods for velocity file analysis. """
+    """ This class contains methods for velocity file analysis. 
+
+        :arg parent:  a parent class, usually a :class:`Dataset` instance
+                      It is used to compute kinetic energy for instance, by extracting
+                      atom masses for a loaded .psf file located in :class:`Dataset`. 
+        :arg velFile: the velocity file to be loaded
+
+    """
 
     def __init__(self, parent, velFile=None):
 
@@ -31,11 +45,13 @@ class NAMDVEL(VELReader):
         """ This method can be used to compute the kinetic energy distribution without plotting it.
             This method requires a .psf to be loaded to have access to atom masses
 
-            Input:  selection   -> atom selection from psf data
-                    binSize     -> the size of the bin
+            :arg selection: atom selection from psf data
+            :arg binSize:   the size of the bin
 
-            Output: numpy 2D array containing the bin mean value (first column)
-                    and the corresponding density (second column) """
+            :returns: numpy 2D array containing the bin mean value (first column)
+                      and the corresponding density (second column) 
+
+        """
 
         #_Get the indices corresponding to the selection
         if type(selection) == str:
@@ -87,12 +103,12 @@ class NAMDVEL(VELReader):
         """ This method calls pylab's hist method is used to plot the distribution.
             This method requires a .psf to be loaded to have access to atom masses
 
-            Input:  binSize -> the size of the bin. Determine the width of each rectangle of the histogram 
-                    begin   -> start index for data
-                    end     -> end index for data
-                    fit     -> if set to True, use the given model in scipy's curve_fit method and plot it
-                    model   -> model to be used for the fit 
-                    p0      -> starting parameter for fitting """
+            :arg binSize: the size of the bin. Determine the width of each rectangle of the histogram 
+            :arg fit:     if set to True, use the given model in Scipy curve_fit method and plot it
+            :arg model:   model to be used for the fit, using Scipy curve_fit
+            :arg p0:      starting parameter(s) for fitting 
+
+        """
 
 
         dist = self.getKineticEnergyDistribution(selection, binSize)

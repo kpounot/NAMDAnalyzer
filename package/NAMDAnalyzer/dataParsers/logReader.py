@@ -1,3 +1,10 @@
+"""
+
+Classes
+^^^^^^^
+
+"""
+
 import numpy as np
 import re
 
@@ -5,6 +12,10 @@ from collections import namedtuple
 
 
 class LOGReader:
+    """ Class used to read and extract data from a .log/.out file which
+        is simply the standard NAMD output. 
+
+    """
 
     def __init__(self):
 
@@ -13,7 +24,9 @@ class LOGReader:
 
     def importLOGFile(self, logFile):
         """ Imports a new file and store the result in self.logData.
-            If something already exists in self.logData, it will be deleted. """
+            If something already exists in self.logData, it will be deleted. 
+
+        """
 
         self.logFile = logFile
 
@@ -60,7 +73,9 @@ class LOGReader:
     def appendLOG(self, logFile):
         """ Method to append output data to the already loaded ones.
             Timestep number is simply continued by adding the last timestep from initial logData if
-            the first one is set to zero. """
+            the first one is set to zero. 
+
+        """
 
         try:
             self.logData #_Checking if a log file has been loaded already, print an error message if not.

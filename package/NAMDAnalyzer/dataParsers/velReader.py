@@ -1,8 +1,16 @@
+"""
+
+Classes
+^^^^^^^
+
+"""
+
 import numpy as np
 
 from struct import *
 
 class VELReader:
+    """ This class is used to read and extract data from a .vel file. """
 
     def __init__(self):
 
@@ -12,7 +20,9 @@ class VELReader:
 
     def importVELFile(self, velFile):
         """ Imports a new file and store the result in self.velData.
-            If something already exists in self.velData, it will be deleted. """
+            If something already exists in *velData* attribute, it will be deleted. 
+
+        """
 
         self.velFile = velFile
 

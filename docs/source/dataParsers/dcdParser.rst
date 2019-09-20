@@ -1,5 +1,5 @@
-dcdParser module
-================
+dcdParser
+=========
 
 .. automodule:: dcdParser
    :members:

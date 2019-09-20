@@ -1,3 +1,10 @@
+"""
+
+Classes
+^^^^^^^
+
+"""
+
 import os, sys
 import re
 
@@ -13,11 +20,11 @@ from collections import namedtuple
 from NAMDAnalyzer.dataParsers.logReader import LOGReader
 
 class NAMDLOG(LOGReader):
-    """ This class takes a NAMD output logfile as input. """
+    """ This class takes a NAMD output logfile as input. 
 
-    def __init__(self, parent, logFile=None):
+    """
 
-        self.parent = parent
+    def __init__(self, logFile=None):
 
         LOGReader.__init__(self)
 
@@ -34,11 +41,14 @@ class NAMDLOG(LOGReader):
     def getDataSeries(self, keywordsStr, begin=0, end=None):
         """ This method is used to extract on or several columns from the full dataSet.
 
-            Input:  keywords string (example: "ELECT MISC TOTAL")
-                    begin   -> first timestep used as start of data series
-                    end     -> last timestep to be used + 1 
+            :arg keywordStr: keywords string (example: "ELECT MISC TOTAL")
+                             The full list can be obtained using *etitle* attribute 
+            :arg begin:      first timestep used as start of data series
+            :arg end:        last timestep to be used + 1 
 
-            Output: numpy 2D array containing the selected columns within given range """
+            :returns: numpy 2D array containing the selected columns within given range 
+
+        """
 
         #_Split the string given in arguments (assuming space, comma or semicolon separation.)
         keywords = re.split('[\s,;]', keywordsStr)
@@ -55,15 +65,15 @@ class NAMDLOG(LOGReader):
     def getDataDistribution(self, keyword, binSize=50, begin=0, end=None):
         """ This method can be used to compute the distribution of a data series without plotting it.
 
-            Input:  keyword -> the column to be used to compute the distribution
-                    binSize -> the size of the bin. Determine the width of each rectangle of the histogram 
-                    begin   -> first frame to be used
-                    end     -> last frame to be used + 1
-                    fit     -> if set to True, use the given model in scipy's curve_fit method and plot it
-                    model   -> model to be used for the fit 
+            :arg keyword: the column to be used to compute the distribution
+            :arg binSize: the size of the bin. Determine the width of each rectangle of the histogram 
+            :arg begin:   first frame to be used
+            :arg end:     last frame to be used + 1
 
-            Output: numpy 2D array containing the bin mean value (first column)
-                    and the corresponding density (second column) """
+            :returns: numpy 2D array containing the bin mean value (first column)
+                      and the corresponding density (second column) 
+
+        """
 
         data = np.sort(self.getDataSeries(keyword, begin=begin, end=end).ravel())
 
@@ -93,6 +103,8 @@ class NAMDLOG(LOGReader):
 
         return np.column_stack((xBins, density))
 
+
+
     #---------------------------------------------
     #_Plotting methods
     #---------------------------------------------
@@ -100,7 +112,18 @@ class NAMDLOG(LOGReader):
                                                                                 model=None, p0=None):
         """ This method can be used to quickly plot one or several data series.
             
-            Input: keywords string (example: "ELECT MISC TOTAL") """
+            :arg keywordStr: keywords string (example: "ELECT MISC TOTAL") 
+                             The full list can be obtained using *etitle* attribute
+            :arg xaxis:      data series to be used on x-axis (default 'TS' for number of time steps)
+            :arg begin:      first frame to be used
+            :arg end:        last frame to be used + 1
+            :arg fit:        whether data should be fitted against a given model (using Scipy curve_fit)
+            :arg fitIndex:   if several keywords for data series are given, this allows to select which
+                             data series is to be fitted (default 0 for the first one in the string)
+            :arg model:      model to be used for fitting, will be given to Scipy curve_fit
+            :arg p0:         initial parameters for Scipy curve_fit
+
+        """
 
         #_Split the string given in arguments (assuming space, comma or semicolon separation.)
         keywords = re.split('[\s,;]', keywordsStr)
@@ -163,12 +186,15 @@ class NAMDLOG(LOGReader):
         """ This method takes one data series as argument, and computes the number occurences of 
             each value within a range determined by the binSize parameter.
 
-            Input:  keyword -> the column to be used to compute the distribution
-                    binSize -> the size of the bin. Determine the width of each rectangle of the histogram 
-                    begin   -> first frame to be used
-                    end     -> last frame to be used + 1
-                    fit     -> if set to True, use the given model in scipy's curve_fit method and plot it
-                    model   -> model to be used for the fit """
+            :arg keyword: the column to be used to compute the distribution
+            :arg binSize: the size of the bin. Determine the width of each rectangle of the histogram 
+            :arg begin:   first frame to be used
+            :arg end:     last frame to be used + 1
+            :arg fit:     if set to True, use the given model in Scipy curve_fit method and plot it
+            :arg model:   model to be used for the fit 
+            :arg p0:      initial parameters for Scipy cure_fit
+
+        """
 
 
         keyData = np.sort(self.getDataSeries(keyword, begin=begin, end=end).ravel())

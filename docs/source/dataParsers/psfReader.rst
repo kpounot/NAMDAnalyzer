@@ -1,5 +1,5 @@
-psfReader module
-================
+psfReader
+=========
 
 .. automodule:: psfReader
    :members:

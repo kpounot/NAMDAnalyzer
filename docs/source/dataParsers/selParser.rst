@@ -1,5 +1,5 @@
-selParser module
-================
+selParser
+=========
 
 .. automodule:: selParser
    :members:

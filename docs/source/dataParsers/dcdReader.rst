@@ -1,5 +1,5 @@
-dcdReader module
-================
+dcdReader
+=========
 
 .. automodule:: dcdReader
    :members:

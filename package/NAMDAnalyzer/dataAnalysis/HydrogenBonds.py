@@ -1,3 +1,11 @@
+"""
+
+Classes
+^^^^^^^
+
+"""
+
+
 import sys
 
 import numpy as np
@@ -8,33 +16,33 @@ from NAMDAnalyzer.lib.pylibFuncs import py_getHydrogenBonds
 
 
 class HydrogenBonds:
-
-    def __init__(self, data, acceptors='hbacceptors', donors='hbdonors', hydrogens=None, 
-                                    maxTime=50, nbrTimeOri=20, step=1, maxR=2.5, minAngle=130):
-        """This class defines methods to compute hydrogen bonds auto-correlation functions. 
+    """ This class defines methods to compute hydrogen bonds auto-correlation functions. 
             
         Some plotting methods are also available to quicly check the results. 
         
-        Input:  data        -> a Dataset class instance containing trajectories data 
-                acceptors   -> selection of acceptors atoms for hydrogen bonds (string)
-                donors      -> selection of donors atoms for hydrogen bonds (string)
-                hydrogens   -> selection of hydrogens bound to donors (optional, if None, hydrogens
+        :arg data:          a :class:`Dataset` class instance containing trajectories data 
+        :arg acceptors:     selection of acceptors atoms for hydrogen bonds (string)
+        :arg donors:        selection of donors atoms for hydrogen bonds (string)
+        :arg hydrogens:     selection of hydrogens bound to donors (optional, if None, hydrogens
                                 will be guessed from donors list)
-                maxTime     -> maximum time interval to be used for correlation in number of frames
+        :arg maxTime:       maximum time interval to be used for correlation in number of frames
                                 (optional, default 100)
-                step        -> number of frames between each time interval points (optional, default 1) 
-                nbrTimeOri  -> number of time origins to be averaged over (optional, default 25)
-                maxR        -> maximum distance to allow for hydrogen bonding, angström 
+        :arg step:          number of frames between each time interval points (optional, default 1) 
+        :arg nbrTimeOri:    number of time origins to be averaged over (optional, default 25)
+        :arg maxR:          maximum distance to allow for hydrogen bonding, angström 
                                 (optional, default 2.8 - acceptor-hydrogen distance)
-                minAngle    -> minimum angle to allow for hydrogen bonding (optional, default 130) 
+        :arg minAngle:      minimum angle to allow for hydrogen bonding (optional, default 130) 
                 
         References: 
            * D.C. Rapaport (1983): Hydrogen bonds in water, 
              Molecular Physics: An International Journal at the 
              Interface Between Chemistry and Physics, 50:5, 1151-1162
 
-        """
+    """
 
+
+    def __init__(self, data, acceptors='hbacceptors', donors='hbdonors', hydrogens=None, 
+                                    maxTime=50, nbrTimeOri=20, step=1, maxR=2.5, minAngle=130):
 
         self.data       = data
 
@@ -55,9 +63,9 @@ class HydrogenBonds:
 
 
     def _processDonors(self, donors):
-        """This function takes a list of indices corresponding to selected hydrogen bond donor atoms.
-        Then, bound hydrogens are found and two lists of same size are returned. One containing 
-        all hydrogens, and the other their associated donors. 
+        """ This function takes a list of indices corresponding to selected hydrogen bond donor atoms.
+            Then, bound hydrogens are found and two lists of same size are returned. One containing 
+            all hydrogens, and the other their associated donors. 
 
         """
 
@@ -95,13 +103,18 @@ class HydrogenBonds:
 #_Computation methods
 #---------------------------------------------
     def compAutoCorrel(self, continuous=1):
-        """Computes the hydrogen bonds autocorrelation function.
+        """ Computes the hydrogen bonds autocorrelation function.
 
-        Both distances and angles are computed exactly, without any approximation to single-point
-        precision.
+            Both distances and angles are computed exactly, without any approximation, 
+            to single-point precision.
 
-        The result, a 1D array containing correlations for all time intervals is stored 
-        in self.cc or self.ic variable for continuous or intermittent types respectively. 
+            :arg continuous: set to 1, continuous correlation is computed
+                             set to 0 for intermittent case
+
+            The result, a 1D array containing correlations for all time intervals is stored 
+            in *cc*  or *ic* attribute variable for continuous or intermittent types respectively. 
+
+
 
         """
 
@@ -159,8 +172,11 @@ class HydrogenBonds:
 #_Plotting methods
 #---------------------------------------------
     def plotAutoCorrel(self, corrType='continuous'):
-        """Used to quickly plot autocorrelation function, either continuous or intermittent depending on the
-        value of corrType parameter. 
+        """ Used to quickly plot autocorrelation function, either continuous or 
+            intermittent depending on the value of corrType parameter.
+
+            :arg corrType: type of correlation to plot
+            :type corrType: str
 
         """
 

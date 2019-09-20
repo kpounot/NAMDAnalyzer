@@ -1,3 +1,10 @@
+"""
+
+Classes
+^^^^^^^
+
+"""
+
 import sys
 import numpy as np
 
@@ -16,15 +23,19 @@ from NAMDAnalyzer.lib.pylibFuncs import py_compIntScatFunc
 
 
 class BackScatData:
+    """ This class provides methods to convert trajectories into experimental-like Quasi-Elastic Neutron 
+        Scattering spectra (QENS) or Elastic Incoherent Structure Factors (EISF).
+        Mean-Squared Displacements (MSD) can also be computed directly from trajectories. 
+        
+        Some plotting methods are also available to quicly check the results. 
+        
+        :arg dataset: a :class:`Dataset` class instance containing trajectories data. 
+
+    """
+
+
 
     def __init__(self, dataset):
-        """ This class defines methods to convert trajectories into experimental-like Quasi-Elastic Neutron 
-            Scattering spectra (QENS) or Elastic Incoherent Structure Factors (EISF).
-            Mean-Squared Displacements (MSD) can aloso be computed directly from trajectories. 
-            
-            Some plotting methods are also available to quicly check the results. 
-            
-            Input: self.dataset -> a self.dataset class instance containing trajectories data """
 
         self.dataset = dataset
 
@@ -42,16 +53,18 @@ class BackScatData:
                                         alignCOM=True, frames=slice(0, None, 1), nbrTS=200):
         """ This method computes intermediate function for all q-value (related to scattering angle)
 
-            Input:  qValList    -> list of q-values to be used 
-                    maxFrames   -> maximum number of frames to be used (upper limit of time integration)
-                    step        -> step for time interval increment 
-                    nbrTimeOri  -> number of time origins to be averaged over
-                    selection   -> atom selection
-                    alignCOM    -> whether center of mass should be aligned or not
-                    frames      -> either None to select all frames, an int, or a slice object
-                    nbrTS       -> number of time steps to be used (number of points ni the x-axis output)
-                    
-            Returns an (nbr of q-values, timesteps) shaped array. """
+            :arg qValList:   list of q-values to be used 
+            :arg nbrTimeOri: number of time origins to be averaged over
+            :arg selection:  atom selection (usually 'protNonExchH' or 'waterH')
+            :arg alignCOM:   whether center of mass should be aligned or not
+            :arg frames:     either None to select all frames, an int, or a slice object
+            :arg nbrTS:      number of time steps to be used (number of points ni the x-axis output)
+                
+            Result is stored in *interFunc* attribute as the following tuple:
+                - **corr** auto-correlation function as a (nbr of q-values, nbr of timesteps) shaped array. 
+                - **ts**   timesteps as calculated from selected frames
+
+        """
 
 
         if type(selection) == str:
@@ -105,13 +118,22 @@ class BackScatData:
             function with the computed intermediate function to get the convoluted signal, 
             which can be used to compute MSD. 
 
-            Input:  qValList    -> list of q-values to be used 
-                    nbrTimeOri  -> number of time origins to be averaged over
-                    resFunc     -> resolution function to be used (optional, default resFuncSPHERES)
-                    selection   -> atom selection (optional, default 'protein')
-                    alignCOM    -> whether center of mass should be aligned or not
-                    frames      -> either None to select all frames, an int, or a slice object
-                    nbrTS       -> number of time steps to be used (number of points ni the x-axis output) """
+
+
+            :arg qValList:   list of q-values to be used 
+            :arg nbrTimeOri: number of time origins to be averaged over
+            :arg resFunc:    resolution function to be used (default a standard gaussian)
+            :arg selection:  atom selection (usually 'protNonExchH' or 'waterH')
+            :arg alignCOM:   whether center of mass should be aligned or not
+            :arg frames:     either None to select all frames, an int, or a slice object
+            :arg norm:       whether result should be normalized by first point or not
+            :arg nbrTS:      number of time steps to be used (number of points ni the x-axis output)
+                
+            Result is stored in *EISF* attribute as the following tuple:
+                - **eisf** auto-correlation function as a (nbr of q-values, nbr of timesteps) shaped array. 
+                - **ts**   timesteps as calculated from selected frames
+
+        """
 
         if resFunc == None:
             resFunc = CM.FTresFuncSPHERES
@@ -137,20 +159,25 @@ class BackScatData:
 
 
 
-    def compScatteringFunc(self, qValList, nbrTimeOri=50, resFunc=None, 
-                            selection='protNonExchH', alignCOM=True, frames=slice(0, None, 1), nbrTS=200):
-        """ This method calls getIntermediateFunc several times for different time steps, given by
-            the number of frames, which will start from minFrames and by incremented to reach maxFrames
-            in the given number of bins.
+    def compScatteringFunc(self, qValList, nbrTimeOri=50, resFunc=None, selection='protNonExchH', 
+                                alignCOM=True, frames=slice(0, None, 1), norm=True, nbrTS=200):
+        """ This method calls the :func:`compEISF()` method, performs a Fourier transform on
+            the result and computes the power spectrum of it.
 
-            Then, a Fourier transform is performed to compute the scattering function.
 
-            Input:  qValList    -> list of q-values to be used 
-                    nbrTimeOri  -> number of time origins to be averaged over
-                    selection   -> atom selection (optional, default 'protein')
-                    alignCOM    -> whether center of mass should be aligned or not
-                    frames      -> either None to select all frames, an int, or a slice object
-                    nbrTS       -> number of time steps to be used (number of points ni the x-axis output """
+            :arg qValList:   list of q-values to be used 
+            :arg nbrTimeOri: number of time origins to be averaged over
+            :arg selection:  atom selection (usually 'protNonExchH' or 'waterH')
+            :arg alignCOM:   whether center of mass should be aligned or not
+            :arg frames:     either None to select all frames, an int, or a slice object
+            :arg nbrTS:      number of time steps to be used (number of points ni the x-axis output)
+                
+            Result is stored in *scatFunc* attribute as the following tuple:
+                - **scatFunc** spectra as a (nbr of q-values, nbr of timesteps) shaped array. 
+                - **energies** energies in ueV obtained from timesteps
+
+        """
+
 
         self.compEISF(qValList, nbrTimeOri, resFunc, selection, alignCOM, frames, nbrTS)
 
@@ -176,10 +203,14 @@ class BackScatData:
         """ Computes the Mean-Squared Displacement for the given number of frames, which should correspond
             to the max time scale probed by the instrument.
 
-            Input:  frameNbr  -> number of frames to be used (time interval)
-                    selection -> atom selection to be used to compute MSD
-                    frames    -> either None to select all frames, an int, or a slice object
-                    alignCOM  -> whether center of mass should be aligned or not """
+            :arg frameNbr:  number of frames to be used (time interval)
+            :arg selection: atom selection to be used to compute MSD
+            :arg frames:    either None to select all frames, an int, or a slice object
+            :arg alignCOM:  whether center of mass should be aligned or not 
+
+            Result is stored in *MSD* attribute
+
+        """
 
         #_Get the indices corresponding to the selection
         if type(selection) == str:
@@ -208,8 +239,11 @@ class BackScatData:
 #_Conversion methods (for nPDyn)
 #---------------------------------------------
     def convertScatFunctoEISF(self):
-        """ First finds the index corresponding to the 0 energy transfer on x axis.
-            Then returns an array containing the intensity for each q-value. """
+        """ First finds the index corresponding to the 0 energy transfer on x axis 
+            in *scatFunc* attribute.
+            Then returns an array containing the intensity for each q-value. 
+
+        """
 
         #_Get the zero energy transfer index
         elasticIdx = np.argwhere(self.scatFunc[0] == np.max(self.scatFunc[0]))[0][1]
@@ -221,9 +255,9 @@ class BackScatData:
 #_Plotting methods
 #---------------------------------------------
     def plotIntermediateFunc(self):
-        """ This method calls self.backScatData.getIntermediateFunc to obtain the intermediate 
-            scattering function.
-            Then, a plot is generated, showing self-correlation for each q-values in qValList. """
+        """ Plots the intermediate scattering function for each q-value. 
+
+        """
 
         intF, times = self.interFunc
         qValList    = self.qVals
@@ -245,8 +279,9 @@ class BackScatData:
 
 
     def plotEISF(self):
-        """ This method calls self.backScatData.getEISF to obtain the Elastic Incoherent Structure Factor.
-            Then, a plot is generated, showing self-correlation for each q-values in qValList. """
+        """ Plots the EISF for each q-value. 
+
+        """
 
         EISF, times = self.EISF
         qValList    = self.qVals
@@ -269,8 +304,9 @@ class BackScatData:
 
 
     def plotScatteringFunc(self):
-        """ This method calls self.backScatDatagetScatteringFunc to obtain the scattering function S(q,omega).
-            Then, a plot is generated, showing self-correlation for each q-values in qValList. """
+        """ Plots the MSD for each q-value. 
+
+        """
 
         scatF, energies = self.scatFunc
         qValList        = self.qVals

@@ -1,5 +1,5 @@
-HydroproReader module
-=====================
+HydroproReader
+==============
 
 .. automodule:: HydroproReader
    :members:

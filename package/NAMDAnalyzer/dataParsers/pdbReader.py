@@ -1,8 +1,20 @@
+"""
+
+Classes
+^^^^^^^
+
+"""
+
 import numpy as np
 import re
 
 
 class PDBReader:
+    """ This class is used to read and extract data from a .pdb file. 
+
+        It is pretty simple and naive at the moment
+
+    """
     
     def __init__(self):
 
@@ -58,9 +70,9 @@ class PDBReader:
             #_If a 'TER' or a 'ENDMDL', or 'END' is encountered, copy temporary lists into main ones, 
             #_and clear the former to start a new model/chain
             elif re.search('^TER', line) or re.search('^ENDMDL', line) or re.search('^END', line):
-                self.atomList.append( np.copy(tempAtomList) )
-                self.hetatomList.append( np.copy(tempHetAtomList) )
-                self.anisouList.append( np.copy(tempAnisouList) )
+                self.atomList    = np.copy(tempAtomList) 
+                self.hetatomList = np.copy(tempHetAtomList) 
+                self.anisouList  = np.copy(tempAnisouList) 
                 tempAtomList.clear()
                 tempHetAtomList.clear()
                 tempAnisouList.clear()

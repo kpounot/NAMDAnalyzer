@@ -21,7 +21,7 @@ or
 
 ::
     
-    python setup.py [build, build_cuda]
+    python [setup.py, cuda_setup.py]
     python setup.py install
 
 

@@ -1,5 +1,5 @@
-periodic_kdtree module
-======================
+periodic_kdtree
+===============
 
 .. automodule:: periodic_kdtree
-   :members:
+   :members: 

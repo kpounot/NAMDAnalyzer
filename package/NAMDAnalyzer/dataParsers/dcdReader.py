@@ -1,3 +1,10 @@
+"""
+
+Classes
+^^^^^^^
+
+"""
+
 import numpy as np
 import re
 
@@ -5,6 +12,20 @@ from scipy.io import FortranFile
 from struct import *
 
 class DCDReader:
+    """ This class allow user to import a DCD file and extract the trajectory.
+
+        Some choices were made here to speed up subsequent analysis and allow easy data access
+        and appending of trajectory coordinates.
+        That is, trajectory is loaded in memory as a numpy array, taking into account the *stride* given.
+
+        It makes it longer to initially load data, but the access of coordinates over a big frame
+        range is very fast.
+
+
+        :arg stride: step for frame reading, 2 means ont over two frames are loaded 
+
+    """
+
     def __init__(self, stride=1):
 
         self.dcdData    = None
@@ -21,9 +42,9 @@ class DCDReader:
 
 
     def importDCDFile(self, dcdFile):
-        """Imports a new file and store the result in self.dcdData.
+        """Imports a new file and store the result in *dcdData* attribute.
            
-        If something already exists in self.dcdData, it will be deleted. 
+            If something already exists in *dcdData* attribute, it will be deleted. 
 
         """
 
@@ -122,12 +143,9 @@ class DCDReader:
 
 
     def appendDCD(self, dcdFile):
-        """Method to append trajectory data to the existing loaded data.
+        """ Method to append trajectory data to the existing loaded data.
 
-        The .dcd file is opened using dcdParser class, then data are append to the existing
-        dcdData instance. 
-
-        Input:  a single .dcd trajectory file 
+            :arg dcdFile: a single .dcd trajectory file 
 
         """
         

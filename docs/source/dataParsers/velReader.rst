@@ -1,5 +1,5 @@
-velReader module 
-================
+velReader
+=========
 
 .. automodule:: velReader
   :members:

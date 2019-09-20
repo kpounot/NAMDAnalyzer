@@ -1,5 +1,5 @@
-molFit_quaternions module
-=========================
+molFit_quaternions 
+==================
 
 .. automodule:: molFit_quaternions
    :members:

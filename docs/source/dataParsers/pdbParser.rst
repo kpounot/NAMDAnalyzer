@@ -1,5 +1,5 @@
-pdbParser module
-================
+pdbParser
+=========
 
 .. automodule:: pdbParser
    :members:

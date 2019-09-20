@@ -1,3 +1,10 @@
+"""
+
+Classes
+^^^^^^^
+
+"""
+
 import sys
 
 import numpy as np
@@ -6,19 +13,21 @@ import matplotlib.pyplot as plt
 
 
 class ResidenceTime:
+    """ This class defines methods to compute retention time of atoms in a certain region.
+        This determines how fast atoms in sel2 can leave the vicinity of sel1.
+        
+        Some plotting methods are also available to quicly check the results. 
+        
+        :arg data:       a :class:`Dataset` class instance containing trajectories data 
+        :arg sel:        selection corresponding to analysis region (with 'within' keyword')
+        :arg tMax:       maximum number of frames to be used 
+        :arg step:       time interval between each computed frame
+        :arg nbrTimeOri: number of time origins to be averaged over (optional, default 20) 
+
+    """
+
 
     def __init__(self, data, sel, tMax=25, step=1, nbrTimeOri=20):
-        """ This class defines methods to compute retention time of atoms in a certain region.
-            This determines how fast atoms in sel2 can leave the vicinity of sel1.
-            
-            Some plotting methods are also available to quicly check the results. 
-            
-            Input:  data        -> a Dataset class instance containing trajectories data 
-                    sel         -> selection corresponding to analysis region (with 'within' keyword')
-                    tMax        -> maximum number of frames to be used 
-                    step        -> time interval between each computed frame
-                    nbrTimeOri  -> number of time origins to be averaged over (optional, default 20) """
-
                                                                                                             
         self.data       = data
         self.sel        = sel 
@@ -37,7 +46,9 @@ class ResidenceTime:
     def compResidenceTime(self):
         """ For each frame in the range of tMax with given step, the number of atoms in selected region
             is computed and divided by the number of atoms at time origin. The result is averaged over
-            multiple time origins. """
+            multiple time origins. 
+
+        """
 
 
         self.times  = ( np.arange(0, self.tMax, self.step, dtype=int) 

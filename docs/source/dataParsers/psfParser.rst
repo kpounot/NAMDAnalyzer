@@ -1,5 +1,5 @@
-psfParser module
-================
+psfParser
+=========
 
 .. automodule:: psfParser
    :members:

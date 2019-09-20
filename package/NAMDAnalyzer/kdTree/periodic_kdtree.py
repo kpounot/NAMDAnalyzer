@@ -69,27 +69,26 @@ class PeriodicCKDTree(cKDTree):
     appear in the results, it is essential to restrict the maximum
     distance between a query point and a data point to half the smallest
     box dimension.
+    
+
+    :arg bounds: array_like, shape (k,)
+                 Size of the periodic box along each spatial dimension.  A
+                 negative or zero size for dimension k means that space is not
+                 periodic along k.
+    :arg data: array-like, shape (n,m)
+               The n data points of dimension mto be indexed. This array is 
+               not copied unless this is necessary to produce a contiguous 
+               array of doubles, and so modifying this data will result in 
+               bogus results.
+    :arg leafsize: positive integer
+                   The number of points at which the algorithm switches over to
+                   brute-force.
+
+
 
     """
     
     def __init__(self, bounds, data, leafsize=10):
-        """Construct a kd-tree.
-
-        :arg bounds: array_like, shape (k,)
-                     Size of the periodic box along each spatial dimension.  A
-                     negative or zero size for dimension k means that space is not
-                     periodic along k.
-        :arg data: array-like, shape (n,m)
-                   The n data points of dimension mto be indexed. This array is 
-                   not copied unless this is necessary to produce a contiguous 
-                   array of doubles, and so modifying this data will result in 
-                   bogus results.
-        :arg leafsize: positive integer
-                       The number of points at which the algorithm switches over to
-                       brute-force.
-
-        """
-
         # Map all points to canonical periodic image
         self.bounds = np.array(bounds)
         self.real_data = np.asarray(data)
@@ -159,11 +158,12 @@ class PeriodicCKDTree(cKDTree):
                                    queries, it may help to supply the distance to the nearest neighbor
                                    of the most recent point.
 
-        :returns d: array of floats
+        :returns: 
+            - **d** array of floats
                     The distances to the nearest neighbors. 
                     If x has shape tuple+(self.m,), then d has shape tuple+(k,).
                     Missing neighbors are indicated with infinite distances.
-        :returns i: ndarray of ints
+            - **i** ndarray of ints
                     The locations of the neighbors in self.data.
                     If `x` has shape tuple+(self.m,), then `i` has shape tuple+(k,).
                     Missing neighbors are indicated with self.n.
@@ -278,13 +278,17 @@ class PeriodicCKDTree(cKDTree):
             return result
 
     def query_ball_tree(self, other, r, p=2., eps=0):
+        """"""
         raise NotImplementedError()
 
     def query_pairs(self, r, p=2., eps=0):
+        """"""
         raise NotImplementedError()
     
     def count_neighbors(self, other, r, p=2.):
+        """"""
         raise NotImplementedError()
         
     def sparse_distance_matrix(self, other, max_distance, p=2.):
+        """"""
         raise NotImplementedError()

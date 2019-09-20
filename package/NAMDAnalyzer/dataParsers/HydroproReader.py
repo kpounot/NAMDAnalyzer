@@ -1,3 +1,10 @@
+"""
+
+Classes
+^^^^^^^
+
+"""
+
 import sys
 
 import re
@@ -8,10 +15,14 @@ import numpy as np
 
 
 class HydroproReader:
+    """ This class can be used to extract usefule information from a hydropro result file that
+        can be used with ScatDiffusion module from NamdAnalyzer. 
+
+        :arg resFile: result file as obtained from HydroPro software
+
+    """
 
     def __init__(self, resFile=None):
-        """ This class can be used to extract usefule information from a hydropro result file that
-            can be used with ScatDiffusion module from NamdAnalyzer. """
 
         self.paramsTuple = namedtuple('params', 'temp solViscosity molWeight specVol solDensity dt0 rg vol dr0'
                                                                                 +' sedCoeff rh')
@@ -25,7 +36,21 @@ class HydroproReader:
 
 
     def readFile(self, resFile):
-        """ Extracts different parameters from hydropro output file using regular expression. """
+        """ Extracts different parameters from hydropro output file using regular expression. 
+
+            Result is stored in *params* namedtuple attribute with the following keys:
+                - temp          - temperature used
+                - solViscosity  - solvent viscosity at given temperature
+                - molWeight     - molecular weight of the molecule
+                - specVol       - specific volume
+                - solDensity    - solvent density at given temperature
+                - dt0           - translational diffusion coefficient
+                - rg            - gyration radius
+                - dr0           - rotational diffusion coefficient
+                - sedCoeff      - sedimentation coefficient
+                - rh            - hydrodynamic radius
+
+        """
 
         #_Temporary list to store parameters
         paramsList = []

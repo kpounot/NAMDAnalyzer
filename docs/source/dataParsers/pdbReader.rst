@@ -1,5 +1,5 @@
-pdbReader module
-================
+pdbReader
+=========
 
 .. automodule:: pdbReader
    :members:

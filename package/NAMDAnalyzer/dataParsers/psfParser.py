@@ -1,3 +1,10 @@
+"""
+
+Classes
+^^^^^^^
+
+"""
+
 import os, sys
 import numpy as np
 import re
@@ -7,7 +14,13 @@ from collections import namedtuple
 from NAMDAnalyzer.dataParsers.psfReader import PSFReader
 
 class NAMDPSF(PSFReader):
-    """ This class is used for .psf file reading. """
+    """ This class is used for .psf file reading. 
+
+        It contains also selection methods that are used throughout the package.
+        These selection methods can be called directly from here, but using the 
+        string selection is usually much easier.
+
+    """
 
     def __init__(self, psfFile=None):
 
@@ -72,7 +85,9 @@ class NAMDPSF(PSFReader):
     def getAtomsMasses(self, selection):
         """ Return the column corresponding to atoms masses as an 1D array of float.
 
-            Input:  selection   -> a selection of atom indices """
+            :arg selection: a selection of atoms, either a string or a list 
+
+        """
 
         #_Get the indices corresponding to the selection
         if type(selection) == str:
@@ -88,38 +103,42 @@ class NAMDPSF(PSFReader):
         """ This method returns an list of index corresponding to the ones that have been selected 
             using the 'selText' argument and the indices list.
 
-            Possible selText are:   - all
-                                    - protein
-                                    - backbone
-                                    - protH or proteinH
-                                    - protNonExchH
-                                    - water
-                                    - waterH
-                                    - hydrogen
-                                    - hbdonors
-                                    - hbacceptors
+            :arg selText: keywords defining specific selection 
 
-            For segName, resNbr, resName, atom:  - segment id, or list of segment id
-                                                 - any residue number, or list of residue number
-                                                 - any residue name, or list of residue names
-                                                 - any atom name, or list of atom names 
+                          Possibilites are:   
+                              - all
+                              - protein
+                              - backbone
+                              - protH or proteinH
+                              - protNonExchH (non exchangable hydrogens, useful for neutron scattering)
+                              - water
+                              - waterH
+                              - hydrogen
+                              - hbdonors
+                              - hbacceptors
+                              - hbhydrogens (hydrogens bound to hydrogen bond donors)
 
-            Argument index should be a list, which can be generated with range in case of a range.
+            :arg segName: segment id, or list of segment id
+            :arg resNbr:  any residue number, or list of residue number
+            :arg resID:   any residue index, or list of residue indices
+            :arg resName: any residue name, or list of residue names
+            :arg atom:    any atom name, or list of atom names 
+            :arg index:   should be a list, which can be generated with range in case of a range.
+            :arg invert:  if set to True, is equivalent to write ``'not resid 40:80'``
 
-            Some NOT... arguments can be provided as well to eliminate some entries. 
-                                    
-            In case the user wants to the protein and a given segment id, the following argument can
-            be entered ['protein', 'segID_name']. Then, for every selection, the index lists are 
-            compared and only the indices that appear in all lists are kept. """
+            :returns: Each of individual arguments are treated separatly, then they are compared 
+                      and only atom indices that appear in all lists are kept and returned as a np.ndarray. 
+
+        """
 
 
         #_Converting to lists on case of single string
         if type(segName) == str:
-            segName = [segName]
+            segName = segName.split(' ')
         if type(resID) == str:
-            resID = [resID]
+            resID = resID.split(' ')
         if type(atom) == str:
-            atom = [atom]
+            atom = atom.split(' ')
 
         keepIdxList = []
 

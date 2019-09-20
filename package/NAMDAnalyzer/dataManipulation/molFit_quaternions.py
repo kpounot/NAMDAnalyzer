@@ -1,3 +1,10 @@
+"""
+
+Functions
+^^^^^^^^^
+
+"""
+
 import os, sys
 import numpy as np
 
@@ -43,27 +50,27 @@ def get_bestMatrix(q):
 
 
 def alignAllMol(dcdData):
-    """This function takes trajectories from :class:`.Dataset` *dcdData* attribute, 
-    and apply the following procedure for each frames in *dcdData* array:
+    """ This function takes trajectories from :class:`.Dataset` *dcdData* attribute, 
+        and apply the following procedure for each frames in *dcdData* array:
 
-    First, computes appropriate dot products are computed with the first frames coordinates
-    Then, the matrix to be solved for eigenvalues and eigenvectors is constructed and solved
-
-
-    :arg dcdData: Array containing trajectory coordinates for wanted frames
-                  with shape (atoms, frames, coordinates)
-    :type dcdData: :class:`.numpy.ndarray`
+        First, computes appropriate dot products are computed with the first frames coordinates
+        Then, the matrix to be solved for eigenvalues and eigenvectors is constructed and solved
 
 
-    :returns: A list of 4 by 4 rotation matrices to be applied on *dcdData* array
+        :arg dcdData: Array containing trajectory coordinates for wanted frames
+                      with shape (atoms, frames, coordinates)
+        :type dcdData: :class:`.numpy.ndarray`
 
-    
-    This procedure is based on the [Horn_1987]_ and [Theobald_2005]_ papers.
 
-    References:
+        :returns: A list of 4 by 4 rotation matrices to be applied on *dcdData* array
 
-    .. [Horn_1987] https://doi.org/10.1364/JOSAA.4.000629
-    .. [Theobald_2005] https://doi.org/10.1107/S0108767305015266
+        
+        This procedure is based on the [Horn_1987]_ and [Theobald_2005]_ papers.
+
+        References:
+
+        .. [Horn_1987] https://doi.org/10.1364/JOSAA.4.000629
+        .. [Theobald_2005] https://doi.org/10.1107/S0108767305015266
 
     """
 

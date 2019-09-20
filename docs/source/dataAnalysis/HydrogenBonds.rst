@@ -1,5 +1,5 @@
-HydrogenBonds module
-====================
+HydrogenBonds
+=============
 
 .. automodule:: HydrogenBonds
    :members:

@@ -1,3 +1,10 @@
+"""
+
+Classes
+^^^^^^^
+
+"""
+
 import sys
 import numpy as np
 
@@ -15,17 +22,19 @@ from NAMDAnalyzer.dataParsers.HydroproReader import HydroproReader
 
 
 class ScatDiffusion(HydroproReader):
+    """ This class defines methods to compute corrected diffusion coefficients.
+        Starting from coefficients Dt0, for translational diffusion and Dr0 for rotational diffusion
+        in the dilute limit obtained with HYDROPRO for example, corrections on the volume fraction
+        and coefficient themselves can be performed to obtain the apparent diffusion coefficient 
+        for crowded solution that can be used to compare with experimental scattering data.
+        
+        :arg dataset:       a self.dataset class instance containing trajectories data 
+        :arg hydroproFile:  output .res file from hydropro containing computes parameters 
+
+    """
+
 
     def __init__(self, dataset, hydroproFile=None):
-        """ This class defines methods to compute corrected diffusion coefficients.
-            Starting from coefficients Dt0, for translational diffusion and Dr0 for rotational diffusion
-            in the dilute limit obtained with HYDROPRO for example, corrections on the volume fraction
-            and coefficient themselves can be performed to obtain the apparent diffusion coefficient 
-            for crowded solution that can be used to compare with experimental scattering data.
-            
-            Input:  dataset         -> a self.dataset class instance containing trajectories data 
-                    hydroproFile    -> output .res file from hydropro containing computes parameters """
-
 
         if hydroproFile:
             super().__init__(hydroproFile)
@@ -44,8 +53,8 @@ class ScatDiffusion(HydroproReader):
         """ Computes the hydrodynamic radius based on translational diffusion coefficient in the dilute limit
             and uses the relation, effPhi = phi * (Rh/R)**3 to get the effective volume fraction. 
             
-            Input:  massP       -> mass of protein used in the experiment (in grams)
-                    solventVol  -> volume of solvent used (in cm^3), to compute initial volume fraction """
+            :arg massP:      mass of protein used in the experiment (in grams)
+            :arg solventVol: volume of solvent used (in cm^3), to compute initial volume fraction """
 
 
         R = ( 3/(4*np.pi) * self.params.vol )**(1/3)
@@ -61,7 +70,9 @@ class ScatDiffusion(HydroproReader):
         """ Computes the translational diffusion coefficient in crowded solution based on protein's 
             effective volume fraction phi and translational diffusion coefficient Ds0 in the dilute limit. 
         
-            See M.Tokuyama, I.Oppenheim, J. Korean Phys. 28, (1995) """
+            See M.Tokuyama, I.Oppenheim, J. Korean Phys. 28, (1995) 
+
+        """
 
         b = np.sqrt( 9 / 8 * self.effPhi )
         c = 11 / 16 * self.effPhi
@@ -75,7 +86,9 @@ class ScatDiffusion(HydroproReader):
 
     def compCorrectedDs(self):
         """ Computes the rotational diffusion coefficient in crowded solution based on protein's 
-            effective volume fraction phi and rotational diffusion coefficient in the dilute limit. """
+            effective volume fraction phi and rotational diffusion coefficient in the dilute limit. 
+
+        """
 
         self.Dr = self.params.dr0 * (1 - 1.3 * self.effPhi**2) 
 
@@ -87,7 +100,9 @@ class ScatDiffusion(HydroproReader):
     def compAppDiffCoeff(self, qVals, maxN=100, density_dr=1, maxDensityR=60, frame=-1):
         """ Computes apparent diffusion coefficient based on corrected diffusion coefficients Dt and Dr. 
         
-            As Dt and Dr are in [cm] and [s] units, the obtained result is given in cm^2/s """ 
+            As Dt and Dr are in [cm] and [s] units, the obtained result is given in cm^2/s 
+
+        """ 
 
 
         if self.effPhi is None:
@@ -141,7 +156,9 @@ class ScatDiffusion(HydroproReader):
             
             There should be only one protein in the trajectories. 
             
-            Returns volume in cm**3 """
+            Returns volume in cm**3 
+
+        """
 
         selProt = self.dataset.getSelection('protein')
 
@@ -164,7 +181,9 @@ class ScatDiffusion(HydroproReader):
 
             There should be only one protein in the trajectories. 
             
-            Returns specific volume in cm**3 / g """
+            Returns specific volume in cm**3 / g 
+
+        """
 
         massP = np.sum( self.dataset.getAtomsMasses('protein') )
 
@@ -185,7 +204,9 @@ class ScatDiffusion(HydroproReader):
             "Thermal offset viscosities of liquid H2O, D2O and T2O", J.Phys. Chem. B
             103(11):1991-1994
 
-            eta(T) is valid from 280k up to 400K """
+            eta(T) is valid from 280k up to 400K 
+
+        """
 
         T = float(T)
 
@@ -214,9 +235,14 @@ class ScatDiffusion(HydroproReader):
 
     def getDensityD2O(self, T):
         """ Calculates the density of D2O in units of [g/cm^3] for given temperature T in [K]
-            Handbook of Chemistry and Physics, 73rd Edition, 
-            Lide, D.R. Ed.; CRC Press: Boca Raton 1992; Chapter 6, pg. 13
-            http://physchem.uni-graz.ac.at/sm/Service/Water/D2Odens.htm """
+            
+            References:
+
+                - Handbook of Chemistry and Physics, 73rd Edition, 
+                  Lide, D.R. Ed.; CRC Press: Boca Raton 1992; Chapter 6, pg. 13
+                  http://physchem.uni-graz.ac.at/sm/Service/Water/D2Odens.htm 
+
+        """
 
         T = float(T)
 
