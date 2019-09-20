@@ -16,12 +16,17 @@ from matplotlib import cm, colors, colorbar
 from mpl_toolkits.mplot3d.axes3d import Axes3D
 from scipy.spatial.transform import Rotation as R
 
-from NAMDAnalyzer.lib.pylibFuncs import (  py_getWithin, 
-                                py_getCenterOfMass,
-                                py_setCenterOfMassAligned,
-                                py_getDistances,
-                                py_cdf,
-                                py_getParallelBackend )
+try:
+    from NAMDAnalyzer.lib.pylibFuncs import (  py_getWithin, 
+                                    py_getCenterOfMass,
+                                    py_setCenterOfMassAligned,
+                                    py_getDistances,
+                                    py_cdf,
+                                    py_getParallelBackend )
+except ImportError:
+    print("NAMDAnalyzer C code was not compiled, several methods won't work.\n"
+            + "Please compile it before using it.\n")
+
 
 
 from NAMDAnalyzer.dataManipulation import molFit_quaternions as molFit_q

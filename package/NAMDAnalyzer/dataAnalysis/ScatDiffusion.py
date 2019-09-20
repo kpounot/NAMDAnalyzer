@@ -16,7 +16,13 @@ from scipy.optimize import root
 
 from NAMDAnalyzer.helpersFunctions import ConstantsAndModels as CM 
 
-from NAMDAnalyzer.lib.pylibFuncs import py_compIntScatFunc
+try:
+    from NAMDAnalyzer.lib.pylibFuncs import py_compIntScatFunc
+except ImportError:
+    print("NAMDAnalyzer C code was not compiled, several methods won't work.\n"
+            + "Please compile it before using it.\n")
+
+
 from NAMDAnalyzer.dataParsers.HydroproReader import HydroproReader
 
 
