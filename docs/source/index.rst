@@ -12,7 +12,12 @@ Reference
 .. toctree::
    :maxdepth: 3
 
-   modules
+   dataset
+   dataAnalysis/index
+   dataManipulation/index
+   dataParsers/index
+   helpersFunctions/index
+   kdTree/index
    license
    help
 
