@@ -12,7 +12,11 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 
-from NAMDAnalyzer.lib.pylibFuncs import py_getHydrogenBonds
+try:
+    from NAMDAnalyzer.lib.pylibFuncs import py_getHydrogenBonds
+except ImportError:
+    print("NAMDAnalyzer C code was not compiled, several methods won't work.\n"
+            + "Please compile it before using it.\n")
 
 
 class HydrogenBonds:
