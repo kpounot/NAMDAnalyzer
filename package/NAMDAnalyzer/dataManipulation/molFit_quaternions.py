@@ -130,7 +130,11 @@ def alignAllMol(dcdData):
 
 
 def applyRotation(dcdData, qM):
-    """ Apply a rotation using given rotation matrix qM on given dcd data. """
+    """ Apply a rotation using given rotation matrix qM on given dcd data. 
+
+        :returns: rotated dcd data
+
+    """
 
     for i in range(1, dcdData.shape[1]):
 
