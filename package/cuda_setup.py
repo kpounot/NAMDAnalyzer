@@ -13,7 +13,7 @@ Options._directive_defaults['language_level'] = 3
 import numpy as np
 
 
-with open('../README.md', 'r') as f:
+with open('../README.rst', 'r') as f:
     description = f.read()
 
 
