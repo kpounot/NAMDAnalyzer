@@ -48,7 +48,7 @@ Options:
 
 
 Reference
-=========
+---------
 
 .. toctree::
    :maxdepth: 2
@@ -64,7 +64,7 @@ Reference
 
 
 Quick start
-===========
+-----------
 
 .. include:: quickstart.rst
 
