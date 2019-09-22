@@ -13,7 +13,6 @@ dataParsers
    pdbReader
    psfParser
    psfReader
-   selParser
    velParser
    velReader
 

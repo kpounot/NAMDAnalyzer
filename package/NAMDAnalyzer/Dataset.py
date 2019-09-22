@@ -5,12 +5,14 @@ import IPython
 import re
 
 
+from NAMDAnalyzer.selection.Selection import Selection
+
+
 from NAMDAnalyzer.dataParsers.dcdParser import NAMDDCD
 from NAMDAnalyzer.dataParsers.logParser import NAMDLOG
 from NAMDAnalyzer.dataParsers.pdbParser import NAMDPDB
 from NAMDAnalyzer.dataParsers.velParser import NAMDVEL
 from NAMDAnalyzer.dataParsers.psfParser import NAMDPSF
-from NAMDAnalyzer.dataParsers.selParser import SelParser
 
 
 class Dataset(NAMDDCD):
@@ -110,14 +112,19 @@ class Dataset(NAMDDCD):
 
 
 
-    def selection(self, selT, frame=-1):
-        """ Uses the :class:`.SelParser` class to select atoms with a simple string command. 
+    def selection(self, selT='all'):
+        """ Uses the :class:`Selection` class to select atoms with a simple string command. 
+
+            Default frame is the last one.
+
+            :arg selText: a selection string (default 'all')
+
+            :returns: a :class:`Selection` class instance
+
 
         """
 
-        selParser = SelParser(self, selT, frame)
-
-        return selParser.selection
+        return Selection(self, selT)
 
 
 

@@ -32,14 +32,14 @@ class SelParser:
     """
 
 
-    def __init__(self, dataContext, selT=None, frame=-1):
+    def __init__(self, dataContext, selT=None):
 
         self.selection = None
 
         self.dataContext = dataContext
         self.init_selT   = selT
         self.selT        = selT
-        self.frame       = frame
+        self.frame       = -1
         self.withinList  = None
 
         self.and_selList = [] #_Selections that will be compared using 'and' operator

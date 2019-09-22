@@ -59,6 +59,7 @@ Reference
    dataParsers/index
    helpersFunctions/index
    kdTree/index
+   selection/index
    license
    help
 

@@ -35,8 +35,9 @@ class ResidenceTime:
         self.step       = step
         self.nbrTimeOri = nbrTimeOri
 
-        self.retTime    = None
-        self.times      = None
+        self.resTime     = None
+        self.residueWise = None
+        self.times       = None
 
 
 
@@ -47,6 +48,8 @@ class ResidenceTime:
         """ For each frame in the range of tMax with given step, the number of atoms in selected region
             is computed and divided by the number of atoms at time origin. The result is averaged over
             multiple time origins. 
+
+            The result is stored in *resTime* attribute.
 
         """
 
@@ -68,8 +71,47 @@ class ResidenceTime:
                 corr[tIdx] += np.intersect1d(sel[0], keepIdx).size
 
 
-        self.retTime = corr / corr[0]
+        self.resTime = corr / corr[0]
 
+
+
+
+    def compResidueWiseResidenceTime(self, segName=None):
+        """ Computes, for each frame in the range of tMax with given step, the residence time for 
+            selected atoms around each residue in the protein. 
+
+            By default all atoms pertaining to protein are selected.
+            If different proteins are present, the *segName* argument can be used to restrict the 
+            selection to a subset of segments/chains.
+
+            The result is stored in *residueWise* attribute
+
+        """
+
+        self.times  = ( np.arange(0, self.tMax, self.step, dtype=int) 
+                        * self.data.dcdFreq[0] * self.data.timestep * 1e12 )
+        corr        = np.zeros_like(self.times)
+
+
+        #_Gets residue number list
+        resSel  = "protein" if segName is None else "protein and %s" % segName
+
+
+        oriList = ( (self.data.nbrFrames - self.tMax) * np.random.random(self.nbrTimeOri) ).astype(int)
+
+        for idx, frame in enumerate(oriList):
+
+            print("Processing time origin %i of %i with %i frames..." 
+                                % (idx+1, oriList.size, self.tMax/self.step), end='\r')
+
+
+            sel = self.data.selection(self.sel + " frame %i:%i:%i" % (frame, frame+self.tMax, self.step))
+            
+            for tIdx, keepIdx in enumerate(sel):
+                corr[tIdx] += np.intersect1d(sel[0], keepIdx).size
+
+
+        self.resTime = corr / corr[0]
 
 
         
@@ -84,7 +126,7 @@ class ResidenceTime:
 
         fig, ax = plt.subplots()
 
-        ax.plot(self.times, self.retTime, marker='o')
+        ax.plot(self.times, self.resTime, marker='o')
         ax.set_xlabel('Time [ps]')
         ax.set_ylabel('P(t)')
 

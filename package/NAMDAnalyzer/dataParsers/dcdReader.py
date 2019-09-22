@@ -14,14 +14,6 @@ from struct import *
 class DCDReader:
     """ This class allow user to import a DCD file and extract the trajectory.
 
-        Some choices were made here to speed up subsequent analysis and allow easy data access
-        and appending of trajectory coordinates.
-        That is, trajectory is loaded in memory as a numpy array, taking into account the *stride* given.
-
-        It makes it longer to initially load data, but the access of coordinates over a big frame
-        range is very fast.
-
-
         :arg stride: step for frame reading, 2 means ont over two frames are loaded 
 
     """
