@@ -18,6 +18,7 @@ sys.path.insert(0, os.path.abspath('../../package/NAMDAnalyzer/dataParsers'))
 sys.path.insert(0, os.path.abspath('../../package/NAMDAnalyzer/dataManipulation'))
 sys.path.insert(0, os.path.abspath('../../package/NAMDAnalyzer/dataAnalysis'))
 sys.path.insert(0, os.path.abspath('../../package/NAMDAnalyzer/helpersFunctions'))
+sys.path.insert(0, os.path.abspath('../../package/NAMDAnalyzer/selection'))
 sys.path.insert(0, os.path.abspath('../../package/NAMDAnalyzer/kdTree'))
 
 
