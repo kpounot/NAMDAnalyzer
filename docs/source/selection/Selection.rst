@@ -1,5 +1,0 @@
-Selection
-=========
-
-.. automodule:: Selection
-   :members:

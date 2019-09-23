@@ -1,0 +1,6 @@
+selText
+=======
+
+
+.. automodule:: selText
+   :members:

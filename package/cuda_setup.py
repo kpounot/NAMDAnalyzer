@@ -91,6 +91,7 @@ class build_ext_subclass( build_ext ):
 packagesList = [    'NAMDAnalyzer.dataManipulation',
                     'NAMDAnalyzer.dataParsers',
                     'NAMDAnalyzer.dataAnalysis',
+                    'NAMDAnalyzer.selection',
                     'NAMDAnalyzer.lib',
                     'NAMDAnalyzer.kdTree',
                     'NAMDAnalyzer.helpersFunctions' ]

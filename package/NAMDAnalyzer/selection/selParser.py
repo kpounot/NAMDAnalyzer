@@ -84,6 +84,8 @@ class SelParser:
             print('Selection text should be a string instance, the given argument cannot be parsed.')
             return
 
+
+        #_Parses frame keyword
         if re.search('frame', self.selT):
             frameTxt = self.selT[self.selT.find('frame')+6:]
             if re.match('[0-9]+:[0-9]+$', frameTxt):
@@ -99,6 +101,12 @@ class SelParser:
             self.selT = re.sub(' frame [0-9]+(:[0-9]+)*(\s[0-9]+)*', '', self.selT)
 
 
+        else:
+            self.frame = 1
+
+
+
+        #_Parses within keyword
         if re.search('within', self.selT):
             self.withinList = self._getWithin(self.selT[self.selT.find('within'):]) 
 

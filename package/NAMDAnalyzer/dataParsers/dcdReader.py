@@ -33,6 +33,10 @@ class DCDReader:
 
 
 
+
+
+
+
     def importDCDFile(self, dcdFile):
         """Imports a new file and store the result in *dcdData* attribute.
            

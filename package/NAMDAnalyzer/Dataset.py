@@ -5,7 +5,7 @@ import IPython
 import re
 
 
-from NAMDAnalyzer.selection.Selection import Selection
+from NAMDAnalyzer.selection.selText import SelText
 
 
 from NAMDAnalyzer.dataParsers.dcdParser import NAMDDCD
@@ -124,7 +124,7 @@ class Dataset(NAMDDCD):
 
         """
 
-        return Selection(self, selT)
+        return SelText(self, selT)
 
 
 

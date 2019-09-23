@@ -66,6 +66,8 @@ class NAMDDCD(DCDReader, NAMDPSF):
         self.parallelBackend = py_getParallelBackend()
 
 
+
+
     def appendCoordinates(self, coor):
         """ Can be used to append a frame with coordinates from a pdb file.
 
