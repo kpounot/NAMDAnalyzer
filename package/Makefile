@@ -34,9 +34,17 @@ endif
 clean:
 ifeq ($(OS), Windows_NT)
 	rmdir /S /Q build  
-	cd NAMDAnalyzer/lib/ && del *.c *.cpp
+	rmdir /S /Q dist  
+	rmdir /S /Q NAMDAnalyzer.egg-info  
+	cd NAMDAnalyzer/lib/ && del *.pyd
+	cd cuda && del *.lib
+	cd ../openmp && del *.c *.cpp
 else
 	rm -rf build  
-	rm NAMDAnalyzer/lib/*.c NAMDAnalyzer/lib/*.cpp
+	rm -rf dist  
+	rm -rf NAMDAnalyzer.egg-info  
+	rm NAMDAnalyzer/lib/*.pyd 
+	rm NAMDAnalyzer/lib/cuda/*.lib
+	rm NAMDAnalyzer/lib/openmp/*.c NAMDAnalyzer/lib/openmp/*.cpp
 endif
 

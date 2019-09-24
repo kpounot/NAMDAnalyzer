@@ -148,7 +148,9 @@ def py_cdf(np.ndarray[float, ndim=1, mode="c"] dist not None,
            np.ndarray[float, ndim=1, mode="c"] out not None, 
            float maxR, float dr, int normFactor):
     """ Given a distances array, computes the cumulative radial distribution with bins given 
-        by range(0, maxR, dr). """
+        by range(0, maxR, dr). 
+
+    """
 
 
     cdef int d

@@ -6,6 +6,7 @@ dataAnalysis
 
    BackscatteringDataConvert
    HydrogenBonds
+   RadialDensity
    ResidenceTime
    Rotations
    ScatDiffusion

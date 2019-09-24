@@ -15,6 +15,7 @@ from scipy.optimize import root
 
 
 from NAMDAnalyzer.helpersFunctions import ConstantsAndModels as CM 
+from NAMDAnalyzer.dataAnalysis.RadialDensity import COMRadialNumberDensity
 
 try:
     from NAMDAnalyzer.lib.pylibFuncs import py_compIntScatFunc
@@ -116,12 +117,20 @@ class ScatDiffusion(HydroproReader):
                     + "Use self.compEffVolFrac() method before calling this method.\n")
             return
 
+
+        #_Pre-process q-values and diffusion coefficients
         qVals = np.array( qVals ).astype('f') * 1e8 #_Conversion to cm^(-1)
 
         self.compCorrectedDt()
         self.compCorrectedDs()
 
-        density = self.dataset.getCOMRadialNumberDensity('protH', dr=density_dr, maxR=maxDensityR, frame=frame)
+        #_Computes the density
+        density = COMRadialNumberDensity(self.dataset, 'protH', dr=density_dr, 
+                                         maxR=maxDensityR, frame=frame)
+        density.compDensity()
+        density = ( density.radii, density.density )
+
+
 
         solRoot = root(self.fitFuncAppDiffCoeff, x0=self.Dt, args=(qVals, density, maxN), method='lm') 
 

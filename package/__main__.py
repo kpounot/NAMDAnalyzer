@@ -8,6 +8,9 @@ from NAMDAnalyzer.dataAnalysis.ScatDiffusion import ScatDiffusion
 from NAMDAnalyzer.dataAnalysis.HydrogenBonds import HydrogenBonds
 from NAMDAnalyzer.dataAnalysis.Rotations import Rotations
 from NAMDAnalyzer.dataAnalysis.ResidenceTime import ResidenceTime
+from NAMDAnalyzer.dataAnalysis.RadialDensity import ( ResidueWiseWaterDensity, 
+                                                      COMRadialNumberDensity, 
+                                                      RadialNumberDensity )
 
 
 

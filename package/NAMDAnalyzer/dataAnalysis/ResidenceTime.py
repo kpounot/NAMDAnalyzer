@@ -36,8 +36,9 @@ class ResidenceTime:
         self.nbrTimeOri = nbrTimeOri
 
         self.resTime     = None
-        self.residueWise = None
         self.times       = None
+        self.residueWise = None
+        self.residues    = None
 
 
 
@@ -76,7 +77,7 @@ class ResidenceTime:
 
 
 
-    def compResidueWiseResidenceTime(self, segName=None):
+    def compResidueWiseResidenceTime(self, dt=50, segName=None):
         """ Computes, for each frame in the range of tMax with given step, the residence time for 
             selected atoms around each residue in the protein. 
 
@@ -84,35 +85,43 @@ class ResidenceTime:
             If different proteins are present, the *segName* argument can be used to restrict the 
             selection to a subset of segments/chains.
 
+            :arg dt:      time step to compute residence time. Basically, the number of selected molecules
+                          wihtin the given region at initial time divides the number that stayed within the 
+                          region after a time dt.
+            :arg segName: segment name(s) to be used to get the residues and perform the selection
+            :type segName: str
+
             The result is stored in *residueWise* attribute
 
         """
 
-        self.times  = ( np.arange(0, self.tMax, self.step, dtype=int) 
-                        * self.data.dcdFreq[0] * self.data.timestep * 1e12 )
-        corr        = np.zeros_like(self.times)
-
-
         #_Gets residue number list
-        resSel  = "protein" if segName is None else "protein and %s" % segName
+        resSel = "protein" if segName is None else "protein and %s" % segName
+        resSel = self.data.selection(resSel).getUniqueResidues()
+
+        corr = np.zeros_like(resSel, dtype=float)
+
+        oriList = ( (self.data.nbrFrames - dt) * np.random.random(self.nbrTimeOri) ).astype(int)
 
 
-        oriList = ( (self.data.nbrFrames - self.tMax) * np.random.random(self.nbrTimeOri) ).astype(int)
+        for resId, residue in enumerate(resSel):
 
-        for idx, frame in enumerate(oriList):
+            for idx, frame in enumerate(oriList):
 
-            print("Processing time origin %i of %i with %i frames..." 
-                                % (idx+1, oriList.size, self.tMax/self.step), end='\r')
-
-
-            sel = self.data.selection(self.sel + " frame %i:%i:%i" % (frame, frame+self.tMax, self.step))
-            
-            for tIdx, keepIdx in enumerate(sel):
-                corr[tIdx] += np.intersect1d(sel[0], keepIdx).size
+                print("Processing time origin %i of %i for residue %i of %i..." 
+                                    % (idx+1, oriList.size, resId+1, int(resSel.size)), end='\r')
 
 
-        self.resTime = corr / corr[0]
+                selText = self.sel + 'and %s' % segName + ' and resid %s' % residue
 
+                sel = self.data.selection(selText + " frame %i %i" % (frame, frame+dt))
+                
+                corr[resId] += np.intersect1d(sel[0], sel[1]).size
+
+
+        self.residueWise    = corr / np.max(corr)
+        self.residues       = resSel.astype(int)
+        self.residueWise_dt = dt
 
         
 
@@ -121,7 +130,7 @@ class ResidenceTime:
 #_Plotting methods
 #---------------------------------------------
     def plotResidenceTime(self):
-        """ Used to quickly plot retention time. """
+        """ Used to quickly plot residence time. """
 
 
         fig, ax = plt.subplots()
@@ -131,4 +140,19 @@ class ResidenceTime:
         ax.set_ylabel('P(t)')
 
         fig.show()
+
+
+    def plotResidueWiseResidenceTime(self):
+        """ Used to quickly plot residue wise residence time. """
+
+        fig, ax = plt.subplots()
+
+        ax.bar(self.residues, self.residueWise)
+        ax.set_xlabel('Residue')
+        ax.set_ylabel('P(dt=%i ps)' % 
+                            np.ceil(self.residueWise_dt*self.data.timestep*self.data.dcdFreq[0]*1e12))
+
+        fig.show()
+
+
 

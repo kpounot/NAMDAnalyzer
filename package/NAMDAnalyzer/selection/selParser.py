@@ -76,7 +76,7 @@ class SelParser:
 
 
     def process(self):
-        """Parse the selection string 'selText' by identifying keywords. 
+        """ Parse the selection string 'selText' by identifying keywords. 
 
         """
 

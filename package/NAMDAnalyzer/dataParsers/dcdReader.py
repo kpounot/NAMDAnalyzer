@@ -5,6 +5,8 @@ Classes
 
 """
 
+import os
+
 import numpy as np
 import re
 
@@ -44,7 +46,7 @@ class DCDReader:
 
         """
 
-        self.dcdFile    = dcdFile
+        self.dcdFile    = os.path.abspath(dcdFile)
         self.dcdData    = np.array([])
         self.dcdFreq    = None
         self.nbrAtoms   = None
