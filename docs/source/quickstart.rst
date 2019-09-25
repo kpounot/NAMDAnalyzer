@@ -86,13 +86,15 @@ Outputs of previous code:
 +++++++++++++++++++++++++
 
 .. image:: ../fig/ubq_rmsdPerAtom.png
-   :width: 24 %
+   :width: 19.19 %
 .. image:: ../fig/radialDistWater.png
-   :width: 24 %
+   :width: 19.19 %
+.. image:: ../fig/residueWise_radial3D.png
+   :width: 19.19 %
 .. image:: ../fig/averagedDistances_parallel.png
-   :width: 24 %
+   :width: 19.19 %
 .. image:: ../fig/averagedDistances_chord.png
-   :width: 24 %
+   :width: 19.19 %
 
 
 

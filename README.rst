@@ -155,6 +155,9 @@ Outputs of previous code:
                 <img src="./docs/fig/radialDistWater.png">
             </td>
             <td>
+                <img src="./docs/fig/residueWise_radial3D.png">
+            </td>
+            <td>
                 <img src="./docs/fig/averagedDistances_parallel.png">
             </td>
             <td>
