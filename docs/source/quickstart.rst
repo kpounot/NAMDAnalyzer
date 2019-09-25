@@ -53,17 +53,24 @@ Load trajectories, selection, and analysis
 
 
 
-    #_To compute radial pair distribution function for water within 3 angstrom of a protein region
-    r, pdf = d.getRadialNumberDensity( 'name OH2 and within 3 of protein and resid 40:80',
+    #_To compute radial pair distribution function for water around a protein region
+    from NAMDAnalyzer.dataAnalysis.RadialDensity import RadialNumberDensity
+
+    rdf = RadialNumberDensity( 'name OH2 and within 3 of protein and resid 40:80',
                                        'name OH2 and within 3 of protein and resid 40:80',
                                        dr=0.1, maxR=15, frames=range(0,1000,5) )
 
-    import matplotlib.pyplot as plt
+    rdf.compDensity()
+    rdf.plotDensity()
 
-    plt.plot(r, pdf)
-    plt.xlabel('radius r [$\AA$]')
-    plt.ylabel('$\\rho (r)$')
-    plt.show()
+    #_To compute radial pair distribution density for water around each residue
+    from NAMDAnalyzer.dataAnalysis.RadialDensity import ResidueWiseWaterDensity
+
+    rdf = ResidueWiseWaterDensity( 'protein', dr=0.1, maxR=15, frames=range(0,1000,5) )
+
+    rdf.compDensity()
+    rdf.plotDensity()
+
 
 
 
