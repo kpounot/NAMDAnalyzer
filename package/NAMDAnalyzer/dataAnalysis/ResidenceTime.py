@@ -78,7 +78,7 @@ class ResidenceTime:
 
 
     def compResidueWiseResidenceTime(self, dt=50, segName=None):
-        """ Computes, for each frame in the range of tMax with given step, the residence time for 
+        """ Computes, for a given time dt, the residence time for 
             selected atoms around each residue in the protein. 
 
             By default all atoms pertaining to protein are selected.
