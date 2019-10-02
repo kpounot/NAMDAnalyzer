@@ -38,13 +38,7 @@ Initialization of the ipython console can be done using the following command:
 
 :: 
 
-    ipython -i <path to NAMDAnalyzer.py> -- <list of files to be loaded> [-s stride]
-
-Options: 
-
-- -s --stride 
-    use to skip frames when loading a .dcd file. For instance if "-s 5" is provided, 
-    only the frames that are multiples of 5 will be loaded.
+    ipython -i <path to NAMDAnalyzer.py> -- <list of files to be loaded> 
 
 
 Usage:

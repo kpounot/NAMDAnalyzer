@@ -63,8 +63,6 @@ void d_getHydrogenBonds(float *acceptors, int size_acceptors, int nbrFrames,
             float don_y = donors[3 * nbrFrames * col + 3 * dt + 1]; 
             float don_z = donors[3 * nbrFrames * col + 3 * dt + 2]; 
 
-
-
             float acc_d_x = acc_x - don_x;
             float acc_d_y = acc_y - don_y;
             float acc_d_z = acc_z - don_z;

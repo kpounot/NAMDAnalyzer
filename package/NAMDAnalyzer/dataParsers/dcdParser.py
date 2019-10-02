@@ -64,7 +64,7 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
 
 
-    def appendCoordinates(self, coor):
+    def appendPDB(self, coor):
         """ Can be used to append a frame with coordinates from a pdb file.
 
             Can be used even if no .dcd file was loaded.
