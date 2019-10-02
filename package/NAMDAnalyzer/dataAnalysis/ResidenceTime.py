@@ -77,19 +77,16 @@ class ResidenceTime:
 
 
 
-    def compResidueWiseResidenceTime(self, dt=50, segName=None):
+    def compResidueWiseResidenceTime(self, dt=25):
         """ Computes, for a given time dt, the residence time for 
             selected atoms around each residue in the protein. 
 
             By default all atoms pertaining to protein are selected.
-            If different proteins are present, the *segName* argument can be used to restrict the 
-            selection to a subset of segments/chains.
+            If different proteins are present, the *segName* argument can be used in selection text.
 
             :arg dt:      time step to compute residence time. Basically, the number of selected molecules
                           wihtin the given region at initial time divides the number that stayed within the 
-                          region after a time dt.
-            :arg segName: segment name(s) to be used to get the residues and perform the selection
-            :type segName: str
+                          region after a time dt (in number of frames).
 
             The result is stored in *residueWise* attribute
 
@@ -108,11 +105,14 @@ class ResidenceTime:
 
             for idx, frame in enumerate(oriList):
 
-                print("Processing time origin %i of %i for residue %i of %i..." 
+                print("Processing time origin %i of %i for residue %i of %i...        " 
                                     % (idx+1, oriList.size, resId+1, int(resSel.size)), end='\r')
 
+                #_Processing selection text
+                selText = self.sel
 
-                selText = self.sel + 'and %s' % segName + ' and resid %s' % residue
+                selText += ' and resid %s' % residue
+
 
                 sel = self.data.selection(selText + " frame %i %i" % (frame, frame+dt))
                 

@@ -4,7 +4,7 @@ from NAMDAnalyzer.kdTree.periodic_kdtree import PeriodicCKDTree
 
 
 
-def getWithin_kdTree(allAtoms, usrSel, keepIdx, cellDims, distance):
+def getWithin_kdTree(allAtoms, refSel, outSel, keepIdx, cellDims, distance):
     """ This method uses the periodicCKDTree class to find all atoms within given distance
         from user selection.
 
@@ -25,17 +25,17 @@ def getWithin_kdTree(allAtoms, usrSel, keepIdx, cellDims, distance):
 
     for frame in range(keepIdx.shape[1]):
         bounds  = cellDims[frame]
-        allPos  = allAtoms[:,frame]
+        outPos  = allAtoms[outSel, frame]
 
-        selPos  = allAtoms[usrSel, frame]
+        refPos  = allAtoms[refSel, frame]
 
-        T = PeriodicCKDTree(bounds, allPos)
+        T = PeriodicCKDTree(bounds, outPos)
 
-        toKeep = T.query_ball_point(selPos, r=distance)
+        toKeep = T.query_ball_point(refPos, r=distance)
 
-        toKeep = np.unique( np.concatenate( toKeep ) )
+        toKeep = np.unique( np.concatenate( toKeep ) ).astype(int)
 
-        keepIdx[toKeep, frame] = 1
+        keepIdx[outSel[toKeep], frame] = 1
 
 
 

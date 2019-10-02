@@ -145,17 +145,29 @@ class HydrogenBonds:
             #_Updating selection for each time origin
             acceptors = self.data.selection( self.acceptors + ' frame %i' % frame)
 
+
+            #_Processes selections
             if self.hydrogens is None:
                 donors, hydrogens   = self._processDonors( self.donors + ' frame %i' % frame)
             else:
                 donors = self.data.selection( self.donors + ' frame %i' % frame)
                 hydrogens = self.data.selection( self.hydrogens + ' frame %i' % frame)
 
+            
+            #_Gets coordinates and cell dimensions
+            allAtoms = self.data.dcdData[:, frame:frame+self.maxTime:self.step]
+
+            cellDims = self.data.cellDims[frame]
+            if cellDims.ndim == 1:
+                cellDims = cellDims[np.newaxis,:]
+            cellDims = np.ascontiguousarray(cellDims)
     
-            py_getHydrogenBonds(self.data.dcdData[acceptors, frame:frame+self.maxTime:self.step], 
+
+            #_Computes hydrogen bond autocorrelation for given frames
+            py_getHydrogenBonds(allAtoms[acceptors],
                                 self.times.size,
-                                self.data.dcdData[donors, frame:frame+self.maxTime:self.step], 
-                                self.data.dcdData[hydrogens, frame:frame+self.maxTime:self.step], 
+                                allAtoms[donors], allAtoms[hydrogens],
+                                cellDims,
                                 corr, self.maxTime,
                                 self.step, self.nbrTimeOri, self.maxR, self.minAngle, continuous)
 

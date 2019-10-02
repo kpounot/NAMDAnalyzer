@@ -6,8 +6,8 @@
 #include "../../libFunc.h"
 
 
-void getWithin(float *allAtoms, int nbrAtoms, int nbrFrames, int *selAtoms, 
-                int sel_dim0, int *out, float *cellDims, float distance)
+void getWithin(float *allAtoms, int nbrAtoms, int nbrFrames, int *refSel, int refSize, 
+                int *outSel, int outSelSize, int *out, float *cellDims, float distance)
 {
     /*  The function computes, for each atom in sel, the distance with all other atoms in atomPos.
      *  Then, Periodic Boundary Conditions (PBC) are applied using cell dimensions in cellDims.
@@ -28,32 +28,31 @@ void getWithin(float *allAtoms, int nbrAtoms, int nbrFrames, int *selAtoms,
 
     float squaredDist = distance*distance;
 
-    int frame, atomId;
-    
-    for(frame=0; frame < nbrFrames; ++frame)
+    for(int frame=0; frame < nbrFrames; ++frame)
     { 
-        for(int i=0; i < sel_dim0; ++i)
-            out[ selAtoms[i] * nbrFrames + frame ] = 1;
-
         float cD_x = cellDims[3*frame];
         float cD_y = cellDims[3*frame + 1];
         float cD_z = cellDims[3*frame + 2];
 
-        #pragma omp parallel for private(atomId)
-        for(int selId=0; selId < sel_dim0; ++selId)
+        for(int refId=0; refId < refSize; ++refId)
         {
-            float sel_x = allAtoms[3*nbrFrames*selAtoms[selId] + 3*frame];
-            float sel_y = allAtoms[3*nbrFrames*selAtoms[selId] + 3*frame + 1];
-            float sel_z = allAtoms[3*nbrFrames*selAtoms[selId] + 3*frame + 2];
+            int refIdx = refSel[refId];
 
-            for(atomId=0; atomId < nbrAtoms; ++atomId)
+            float sel_x = allAtoms[3*nbrFrames*refIdx + 3*frame];
+            float sel_y = allAtoms[3*nbrFrames*refIdx + 3*frame + 1];
+            float sel_z = allAtoms[3*nbrFrames*refIdx + 3*frame + 2];
+
+            #pragma omp parallel for shared(frame, refId, cD_x, cD_y, cD_z, sel_x, sel_y, sel_z, refIdx)
+            for(int atomId=0; atomId < outSelSize; ++atomId)
             {
-                float atom_x = allAtoms[3*nbrFrames*atomId + 3*frame];
-                float atom_y = allAtoms[3*nbrFrames*atomId + 3*frame + 1];
-                float atom_z = allAtoms[3*nbrFrames*atomId + 3*frame + 2];
+                int atomIdx = outSel[atomId];
+
+                float atom_x = allAtoms[3*nbrFrames*atomIdx + 3*frame];
+                float atom_y = allAtoms[3*nbrFrames*atomIdx + 3*frame + 1];
+                float atom_z = allAtoms[3*nbrFrames*atomIdx + 3*frame + 2];
 
                 // Only executes following if this atom was not found yet
-                if(out[ atomId * nbrFrames + frame ] == 0) 
+                if(out[ outSel[atomId*nbrFrames + frame ] * nbrFrames + frame ] == 0 || refIdx != atomIdx) 
                 {
                     // Computes distances for given timestep and atom
                     float dist_x = atom_x - sel_x;
@@ -62,23 +61,26 @@ void getWithin(float *allAtoms, int nbrAtoms, int nbrFrames, int *selAtoms,
                 
                     // Apply PBC conditions
                     dist_x = dist_x - cD_x * roundf( dist_x / cD_x );
-                    if(dist_x > distance)
+                    if(dist_x > squaredDist)
                         continue;
-
                     dist_y = dist_y - cD_y * roundf( dist_y / cD_y );
-                    if(dist_y > distance)
+                    if(dist_y > squaredDist)
                         continue;
-
                     dist_z = dist_z - cD_z * roundf( dist_z / cD_z );
+                    if(dist_z > squaredDist)
+                        continue;
 
                     float dr = dist_x*dist_x + dist_y*dist_y + dist_z*dist_z;
 
                     if(dr <= squaredDist) 
                     {
-                        #pragma omp critical
-                        out[ atomId * nbrFrames + frame ] = 1;
-                        break;
+                        out[ atomIdx * nbrFrames + frame ] = 1;
                     }
+                }
+
+                else if(refIdx == atomIdx)
+                {
+                    out[ atomIdx * nbrFrames + frame ] = 1;
                 }
 
             } // atoms indices loop

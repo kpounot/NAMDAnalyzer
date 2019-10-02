@@ -79,10 +79,12 @@ class BackScatData:
 
         #_Align center of mass if necessary
         if alignCOM:
-            self.dataset.setCenterOfMassAligned('all', frames)
+            print('Aligning center of mass of selected atoms...\n')
+            atomPos = self.dataset.getAlignedCenterOfMass(selection, frames)
+            print('Done\n')
 
-
-        atomPos = self.dataset.dcdData[selection, frames]
+        else:
+            atomPos = self.dataset.dcdData[selection, frames]
 
         #_Computes random q vectors
         qArray = []

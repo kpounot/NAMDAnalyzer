@@ -39,7 +39,7 @@ class SelParser:
         self.dataContext = dataContext
         self.init_selT   = selT
         self.selT        = selT
-        self.frame       = -1
+        self.frame       = 0
         self.withinList  = None
 
         self.and_selList = [] #_Selections that will be compared using 'and' operator
@@ -242,11 +242,18 @@ class SelParser:
 
 
 
-        for selArray in sel:
-            sel[0] = np.intersect1d(sel[0], selArray)
+        if sel != []:
+            for selArray in sel:
+                sel[0] = np.intersect1d(sel[0], selArray)
 
-        if withinList is not None:
-            sel[0] = np.intersect1d(sel[0], withinList)
+            if withinList is not None:
+                sel[0] = np.intersect1d(sel[0], withinList)
+
+        elif sel == [] and withinList is not None:
+            sel.append( withinList )
+
+        else:
+            return np.array([])
 
 
         self.selT = self.selT[:self.selT.find('same resid as ')]
@@ -262,6 +269,8 @@ class SelParser:
             The 'within' part is processed and the rest of the selection text is returned. 
 
         """
+
+        outSel = self.selT[:self.selT.find('within')]
 
         partialSel = partialSel[partialSel.find('within'):]
         partialSel = re.sub('within ', '', partialSel).strip()
@@ -288,7 +297,28 @@ class SelParser:
             sel = self._getSelection(partialSel)
 
 
-        sel = self.dataContext.getWithin(distance, sel, frame=self.frame)
+        #_Process outSel 
+        if outSel != '':
+            outSel = list(filter(None, outSel.strip().split('and')))
+            if outSel[-1] == '':
+                sel = self.dataContext.getWithin(distance, sel, frame=self.frame)
+            elif re.search(outSel[-1], 'same resid as'):
+                if outSel.split(' as ')[-1] != '':
+                    sel = self.dataContext.getWithin(distance, sel, outSel.split('as')[-1], frame=self.frame)
+                else:
+                    sel = self.dataContext.getWithin(distance, sel, frame=self.frame)
+            elif re.search(outSel[-1], 'bound to'):
+                if outSel.split(' to ')[-1] != '':
+                    sel = self.dataContext.getWithin(distance, sel, outSel.split('to')[-1], frame=self.frame)
+                else:
+                    sel = self.dataContext.getWithin(distance, sel, frame=self.frame)
+            else:
+                sel = self.dataContext.getWithin(distance, sel, outSel[-1], frame=self.frame)
+
+        else:
+            sel = self.dataContext.getWithin(distance, sel, frame=self.frame)
+
+
 
 
         self.selT = self.selT[:self.selT.find('within ')]
@@ -324,12 +354,19 @@ class SelParser:
             sel.append(self._getSelection(partialSel))
 
 
-        for selArray in sel:
-            sel[0] = np.intersect1d(sel[0], selArray)
+        if sel != []:
+            for selArray in sel:
+                sel[0] = np.intersect1d(sel[0], selArray)
 
 
-        if withinList is not None:
-            sel[0] = np.intersect1d(sel[0], withinList)
+            if withinList is not None:
+                sel[0] = np.intersect1d(sel[0], withinList)
+
+        elif sel == [] and withinList is not None:
+            sel.append( withinList )
+
+        else:
+            return np.array([])
 
         self.selT = self.selT[:self.selT.find('bound to ')]
 

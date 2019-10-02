@@ -17,7 +17,7 @@ with open('../README.rst', 'r') as f:
     description = f.read()
 
 
-pyxPath = "NAMDAnalyzer/lib/cython_pyx/"
+pyxPath = "NAMDAnalyzer/lib/"
 srcPath = "NAMDAnalyzer/lib/openmp/src/" 
 cudaSrcPath = "NAMDAnalyzer/lib/cuda/src/"
 
@@ -101,19 +101,24 @@ packagesList = [    'NAMDAnalyzer.dataManipulation',
 pylibFuncs_ext   = Extension( "NAMDAnalyzer.lib.pylibFuncs", 
                                    [cudaSrcPath + "compIntScatFunc.cpp", 
                                     cudaSrcPath + "getDistances.cpp", 
+                                    cudaSrcPath + "getRadialNbrDensity.cpp", 
                                     cudaSrcPath + "getHydrogenBonds.cpp", 
                                     cudaSrcPath + "getWithin.cpp", 
                                     cudaSrcPath + "getParallelBackend.cpp", 
+                                    "NAMDAnalyzer/lib/common/src/" + "dcdReader.cpp", 
+                                    "NAMDAnalyzer/lib/common/src/" + "dcdCellReader.cpp", 
                                     "NAMDAnalyzer/lib/" + "libFunc.pyx"],
                                    library_dirs=["NAMDAnalyzer/lib/cuda", cudaLib],
                                    extra_objects=[
                                         'NAMDAnalyzer/lib/cuda/%scompIntScatFunc%s' % (libPrefix, libExt),
                                         'NAMDAnalyzer/lib/cuda/%sgetDistances%s' % (libPrefix, libExt),
+                                        'NAMDAnalyzer/lib/cuda/%sgetRadialNbrDensity%s' % (libPrefix, libExt),
                                         'NAMDAnalyzer/lib/cuda/%sgetHydrogenBonds%s' % (libPrefix, libExt),
                                         'NAMDAnalyzer/lib/cuda/%sgetWithin%s' % (libPrefix, libExt) ],
                                    libraries=['cuda', 'cudart'],
                                    language='c++',
-                                   include_dirs=[cudaSrcPath, np.get_include(), cudaInclude])
+                                   include_dirs=[cudaSrcPath, np.get_include(), cudaInclude,
+                                                 "NAMDAnalyzer/lib/common/src"])
 
 
 

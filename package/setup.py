@@ -18,7 +18,7 @@ with open('../README.rst', 'r') as f:
     description = f.read()
 
 
-pyxPath = "NAMDAnalyzer/lib/cython_pyx/"
+pyxPath = "NAMDAnalyzer/lib/"
 srcPath = "NAMDAnalyzer/lib/openmp/src/" 
 
 #_The following is used to compile with openmp with both mingGW and msvc
@@ -58,12 +58,16 @@ packagesList = [    'NAMDAnalyzer.dataManipulation',
 pylibFuncs_ext   = Extension( "NAMDAnalyzer.lib.pylibFuncs", 
                                    [srcPath + "compIntScatFunc.cpp", 
                                     srcPath + "getDistances.cpp", 
+                                    srcPath + "getRadialNbrDensity.cpp", 
                                     srcPath + "getHydrogenBonds.cpp", 
                                     srcPath + "getWithin.cpp", 
                                     srcPath + "getParallelBackend.cpp", 
+                                    "NAMDAnalyzer/lib/common/src/" + "dcdReader.cpp", 
+                                    "NAMDAnalyzer/lib/common/src/" + "dcdCellReader.cpp", 
                                     "NAMDAnalyzer/lib/" + "libFunc.pyx"],
                                    language='c++',
-                                   include_dirs=[srcPath, np.get_include()])
+                                   include_dirs=[srcPath, np.get_include(),
+                                                 "NAMDAnalyzer/lib/common/src"])
 
 
 

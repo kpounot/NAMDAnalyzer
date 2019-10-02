@@ -20,8 +20,8 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=t
 
 
 __global__
-void d_getDistances(float *sel1, int sel1_size, float *sel2, int sel2_size, float *out, 
-                    float *cellDims, int frame, int nbrFrames)
+void d_getRadialNbrDensity(float *sel1, int sel1_size, float *sel2, int sel2_size, float *out, 
+                    int outSize, float *cellDims, int frame, int nbrFrames, float maxR, float dr)
 {
     int tx = threadIdx.x;
     int ty = threadIdx.y;
@@ -46,7 +46,9 @@ void d_getDistances(float *sel1, int sel1_size, float *sel2, int sel2_size, floa
 
         float dist = sqrtf(dist_x*dist_x + dist_y*dist_y + dist_z*dist_z);
 
-        out[row*sel2_size+col] += dist / nbrFrames;
+        int idx = (int)(dist/dr);
+        if(idx >=0 && idx < outSize)
+            atomicAdd(&out[(int)(dist/dr)], 1.0 / nbrFrames);
     }
 
 }
@@ -54,8 +56,9 @@ void d_getDistances(float *sel1, int sel1_size, float *sel2, int sel2_size, floa
 
 
 
-void cu_getDistances_wrapper(float *sel1, int sel1_size, float *sel2, 
-                             int sel2_size, float *out, float *cellDims, int nbrFrames, int sameSel)
+void cu_getRadialNbrDensity_wrapper(float *sel1, int sel1_size, float *sel2, int sel2_size, 
+                                    float *out, int outSize, float *cellDims, int nbrFrames, int sameSel,
+                                    float maxR, float dr)
 {
     // Copying sel1 matrix on GPU memory
     float *cu_sel1;
@@ -84,10 +87,9 @@ void cu_getDistances_wrapper(float *sel1, int sel1_size, float *sel2,
 
     // Copying out matrix on GPU memory
     float *cu_out;
-    size = sel1_size * sel2_size * sizeof(float);
+    size = outSize * sizeof(float);
     gpuErrchk( cudaMalloc(&cu_out, size) );
     gpuErrchk( cudaMemset(cu_out, 0, size) );
-    gpuErrchk( cudaHostRegister(out, size, cudaHostRegisterMapped) );
 
 
     dim3 dimBlock( BLOCK_SIZE, BLOCK_SIZE, 1 );
@@ -95,11 +97,10 @@ void cu_getDistances_wrapper(float *sel1, int sel1_size, float *sel2,
 
     for(int frame=0; frame < nbrFrames; ++frame)
     {
-        if(frame > 0)
-            printf("Processing frame %i of %i...     \r", frame+1, nbrFrames);
+        printf("Processing frame %i of %i...     \r", frame+1, nbrFrames);
 
-        d_getDistances<<<dimGrid, dimBlock>>>(cu_sel1, sel1_size, cu_sel2, sel2_size, 
-                                              cu_out, cu_cellDims, frame, nbrFrames);
+        d_getRadialNbrDensity<<<dimGrid, dimBlock>>>(cu_sel1, sel1_size, cu_sel2, sel2_size, 
+                                              cu_out, outSize, cu_cellDims, frame, nbrFrames, maxR, dr);
         gpuErrchk( cudaDeviceSynchronize() );
     }
 
@@ -107,7 +108,6 @@ void cu_getDistances_wrapper(float *sel1, int sel1_size, float *sel2,
     // Copying result back into host memory
     gpuErrchk( cudaMemcpy(out, cu_out, size, cudaMemcpyDeviceToHost) );
 
-    gpuErrchk( cudaHostUnregister(out) );
 
     cudaFree(cu_sel1);
     cudaFree(cu_sel2);

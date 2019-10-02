@@ -98,7 +98,7 @@ class NAMDPSF(PSFReader):
 
 
 
-    def getSelection(self, selText="all", segName=None, resID=None, resName=None, atom=None, 
+    def getSelection(self, selText=None, segName=None, resID=None, resName=None, atom=None, 
                                                                         index=None, invert=False):
         """ This method returns an list of index corresponding to the ones that have been selected 
             using the 'selText' argument and the indices list.
@@ -144,7 +144,7 @@ class NAMDPSF(PSFReader):
 
         #_Getting the different index lists corresponding to the given selection(s)
         if selText == "all":
-            keepIdxList.append( np.ones_like(self.psfData.atoms[:,0]).astype(bool) )
+            keepIdxList.append( np.ones(self.psfData.atoms.shape[0]).astype(bool) )
 
         if selText == "hydrogen":
             keepIdxList.append( np.isin(self.psfData.atoms[:,4], self.H, invert=invert) )

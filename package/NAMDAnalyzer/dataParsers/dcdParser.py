@@ -19,7 +19,6 @@ from scipy.spatial.transform import Rotation as R
 try:
     from NAMDAnalyzer.lib.pylibFuncs import (  py_getWithin, 
                                     py_getCenterOfMass,
-                                    py_setCenterOfMassAligned,
                                     py_getDistances,
                                     py_cdf,
                                     py_getParallelBackend )
@@ -47,17 +46,14 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
         :arg psfFile: NAMD .psf file to be loaded
         :arg dcdFile: NAMD .dcd file to be used
-        :arg stride:  step for frames when reading the .dcd file, 2 means one frame over two is read
 
     """
     
-    def __init__(self, psfFile, dcdFile=None, stride=1):
+    def __init__(self, psfFile, dcdFile=None):
     
         NAMDPSF.__init__(self, psfFile)
 
-        self.stride = stride
-
-        DCDReader.__init__(self, stride)
+        DCDReader.__init__(self)
 
         if dcdFile:
             self.importDCDFile(dcdFile)
@@ -100,15 +96,16 @@ class NAMDDCD(DCDReader, NAMDPSF):
 #---------------------------------------------
 #_Distances and within selections
 #---------------------------------------------
-    def getDistances(self, sel1, sel2=None, frame=-1):
+    def getDistances(self, sel1, sel2=None, frame=0):
         """ Computes pair-wise distances between sel1 and sel2.
     
-            :arg sel1: first selection of atoms used for distance calculation with sel2 (default -> all)
-            :arg sel2: second selection for distance calculation with sel1 (default -> all)
-            :arg frame: frame to be used for computation
+            :arg sel1:  first selection of atoms used for distance calculation with sel2 (default -> all)
+            :arg sel2:  second selection for distance calculation with sel1 (default -> all)
+            :arg frame: frame to be used for computation, if more than one frame is used, the returned
+                        array contains distances averaged over all selected frames.
 
             :returns: a matrix containing pairwise distances if memory allows it with sel1 being 
-                      arranged row-wise and sel2 column-wise. 
+                      arranged row-wise and sel2 column-wise.
 
         """
 
@@ -123,29 +120,27 @@ class NAMDDCD(DCDReader, NAMDPSF):
         if type(sel1) == str:
             if re.search('within', sel1):
                 sel1 + ' frame %i' % frame
+
             sel1 = self.selection(sel1)
 
         if type(sel2) == str:
             if sameSel:
-                sel2 = np.copy(sel1)
-            elif re.search('within', sel2):
-                sel2 + ' frame %i' % frame
-                sel2 = self.selection(sel2)
+                sel2 = sel1
             else:
+                if re.search('within', sel2):
+                    sel2 + ' frame %i' % frame
+                    
                 sel2 = self.selection(sel2)
 
         if sel2 is None:
-            sel2 = np.copy(sel1)
+            sel2 = sel1
             sameSel = 1
-
-
-        #_Gets atom coordinates
-        sel1 = self.dcdData[sel1,frame]
-        sel2 = self.dcdData[sel2,frame]
 
         out = np.zeros((sel1.shape[0], sel2.shape[0]), dtype='float32')
 
-        cellDims = np.ascontiguousarray(self.cellDims[frame], dtype='float32')
+        cellDims = self.cellDims[frame]
+        sel1 = self.dcdData[sel1, frame]
+        sel2 = self.dcdData[sel2, frame]
 
         py_getDistances(sel1, sel2, out, cellDims, sameSel)
 
@@ -155,44 +150,12 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
 
 
-
-
-    def getAveragedDistances(self, sel1, sel2=None, frames=None):
-        """ Computes distances between sel1 and sel2, averaged over all selected frames.
-
-            :arg sel1: first selection of atoms used for distance calculation with sel2 (default -> all)
-            :arg sel2: second selection for distance calculation with sel1 (default -> all)
-            :arg frame: frame to be used for computation
-
-            :returns: a matrix containing pairwise distances if memory allows it with sel1 being 
-                      arranged row-wise and sel2 column-wise. 
-
-        """
-
-        
-        if frames is None:
-            frames = np.arange(0, self.nbrFrames, 1)
-
-
-        dist = self.getDistances(sel1, sel2, frame=frames[0])
-
-        for idx, frame in enumerate(frames[1:]):
-            print('Processing frame %i of %i...' % (idx+2, len(frames)), end='\r')
-            dist += self.getDistances(sel1, sel2, frame=frame) / len(frames)
-
-        
-        return dist
-
-
-
-
-
-
-    def getWithin(self, distance, usrSel, frame=-1):
+    def getWithin(self, distance, refSel, outSel='all', frame=0):
         """ Selects all atoms that within the given distance of the given selection and frame.
 
             :arg distance: distance in angstrom, within which to select atoms
-            :arg usrSel:   initial selection from which distance should be computed
+            :arg refSel:   initial selection from which distance should be computed
+            :arg outSel:   atoms to keep in output, all others won't be considered for computation
             :arg frame:    frame to be used for atom selection, can be str, int, range or slice
 
             :returns: an array of boolean, set to 1 for each selected atom in simulation in each 
@@ -202,32 +165,28 @@ class NAMDDCD(DCDReader, NAMDPSF):
         """
 
 
-        #_Get the indices corresponding to the selection
-        if type(usrSel) == str:
-            usrSel = self.selection(usrSel)
+        #_Get the coordinates corresponding to the selection
+        if type(refSel) == str:
+            refSel = self.selection(refSel)
 
-        if type(frame) == int:
-            frame = [frame]
-            nbrFrames = 1
-        elif isinstance(frame, slice):
-            step = 1 if frame.step == None else frame.step
-            nbrFrames = int( (frame.stop - frame.start) / step ) #_frame.stop is not included
-        else:
-            nbrFrames = len(frame)
+        #_Gets coordinates for atoms to be used as reference
+        if type(outSel) == str:
+            outSel = self.selection(outSel)
 
+        cellDims = self.cellDims[frame]
 
-        #_Gets all atoms coordinates along x axis with their respective indices
-        allAtoms = np.ascontiguousarray(self.dcdData[:,frame], dtype='float32')
-
-        cellDims = np.ascontiguousarray(self.cellDims[frame], dtype='float32')
+        allAtoms = self.dcdData[:,frame]
 
         #_Initialize boolean array for atom selection
-        keepIdx = np.zeros( (allAtoms.shape[0], nbrFrames), dtype='int32')
+        keepIdx = np.zeros( (allAtoms.shape[0], allAtoms.shape[1]), dtype='int32')
+
     
-        if self.parallelBackend == 2 or usrSel.size <= 200:
-            py_getWithin(allAtoms, usrSel.astype('int32'), keepIdx, cellDims, distance)
+        if self.parallelBackend == 2 or outSel.size <= 10000: 
+            py_getWithin(allAtoms, refSel.astype('int32'), outSel.astype('int32'), 
+                         keepIdx, cellDims, distance)
         else:
-            getWithin_kdTree(allAtoms, usrSel.astype('int32'), keepIdx, cellDims, distance)
+            getWithin_kdTree(allAtoms, refSel.astype('int32'), outSel.astype('int32'), 
+                             keepIdx, cellDims, distance)
 
 
         if keepIdx.shape[1] == 1:
@@ -241,7 +200,7 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
 
 
-    def getWithinCOM(self, distance, COM, outSel=None, frame=-1, getSameResid=False):
+    def getWithinCOM(self, distance, COM, outSel=None, frame=0, getSameResid=False):
         """ Selects all atoms that within the given distance of the given selection and frame.
 
             :arg distance:     distance in angstrom, within which to select atoms
@@ -293,139 +252,9 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
 
 
-
 #---------------------------------------------
-#_Data modifiers
+#_Special accessors and data modifiers
 #---------------------------------------------
-    def binDCD(self, binSize):
-        """ Binning method for dcd data. The binning is performed along the axis 1 of the dataset,
-            which corresponds to frames dimension. 
-
-        """
-
-        if binSize==1:
-            return
-
-        print('Binning trajectories...')
-
-        nbrLoops = int(self.dcdData.shape[1] / binSize)
-
-        #_Performs the binning
-        for i in range(nbrLoops):
-            self.dcdData[:,i] = self.dcdData[:, i*binSize : i*binSize+binSize].mean(axis=1)
-            self.dcdFreq[i] = np.sum( self.dcdFreq[i*binSize : i*binSize+binSize] )
-
-        #_Free the memory
-        self.dcdData = np.delete(self.dcdData, range(nbrLoops,self.dcdData.shape[1]), axis=1)
-        self.dcdFreq = np.delete(self.dcdFreq, range(nbrLoops,self.dcdFreq.size))
-
-        print('Done\n')
-
-
-
-    def setCenterOfMassAligned(self, selection='all', frames=slice(0,None)):
-        """ Modifies the dcd data by aligning center of mass of all atoms between given frames. 
-
-            :arg selection: either string or array of indices for selected atoms
-            :arg frames:    either not given to select all frames, an int, or a slice object
-
-            If *selection* is 'all', the corresponding frame in *COMAligned* attribute
-            is set to True, so that the method will just ``pass`` on next call for this frame.
-        
-        """
-
-        #_Get the indices corresponding to the selection
-        if type(selection) == str:
-            selection = self.selection(selection)
-
-        
-        if np.all(self.COMAligned[frames]):
-            return
-
-
-        print("\nAligning center of mass of selected atoms...\n")
-
-        centerOfMass = self.getCenterOfMass(selection, frames)
-
-        dcdData = self.dcdData[selection, frames]
-        if dcdData.ndim == 2:
-            dcdData = dcdData[:,np.newaxis,:]
-
-        #_Substract the center of mass coordinates to each atom for each frame
-        py_setCenterOfMassAligned(dcdData, centerOfMass)
-
-        self.dcdData[selection, frames] = dcdData
-
-
-        if selection.size == self.nbrAtoms:
-            self.COMAligned[frames] = True
-
-
-        print("Done\n")
-
-
-
-
-    def setAlignedData(self, selection, outSel='all', frames=slice(0, None)):
-        """ This method will fit all atoms between firstAtom and lastAtom for each frame between
-            begin and end, using the first frame for the others to be fitted on. 
-            
-            :arg selection: either string or array of indices, will be used for fitting
-            :arg outSel:    either string or array of indices, will be used to apply rotation
-            :arg frames:    either not given to select all frames, an int, or a slice object
-
-            :returns: a similar array as the initial dataSet but with aligned coordinates.
-
-        """
-
-        if type(selection) == str:
-            selection = self.selection(selection)
-
-        if type(outSel) == str:
-            outSel = self.selection(outSel)
-
-
-        print("\nAligning selected atoms and frames...\n")
-
-
-        self.setAlignedCenterOfMass(selection, frames)
-
-        qM = molFit_q.alignAllMol(self.dcdData[selection, frames])
-        
-        self.dcdData[outSel, frames] = molFit_q.applyRotation(self.dcdData[outSel, frames], qM)
-
-        print("Done\n")
-
-
-
-    def setPBC(self, selection='all', frames=slice(0,None)):
-        """ This method applies periodic boundary conditions on all selected atom
-            coordinates for each frame selected. 
-
-            :arg selection: either string or array of indices, will be used for fitting
-            :arg frames:    either not given to select all frames, an int, or a slice object
-
-        """
-
-        if isinstance(selection, str):
-            selection = self.selection(selection)
-
-        if not np.all(self.COMAligned[frames]): #_Get center of mass to keep trace of center of mass motion
-            com = self.getCenterOfMass(selection, frames)
-
-
-        self.dcdData[selection, frames] -= ( self.cellDims[frames] *
-                                            np.floor( self.dcdData[selection, frames] 
-                                            / self.cellDims[frames] ) )
-
-
-        if not np.all(self.COMAligned[frames]):
-            self.dcdData[selection, frames] += com
-
-        
-
-
-
     def rotate(self, rotVec, selection, frames=slice(0, None)):
         """ This method allows to rotate the given selection using the angle/axis representation
             given by rotVec, whose coordinates represent the axis of rotation and norm gives
@@ -452,10 +281,114 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
         q = r.as_quat()
 
-        self.dcdData[selection, frames] = molFit_q.applyRotation(self.dcdData[selection, frames], q)
+        return molFit_q.applyRotation(self.dcdData[selection, frames], q)
 
 
-        print("Done\n")
+
+    def getCenterOfMass(self, selection, frames=slice(0,None)):
+        """ Computes the center of mass for selected atoms and frames. 
+    
+            :arg selection: selected atom, can be a single string or a list of atom indices
+            :arg frames:    either not given to select all frames, an int, or a slice object
+
+        """
+
+        if type(selection) == str:
+            selection = self.selection(selection)
+
+        try: #_Check if a psf file has been loaded
+            atomMasses = selection.getMasses()
+
+        except AttributeError:
+            print("No .psf file was loaded, please import one before using this method.")
+            return
+
+        atomMasses = atomMasses.reshape(atomMasses.size, 1)
+
+        dcdData = self.dcdData[selection, frames]
+        if dcdData.ndim == 2:
+            dcdData = dcdData[:,np.newaxis,:]
+
+        centerOfMass = py_getCenterOfMass(dcdData, atomMasses)
+
+
+        return centerOfMass
+
+
+
+
+    def getAlignedCenterOfMass(self, selection='all', frames=slice(0,None)):
+        """ This method aligns the center of mass of each frame to the origin.
+            It does not perform any fitting for rotations, so that it can be used for center of mass
+            drift corrections if no global angular momentum is present. 
+
+            :arg selection: selected atom, can be a single string or a list of atom indices
+            :arg frames:    either not given to select all frames, an int, or a slice object
+
+        """
+
+
+        #_Get the indices corresponding to the selection
+        if type(selection) == str:
+            selection = self.selection(selection)
+
+
+        dataSet = self.dcdData[selection, frames] 
+
+        centerOfMass = self.getCenterOfMass(selection, frames)
+
+        #_Substract the center of mass coordinates to each atom for each frame
+        dataSet = dataSet - centerOfMass
+
+        return dataSet
+
+
+
+    def getAlignedData(self, selection, frames=slice(0, None)):
+        """ This method will fit all atoms between firstAtom and lastAtom for each frame between
+            begin and end, using the first frame for the others to be fitted on. 
+        
+            :arg selection: selected atom, can be a single string or a list of atom indices
+            :arg frames:    either not given to select all frames, an int, or a slice object
+
+            :returns: a similar array as the initial dataSet but with aligned coordinates.
+
+        """
+
+        if type(selection) == str:
+            selection = self.selection(selection)
+
+        alignData = self.getAlignedCenterOfMass(selection, frames)
+
+        q = molFit_q.alignAllMol(alignData)
+
+        alignData = molFit_q.applyRotation(self.dcdData[selection, frames], q)
+        
+        return alignData
+
+
+
+
+
+
+    def getPBC(self, selection='all', frames=slice(0,None)):
+        """ This method applies periodic boundary conditions on all selected atom
+            coordinates for each frame selected. 
+
+        """
+
+        if isinstance(selection, str):
+            selection = self.selection(selection)
+
+
+        dcdData = np.copy(self.dcdData[selection, frames])
+
+        dcdData -= ( self.cellDims[frames] * np.floor( dcdData / self.cellDims[frames] ) )
+
+
+        return dcdData
+
+ 
 
 
 
@@ -566,109 +499,7 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
 
 
-    def getCenterOfMass(self, selection, frames=slice(0,None)):
-        """ Computes the center of mass for selected atoms and frames. 
-    
-            :arg selection: selected atom, can be a single string or a list of atom indices
-            :arg frames:    either not given to select all frames, an int, or a slice object
 
-        """
-
-        if type(selection) == str:
-            selection = self.selection(selection)
-
-        try: #_Check if a psf file has been loaded
-            atomMasses = self.getAtomsMasses(selection)
-
-        except AttributeError:
-            print("No .psf file was loaded, please import one before using this method.")
-            return
-
-        atomMasses = atomMasses.reshape(atomMasses.size, 1)
-
-        dcdData = self.dcdData[selection, frames]
-        if dcdData.ndim == 2:
-            dcdData = dcdData[:,np.newaxis,:]
-
-        centerOfMass = py_getCenterOfMass(dcdData, atomMasses)
-
-
-        return centerOfMass
-
-
-
-
-    def getAlignedData(self, selection, frames=slice(0, None)):
-        """ This method will fit all atoms between firstAtom and lastAtom for each frame between
-            begin and end, using the first frame for the others to be fitted on. 
-        
-            :arg selection: selected atom, can be a single string or a list of atom indices
-            :arg frames:    either not given to select all frames, an int, or a slice object
-
-            :returns: a similar array as the initial dataSet but with aligned coordinates.
-
-        """
-
-        if type(selection) == str:
-            selection = self.selection(selection)
-
-        alignData = self.getAlignedCenterOfMass(selection, frames)
-
-        q = molFit_q.alignAllMol(alignData)
-
-        alignData = molFit_q.applyRotation(self.dcdData[selection, frames], q)
-        
-        return alignData
-
-
-
-
-    def getAlignedCenterOfMass(self, selection='all', frames=slice(0,None)):
-        """ This method aligns the center of mass of each frame to the origin.
-            It does not perform any fitting for rotations, so that it can be used for center of mass
-            drift corrections if no global angular momentum is present. 
-
-            :arg selection: selected atom, can be a single string or a list of atom indices
-            :arg frames:    either not given to select all frames, an int, or a slice object
-
-        """
-
-
-        #_Get the indices corresponding to the selection
-        if type(selection) == str:
-            selection = self.selection(selection)
-
-
-        dataSet = np.copy( self.dcdData[selection, frames] )
-
-        centerOfMass = self.getCenterOfMass(selection, frames)
-
-        #_Substract the center of mass coordinates to each atom for each frame
-        dataSet = dataSet - centerOfMass
-
-        return dataSet
-
-
-
-
-    def getPBC(self, selection='all', frames=slice(0,None)):
-        """ This method applies periodic boundary conditions on all selected atom
-            coordinates for each frame selected. 
-
-        """
-
-        if isinstance(selection, str):
-            selection = self.selection(selection)
-
-
-        dcdData = np.copy(self.dcdData[selection, frames])
-
-        dcdData -= ( self.cellDims[frames] * np.floor( dcdData / self.cellDims[frames] ) )
-
-
-        return dcdData
-
- 
 
 
 
@@ -824,7 +655,7 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
         """
 
-        dist = self.getAveragedDistances(sel1, sel2, frames)
+        dist = self.getDistances(sel1, sel2, frames)
 
 
         if isinstance(sel1, str):

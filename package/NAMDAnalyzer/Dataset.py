@@ -32,13 +32,13 @@ class Dataset(NAMDDCD):
 
     """
 
-    def __init__(self, *fileList, stride=1):
+    def __init__(self, *fileList):
 
         self.fileList = list(fileList)
 
         self.psfFile = self._getPSF(self.fileList) #_Check for .psf file presence
 
-        NAMDDCD.__init__(self, self.psfFile, stride=stride) #_Initialize NAMDDCD 
+        NAMDDCD.__init__(self, self.psfFile) #_Initialize NAMDDCD 
 
         self.logData = NAMDLOG()
         self.velData = NAMDVEL(self)

@@ -1,10 +1,12 @@
 #include "../../libFunc.h"
 
-void cu_getDistances_wrapper(float *sel1, int sel1_size, float *sel2, 
-                             int sel2_size, float *out, float *cellDims, int nbrFrames, int sameSel);
+void cu_getRadialNbrDensity_wrapper(float *sel1, int sel1_size, float *sel2, int sel2_size, 
+                             float *out, int outSize, float *cellDims, int nbrFrames, int sameSel,
+                             float maxR, float dr);
 
-void getDistances(float *sel1, int sel1_size, float *sel2, 
-                  int sel2_size, float *out, float *cellDims, int nbrFrames, int sameSel)
+void getRadialNbrDensity(float *sel1, int sel1_size, float *sel2, int sel2_size, 
+                         float *out, int outSize, float *cellDims, int nbrFrames, int sameSel,
+                         float maxR, float dr)
 {
     /*  The function computes, for each atom in sel, the distance with all other atoms in atomPos.
      *  Then, Periodic Boundary Conditions (PBC) are applied using cell dimensions in cellDims.
@@ -15,7 +17,8 @@ void getDistances(float *sel1, int sel1_size, float *sel2,
      *          sel2_size     -> size of sel2 list, in number of elements
      *          out           -> output matrix to store the result */
 
-    cu_getDistances_wrapper(sel1, sel1_size, sel2, sel2_size, out, cellDims, nbrFrames, sameSel);
+    cu_getRadialNbrDensity_wrapper(sel1, sel1_size, sel2, sel2_size, out, outSize, 
+                                   cellDims, nbrFrames, sameSel, maxR, dr);
 
 }
 

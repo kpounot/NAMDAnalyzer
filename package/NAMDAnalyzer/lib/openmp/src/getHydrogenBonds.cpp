@@ -9,6 +9,7 @@
 void getHydrogenBonds(  float *acceptors, int size_acceptors, int nbrFrames,
                         float *donors, int size_donors,
                         float *hydrogens, int size_hydrogens, 
+                        float *cellDims,
                         float *out, int maxTime, int step, int nbrTimeOri,
                         float maxR, float minAngle, int continuous)
 {
@@ -28,30 +29,24 @@ void getHydrogenBonds(  float *acceptors, int size_acceptors, int nbrFrames,
 
             for(dt=0; dt < nbrFrames; ++dt)
             {
+                float cD_x = cellDims[3*dt];
+                float cD_y = cellDims[3*dt + 1];
+                float cD_z = cellDims[3*dt + 2];
+
                 // Computes distances for given timestep and atom
                 float h_acc_x = ( hydrogens[3 * nbrFrames * col + 3 * dt] 
                                 - acceptors[3 * nbrFrames * row + 3 * dt] );
-                if(h_acc_x > maxR*maxR)
-                {
-                    continuous == 1 ? notBroken=0 : notBroken=1;
-                    continue;
-                }
 
                 float h_acc_y = ( hydrogens[3 * nbrFrames * col + 3 * dt + 1] 
                                 - acceptors[3 * nbrFrames * row + 3 * dt + 1] );
-                if(h_acc_y > maxR*maxR)
-                {
-                    continuous == 1 ? notBroken=0 : notBroken=1;
-                    continue;
-                }
 
                 float h_acc_z = ( hydrogens[3 * nbrFrames * col + 3 * dt + 2] 
                                 - acceptors[3 * nbrFrames * row + 3 * dt + 2] );
-                if(h_acc_z > maxR*maxR)
-                {
-                    continuous == 1 ? notBroken=0 : notBroken=1;
-                    continue;
-                }
+
+                // Applies PBC corrections
+                h_acc_x = h_acc_x - cD_x * roundf( h_acc_x / cD_x );
+                h_acc_y = h_acc_y - cD_y * roundf( h_acc_y / cD_y );
+                h_acc_z = h_acc_z - cD_z * roundf( h_acc_z / cD_z );
 
 
                 float acc_d_x = ( acceptors[3 * nbrFrames * row + 3 * dt] 

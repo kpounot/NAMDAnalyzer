@@ -19,48 +19,43 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=t
 
 
 __global__
-void compWithin( float *allAtoms, int nbrAtoms, int nbrFrames, int *selAtoms, int sel_size,
-                 int *out, float *cellDims, float distance, int frame )
+void compWithin( float *allAtoms, int nbrAtoms, int nbrFrames, int *refSel, int refSize,
+                 int *outSel, int outSelSize, int *out, float *cellDims, float distance, int frame )
 {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
+    for(int i=idx; i < refSize; i += BLOCK_SIZE)
+        atomicExch( &out[refSel[i]*nbrFrames + frame], 1 );
 
     float squaredDist = distance * distance;
-
-    for(int i=idx; i < sel_size; i+=BLOCK_SIZE)
-        atomicExch( &out[ selAtoms[i]*nbrFrames + frame ], 1 );
-
-    __syncthreads();
 
     float cD_x  = cellDims[3*frame];
     float cD_y  = cellDims[3*frame+1];
     float cD_z  = cellDims[3*frame+2];
 
-    if(idx < sel_size) 
+    if(idx < refSize) 
     {
-        int selIdx = selAtoms[idx];
+        int refIdx = refSel[idx];
 
-        float sel_x = allAtoms[3*nbrFrames*selIdx + 3*frame];
-        float sel_y = allAtoms[3*nbrFrames*selIdx + 3*frame + 1];
-        float sel_z = allAtoms[3*nbrFrames*selIdx + 3*frame + 2];
+        float sel_x = allAtoms[3*nbrFrames*refIdx + 3*frame];
+        float sel_y = allAtoms[3*nbrFrames*refIdx + 3*frame + 1];
+        float sel_z = allAtoms[3*nbrFrames*refIdx + 3*frame + 2];
 
-        for(int atom=0; atom < nbrAtoms; ++atom)
+        for(int atom=0; atom < outSelSize; ++atom)
         {
-            if(out[atom*nbrFrames + frame] == 0)
+            int outIdx = outSel[atom];
+
+            if(refIdx != outIdx || out[outIdx*nbrFrames + frame] == 0)
             {
-                float atom_x = allAtoms[3*nbrFrames*atom + 3*frame];
+                float atom_x = allAtoms[3*nbrFrames*outIdx + 3*frame];
                 float dist_x = atom_x - sel_x;
                 dist_x = dist_x - cD_x * roundf( dist_x / cD_x );
-                if(dist_x > distance)
-                    continue;
 
-                float atom_y = allAtoms[3*nbrFrames*atom + 3*frame + 1];
+                float atom_y = allAtoms[3*nbrFrames*outIdx + 3*frame + 1];
                 float dist_y = atom_y - sel_y;
                 dist_y = dist_y - cD_y * roundf( dist_y / cD_y );
-                if(dist_y > distance)
-                    continue;
 
-                float atom_z = allAtoms[3*nbrFrames*atom + 3*frame + 2];
+                float atom_z = allAtoms[3*nbrFrames*outIdx + 3*frame + 2];
                 float dist_z = atom_z - sel_z;
                 dist_z = dist_z - cD_z * roundf( dist_z / cD_z );
 
@@ -68,9 +63,11 @@ void compWithin( float *allAtoms, int nbrAtoms, int nbrFrames, int *selAtoms, in
 
                 if(dist <= squaredDist)
                 {
-                    atomicExch( &out[atom*nbrFrames + frame], 1 );
+                    atomicExch( &out[outIdx*nbrFrames + frame], 1 );
                 }
             }
+
+
         } // atom loop
     } // thread execution condition
 
@@ -80,8 +77,8 @@ void compWithin( float *allAtoms, int nbrAtoms, int nbrFrames, int *selAtoms, in
 
 
 
-void cu_getWithin_wrapper(  float *allAtoms, int nbrAtoms, int nbrFrames, int *selAtoms, int sel_size,
-                            int *out, float *cellDims, float distance )
+void cu_getWithin_wrapper(  float *allAtoms, int nbrAtoms, int nbrFrames, int *refSel, int refSize,
+                            int *outSel, int outSelSize, int *out, float *cellDims, float distance )
 {
     // Copying atom1 matrix on GPU memory
     float *cu_allAtoms;
@@ -89,11 +86,17 @@ void cu_getWithin_wrapper(  float *allAtoms, int nbrAtoms, int nbrFrames, int *s
     gpuErrchk( cudaMalloc(&cu_allAtoms, size) );
     gpuErrchk( cudaMemcpy(cu_allAtoms, allAtoms, size, cudaMemcpyHostToDevice) );
 
-    // Copying selAtoms array on GPU memory
-    int *cu_selAtoms;
-    size = sel_size * sizeof(int);
-    gpuErrchk( cudaMalloc(&cu_selAtoms, size) );
-    gpuErrchk( cudaMemcpy(cu_selAtoms, selAtoms, size, cudaMemcpyHostToDevice) );
+    // Copying refSel array on GPU memory
+    int *cu_refSel;
+    size = refSize * sizeof(int);
+    gpuErrchk( cudaMalloc(&cu_refSel, size) );
+    gpuErrchk( cudaMemcpy(cu_refSel, refSel, size, cudaMemcpyHostToDevice) );
+
+    // Copying outSel array on GPU memory
+    int *cu_outSel;
+    size = outSelSize * sizeof(int);
+    gpuErrchk( cudaMalloc(&cu_outSel, size) );
+    gpuErrchk( cudaMemcpy(cu_outSel, outSel, size, cudaMemcpyHostToDevice) );
 
     // Copying cellDims matrix on GPU memory
     float *cu_cellDims;
@@ -108,12 +111,12 @@ void cu_getWithin_wrapper(  float *allAtoms, int nbrAtoms, int nbrFrames, int *s
     gpuErrchk( cudaMemset(cu_out, 0, size) );
 
 
-    int nbrBlocks = ceilf((float)sel_size / BLOCK_SIZE);
+    int nbrBlocks = ceilf((float)refSize / BLOCK_SIZE);
 
     for(int frame=0; frame < nbrFrames; ++frame)
     {
         compWithin<<<nbrBlocks, BLOCK_SIZE>>>(cu_allAtoms, nbrAtoms, nbrFrames, 
-                                              cu_selAtoms, sel_size,
+                                              cu_refSel, refSize, cu_outSel, outSelSize,
                                               cu_out, cu_cellDims, distance, frame);
         gpuErrchk( cudaDeviceSynchronize() );
     }
@@ -123,7 +126,8 @@ void cu_getWithin_wrapper(  float *allAtoms, int nbrAtoms, int nbrFrames, int *s
 
 
     cudaFree(cu_allAtoms);
-    cudaFree(cu_selAtoms);
+    cudaFree(cu_refSel);
+    cudaFree(cu_outSel);
     cudaFree(cu_cellDims);
     cudaFree(cu_out);
 }

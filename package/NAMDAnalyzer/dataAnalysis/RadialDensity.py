@@ -19,14 +19,11 @@ from scipy.signal import medfilt2d
 
 
 try:
-    from NAMDAnalyzer.lib.pylibFuncs import py_cdf
+    from NAMDAnalyzer.lib.pylibFuncs import py_cdf, py_getRadialNbrDensity
 
 except ImportError:
     print("NAMDAnalyzer C code was not compiled, several methods won't work.\n"
             + "Please compile it before using it.\n")
-
-
-
 
 
 
@@ -78,24 +75,23 @@ class ResidueWiseWaterDensity:
 
         """
 
+        waters   = self.data.selection('name OH2').coordinates(self.frames)
+        cellDims = self.data.cellDims[self.frames] 
+
         for resId, residue in enumerate(self.residues):
+            
+            #_Prints state, leaving space for verbosity from py_getRadialNbrDensity
+            print("                                         [Residue %i of %i]" % 
+                                    (resId + 1, len(self.residues)), end='\r')
 
             sel = self.sel + ' and resid %s' % residue
 
             density = np.zeros( self.radii.size, dtype='float32' )
 
-            for frameId, frame in enumerate(self.frames):
-
-                print('Computes frame %i of %i for residue %i of %i   ' % (frameId+1,
-                                                                        len(self.frames),
-                                                                        resId+1,
-                                                                        self.residues.size),
-                      end='\r' )
-
-                dist = self.data.getDistances('name OH2', sel, frame ).flatten()
-
-                py_cdf(dist, density, self.maxR, self.dr, len(self.frames)) 
-
+            sel = self.data.selection(sel).coordinates(self.frames)
+            
+            py_getRadialNbrDensity(waters, sel, density, cellDims, 0, self.maxR, self.dr) 
+        
             density[0] -= density[0]
             density /= (4 * np.pi * self.radii**2 * self.dr)
 
@@ -123,7 +119,7 @@ class ResidueWiseWaterDensity:
         filteredDensity = medfilt2d(self.density, medianFiltSize) #_For better visualization
 
 
-        ax.surface(X, Y, filteredDensity, cmap=cmap)
+        ax.plot_surface(X, Y, filteredDensity, cmap=cmap)
 
         ax.set_xlabel('Radius [$\AA$]')
         ax.set_ylabel('Residue')
@@ -160,25 +156,41 @@ class RadialNumberDensity:
     """
 
 
-    def __init__(self, data, sel1, sel2=None, dr=0.1, maxR=10, frames=None):
+    def __init__(self, data, sel1, sel2=None, dr=0.1, maxR=15, frames=None):
 
         self.data = data
 
-        #_Parses selection
-        if isinstance(sel1, str):
-            self.sel1 = self.data.selection(sel1)
-        else:
-            self.sel1 = sel1
 
+        #_Parsing selections
+        self.sameSel = 0
+        
+        if isinstance(sel1, str) and isinstance(sel2, str):
+            if set(sel1.split(' ')) == set(sel2.split(' ')):
+                self.sameSel = 1
+
+        #_Get the indices corresponding to the selection
+        if type(sel1) == str:
+            if re.search('within', sel1):
+                sel1 = sel1 + ' frame %i' % frame
+
+            self.sel1 = self.data.selection(sel1)
+
+        if type(sel2) == str:
+            if self.sameSel:
+                self.sel2 = self.sel1
+            else:
+                if re.search('within', sel2):
+                    sel2 + ' frame %i' % frame
+                    
+                self.sel2 = self.data.selection(sel2)
 
         if sel2 is None:
-            self.sel2 = self.data.selection('all')
-        elif isinstance(sel2, str):
-            self.sel2 = self.data.selection(sel2)
-        else:
-            self.sel2 = sel2
+            self.sel2 = self.sel1
+            self.sameSel = 1
+
 
         
+
         self.dr   = dr
         self.maxR = maxR
 
@@ -194,23 +206,24 @@ class RadialNumberDensity:
     def compDensity(self):
         """ Computes density given class attributes. """
 
-        radii  = np.arange(dr, maxR, dr) #_Gets x-axis values
+        radii  = np.arange(self.dr, self.maxR, self.dr) #_Gets x-axis values
 
         density = np.zeros( radii.size, dtype='float32' )
 
+
+        sel1 = self.data.dcdData[self.sel1, self.frames]
+        if self.sameSel:
+            sel2 = sel1
+        else:
+            sel2 = self.data.dcdData[self.sel2, self.frames]
+
+        cellDims = self.data.cellDims[self.frames]
         
-        for frameId, frame in enumerate(self.frames):
-            print('Processing frame %i of %i...' % (frameId+1, len(self.frames)), end='\r')
-
-            dist = self.getDistances(sel1, sel2, frame).flatten()
-
-            py_cdf(dist, density, maxR, dr, len(self.frames)) 
+        py_getRadialNbrDensity(sel1, sel2, density, cellDims, self.sameSel, self.maxR, self.dr)
 
             
         density[0] -= density[0]
-
-        density /= (4 * np.pi * radii**2 * dr)
-
+        density /= (4 * np.pi * radii**2 * self.dr)
 
         self.radii = radii 
         self.density = density
@@ -259,11 +272,9 @@ class COMRadialNumberDensity:
         
         self.data = data
 
-        #_Parses selection
-        if isinstance(sel, str):
-            self.sel = self.data.selection(sel)
-        else:
-            self.sel = sel
+        self.frame = frame
+
+        self.sel = sel
 
 
         self.dr   = dr
@@ -274,11 +285,11 @@ class COMRadialNumberDensity:
     def compDensity(self):
         """ Computes density given class attributes. """
 
-        radii = np.arange(0, maxR, dr) #_Gets x-axis values
+        radii = np.arange(self.dr, self.maxR, self.dr) #_Gets x-axis values
         density = np.zeros( radii.size, dtype='float32' )
 
         #_Set center of mass to the origin and computes distances from origin for all atoms
-        dist = self.getAlignedCenterOfMass(selection, frame)
+        dist = self.data.getAlignedCenterOfMass(self.sel, self.frame)
         dist = np.sqrt( np.dot(dist, dist.T) ).flatten()
         dist = dist[dist > 0]
 
@@ -287,7 +298,7 @@ class COMRadialNumberDensity:
             dist = dist[dist < r]
             density[-(rIdx+1)] += dist.size 
         
-        density /= ( 4 * np.pi * radii**2 * dr )
+        density /= ( 4 * np.pi * radii**2 * self.dr )
         density[1:] = density[1:] - density[:-1]
 
         self.radii   = radii 

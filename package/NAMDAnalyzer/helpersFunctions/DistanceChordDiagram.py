@@ -39,7 +39,11 @@ class ChordDiag:
 
         self.sel1   = sel1
         self.sel2   = sel2
-        self.frames = frames
+
+        if frames is None:
+            self.frames = slice(0, None)
+        else:
+            self.frames = frames
 
         #_Parses selection arguments
         if isinstance(self.sel1, str):
@@ -90,7 +94,7 @@ class ChordDiag:
 
         """
 
-        self.dist = self.data.getAveragedDistances(self.sel1, self.sel2, self.frames)
+        self.dist = self.data.getDistances(self.sel1, self.sel2, self.frames)
 
         for idx, r in enumerate(self.rList):
             keep = np.argwhere( self.dist < r )
@@ -192,3 +196,4 @@ class ChordDiag:
         self.ax.set_ylim(ylim)
 
         self.figure.show()
+

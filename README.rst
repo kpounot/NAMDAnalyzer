@@ -105,6 +105,28 @@ Load trajectories, selection, and analysis
     #_or d.appendCoordinates('pdbFile.pdb').
 
 
+    #_Coordinates and cell dimensions can be accessed in various ways
+
+    #_For several frames
+    sel = data.selection('name OH2 and within 3 of protein and resid 40:80 frame 0:100:2')
+
+    #_For one frame
+    sel = data.selection('bound to name OH2 and within 3 of protein and resid 40:80 frame 10')
+
+    sel.coordinates()
+    
+    # or
+
+    d.dcdData[sel]
+
+    #_Coordinates can also be accessed directly using
+    d.dcdData[:4000,10:100:2,0] #_To get x coordinate of first 4000 atoms, in every two frame from 10 to 100 
+
+    #_For cell dimensions
+    d.cellDims[10:100:2] #_To get corresponding cell dimensions
+
+
+
     #_To compute RMSD per atom for molecules aligned in all frames
     d.getRMSDperAtom(selection='protein and segname V1', align=True, frames=slice(0, None))
 
@@ -130,6 +152,14 @@ Load trajectories, selection, and analysis
 
     rdf.compDensity()
     rdf.plotDensity()
+
+
+    #_This can be linked to residue wise residence time
+    from NAMDAnalyzer.dataAnalysis.ResidenceTime import ResidenceTime
+
+    rt = ResidenceTime(data, 'name OH2 and within 3 of protein and segname V5')
+    rt.compResidueWiseResidenceTime(dt=25)
+    rt.plotResidueWiseResidenceTime()
 
 
 

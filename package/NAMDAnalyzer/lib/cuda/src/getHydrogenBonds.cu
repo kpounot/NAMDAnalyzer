@@ -4,7 +4,7 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-#define BLOCK_SIZE 16
+#define BLOCK_SIZE 32
 
 #define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
 inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
@@ -21,6 +21,7 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=t
 __global__
 void d_getHydrogenBonds(float *acceptors, int size_acceptors, int nbrFrames,
                         float *donors, int size_donors, float *hydrogens, int size_hydrogens, 
+                        float *cellDims,
                         float *out, int maxTime, int step, int nbrTimeOri,
                         float maxR, float cosAngle, int continuous )
 {
@@ -35,36 +36,27 @@ void d_getHydrogenBonds(float *acceptors, int size_acceptors, int nbrFrames,
 
     for(int dt=0; dt < nbrFrames; ++dt)
     {
-
         if( row < size_acceptors && col < size_donors )
         {
+            float cD_x = cellDims[3*dt];
+            float cD_y = cellDims[3*dt + 1];
+            float cD_z = cellDims[3*dt + 2];
+
             // Computes distances for given timestep and atom
             float hyd_x = hydrogens[3 * nbrFrames * col + 3 * dt];
             float acc_x = acceptors[3 * nbrFrames * row + 3 * dt]; 
             float h_acc_x = hyd_x - acc_x;
-            if(h_acc_x > maxR*maxR)
-            {
-                continuous == 1 ? notBroken=0 : notBroken=1;
-                continue;
-            }
+            h_acc_x = h_acc_x - cD_x * roundf(h_acc_x / cD_x);
 
             float hyd_y = hydrogens[3 * nbrFrames * col + 3 * dt + 1]; 
             float acc_y = acceptors[3 * nbrFrames * row + 3 * dt + 1]; 
             float h_acc_y = hyd_y - acc_y;
-            if(h_acc_y > maxR*maxR)
-            {
-                continuous == 1 ? notBroken=0 : notBroken=1;
-                continue;
-            }
+            h_acc_y = h_acc_y - cD_y * roundf(h_acc_y / cD_y);
 
             float hyd_z = hydrogens[3 * nbrFrames * col + 3 * dt + 2]; 
             float acc_z = acceptors[3 * nbrFrames * row + 3 * dt + 2]; 
             float h_acc_z = hyd_z - acc_z;
-            if(h_acc_z > maxR*maxR)
-            {
-                continuous == 1 ? notBroken=0 : notBroken=1;
-                continue;
-            }
+            h_acc_z = h_acc_z - cD_z * roundf(h_acc_z / cD_z);
 
 
             float don_x = donors[3 * nbrFrames * col + 3 * dt]; 
@@ -113,6 +105,7 @@ void d_getHydrogenBonds(float *acceptors, int size_acceptors, int nbrFrames,
 void getHydrogenBonds_wrapper(  float *acceptors, int size_acceptors, int nbrFrames,
                                 float *donors, int size_donors,
                                 float *hydrogens, int size_hydrogens, 
+                                float *cellDims,
                                 float *out, int maxTime, int step, 
                                 int nbrTimeOri, float maxR, float minAngle, int continuous )
 {
@@ -137,11 +130,19 @@ void getHydrogenBonds_wrapper(  float *acceptors, int size_acceptors, int nbrFra
     gpuErrchk( cudaMalloc(&cu_hydrogens, size) );
     gpuErrchk( cudaMemcpy(cu_hydrogens, hydrogens, size, cudaMemcpyHostToDevice) );
 
+    // Copying hydrogens matrix on GPU memory
+    float *cu_cellDims;
+    size = 3 * nbrFrames * sizeof(float);
+    gpuErrchk( cudaMalloc(&cu_cellDims, size) );
+    gpuErrchk( cudaMemcpy(cu_cellDims, cellDims, size, cudaMemcpyHostToDevice) );
+
     // Copying out matrix on GPU memory
     float *cu_out;
     size = nbrFrames * sizeof(float);
     gpuErrchk( cudaMalloc(&cu_out, size) );
     gpuErrchk( cudaMemset(cu_out, 0, size) );
+
+
 
     dim3 dimBlock( BLOCK_SIZE, BLOCK_SIZE, 1 );
     dim3 dimGrid( ceil( (float)size_donors/BLOCK_SIZE), ceil( (float)size_acceptors/BLOCK_SIZE), 1);
@@ -149,6 +150,7 @@ void getHydrogenBonds_wrapper(  float *acceptors, int size_acceptors, int nbrFra
     d_getHydrogenBonds<<<dimGrid, dimBlock>>>(cu_acceptors, size_acceptors, 
                                                           nbrFrames, cu_donors, 
                                                           size_donors, cu_hydrogens, size_hydrogens, 
+                                                          cu_cellDims,
                                                           cu_out, maxTime, step, nbrTimeOri, 
                                                           maxR, cosAngle, continuous);
     gpuErrchk( cudaDeviceSynchronize() );
@@ -159,5 +161,6 @@ void getHydrogenBonds_wrapper(  float *acceptors, int size_acceptors, int nbrFra
     cudaFree(cu_acceptors);
     cudaFree(cu_donors);
     cudaFree(cu_hydrogens);
+    cudaFree(cu_cellDims);
     cudaFree(cu_out);
 }

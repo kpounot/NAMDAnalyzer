@@ -33,18 +33,49 @@ endif
 .PHONY: clean
 clean:
 ifeq ($(OS), Windows_NT)
-	rmdir /S /Q build  
-	rmdir /S /Q dist  
-	rmdir /S /Q NAMDAnalyzer.egg-info  
-	cd NAMDAnalyzer/lib/ && del *.pyd
-	cd cuda && del *.lib
-	cd ../openmp && del *.c *.cpp
-else
-	rm -rf build  
-	rm -rf dist  
-	rm -rf NAMDAnalyzer.egg-info  
-	rm NAMDAnalyzer/lib/*.pyd 
-	rm NAMDAnalyzer/lib/cuda/*.lib
-	rm NAMDAnalyzer/lib/openmp/*.c NAMDAnalyzer/lib/openmp/*.cpp
+
+
+ifneq (,$(wildcard ./build/*))
+	rmdir /S /Q build
+endif
+ifneq (,$(wildcard ./dist/*))
+	rmdir /S /Q dist
+endif
+ifneq (,$(wildcard ./NAMDAnalyzer.egg-info/*))
+	rmdir /S /Q NAMDAnalyzer.egg-info
+endif
+ifneq (,$(wildcard ./NAMDAnalyzer/lib/*.pyd))
+	del .\NAMDAnalyzer\lib\*.pyd
+endif
+ifneq (,$(wildcard ./NAMDAnalyzer/lib/*.cpp))
+	del .\NAMDAnalyzer\lib\*.cpp
+endif
+ifneq (,$(wildcard ./NAMDAnalyzer/lib/cuda/*.lib))
+	del .\NAMDAnalyzer\lib\cuda\*.lib
 endif
 
+
+else
+
+
+ifneq (,$(wildcard ./build/*))
+	rm -rf build
+endif
+ifneq (,$(wildcard ./dist/*))
+	rm -rf dist
+endif
+ifneq (,$(wildcard ./NAMDAnalyzer.egg-info/*))
+	rm -rf NAMDAnalyzer.egg-info
+endif
+ifneq (,$(wildcard ./NAMDAnalyzer/lib/*.pyd))
+	rm .\NAMDAnalyzer\lib\*.pyd
+endif
+ifneq (,$(wildcard ./NAMDAnalyzer/lib/*.cpp))
+	rm .\NAMDAnalyzer\lib\*.cpp
+endif
+ifneq (,$(wildcard ./NAMDAnalyzer/lib/cuda/*.lib))
+	rm .\NAMDAnalyzer\lib\cuda\*.lib
+endif
+
+
+endif

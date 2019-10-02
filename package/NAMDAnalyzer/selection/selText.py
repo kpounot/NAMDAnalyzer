@@ -42,6 +42,9 @@ class SelText():
         self._indices = tempSel.selection
         self.frames   = tempSel.frame
 
+        self.shape = self._indices.shape if isinstance(self._indices, np.ndarray) else len(self._indices)
+        self.size  = self._indices.size if isinstance(self._indices, np.ndarray) else len(self._indices)
+
         self.iterIdx = 0
 
 
@@ -64,7 +67,14 @@ class SelText():
 
 
 
-    def indices(self):
+    def astype(self, t):
+        """ Redefines numpy function for SelText type. """
+
+        return self._indices.astype(t)
+
+
+
+    def getIndices(self):
         """ Returns indices corresponding to each selected atoms in psf file. """
 
         return self.dataset.psfData.atoms[ self._indices ][:,0]
@@ -117,13 +127,13 @@ class SelText():
     def getAtom(self):
         """ Returns atom corresponding to each selected atoms in psf file. """
 
-        return self.dataset.psfData.atoms[ self._indices ][:,4]
+        return self.dataset.psfData.atoms[ self._indices ][:,5]
 
 
     def getUniqueAtom(self):
         """ Returns an array of str with each atom in selection apparing only once. """
 
-        atomList = np.unique( self.dataset.psfData.atoms[ self._indices ][:,4] )
+        atomList = np.unique( self.dataset.psfData.atoms[ self._indices ][:,5] )
 
         return atomList
 
@@ -131,13 +141,13 @@ class SelText():
     def getName(self):
         """ Returns atom name corresponding to each selected atoms in psf file. """
 
-        return self.dataset.psfData.atoms[ self._indices ][:,5]
+        return self.dataset.psfData.atoms[ self._indices ][:,4]
 
 
     def getUniqueAtomName(self):
         """ Returns an array of str with each atom name in selection apparing only once. """
 
-        atomList = np.unique( self.dataset.psfData.atoms[ self._indices ][:,5] )
+        atomList = np.unique( self.dataset.psfData.atoms[ self._indices ][:,4] )
 
         return atomList
 
@@ -158,8 +168,11 @@ class SelText():
 
 
 
-    def coordinates(self):
+    def coordinates(self, frames=None):
         """ Returns trajectory coordinates for selected frames. 
+            
+            If ``frames`` argument is None, use default frame from selection text. Else, a integer,
+            a range, a slice, a list or a numpy.ndarray can be used.
 
             The returned array is always 3D.
             In the case of one frame, the shape is (number of atoms, 1, 3).
@@ -172,23 +185,14 @@ class SelText():
 
         """
 
-        if isinstance(self.frames, int):
-            return self.dataset.dcdData[self._indices]
+        if frames is None:
+            frames = self.frames
 
-        elif isinstance(self.frames, slice):
-            if re.search('within', self.selT):
-                return [self.dataset.dcdData[sel, self.frames] for sel in self._indices]
-            else:
-                return self.dataset.dcdData[self._indices, self.frames]
+        if isinstance(self._indices, list):
+            return [self.dataset.dcdData[sel, frames] for i, sel in enumerate(self._indices)]
+        else:
+            return self.dataset.dcdData[self._indices, frames]
 
-        else: #_Assumes a range or numpy.arange
-            if re.search('within', self.selT):
-                return [self.dataset.dcdData[sel, self.frames][:,np.newaxis,:] for sel in self._indices]
-            else:
-                if len(self.frames) == 1:
-                    return self.dataset.dcdData[self._indices, self.frames][:,np.newaxis,:]
-                else:
-                    return self.dataset.dcdData[self._indices][:,self.frames]
 
         
 
