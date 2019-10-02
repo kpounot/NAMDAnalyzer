@@ -7,7 +7,11 @@ Classes
 
 import numpy as np
 
-from NAMDAnalyzer.lib.pylibFuncs import py_getDCDCell
+try:
+    from NAMDAnalyzer.lib.pylibFuncs import py_getDCDCell
+except ImportError:
+    print("NAMDAnalyzer C code was not compiled, several methods won't work.\n"
+            + "Please compile it before using it.\n")
 
 class DCDCell:
     """ This is a simple class that works as an accessor for cell dimensions from a dcd file.

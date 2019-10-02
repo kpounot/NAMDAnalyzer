@@ -12,7 +12,12 @@ import re
 
 from struct import *
 
-from NAMDAnalyzer.lib.pylibFuncs import py_getDCDCoor, py_getDCDCell
+try:
+    from NAMDAnalyzer.lib.pylibFuncs import py_getDCDCoor, py_getDCDCell
+except ImportError:
+    print("NAMDAnalyzer C code was not compiled, several methods won't work.\n"
+            + "Please compile it before using it.\n")
+
 from NAMDAnalyzer.selection.selText import SelText
 from NAMDAnalyzer.dataParsers.dcdCell import DCDCell
 

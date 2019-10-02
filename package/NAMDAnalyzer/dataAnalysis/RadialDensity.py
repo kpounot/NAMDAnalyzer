@@ -20,7 +20,6 @@ from scipy.signal import medfilt2d
 
 try:
     from NAMDAnalyzer.lib.pylibFuncs import py_cdf, py_getRadialNbrDensity
-
 except ImportError:
     print("NAMDAnalyzer C code was not compiled, several methods won't work.\n"
             + "Please compile it before using it.\n")
