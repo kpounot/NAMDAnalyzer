@@ -93,7 +93,7 @@ class ResidenceTime:
         """
 
         #_Gets residue number list
-        resSel = "protein" if segName is None else "protein and %s" % segName
+        resSel = self.sel[self.sel.find('of ')+3:]
         resSel = self.data.selection(resSel).getUniqueResidues()
 
         corr = np.zeros_like(resSel, dtype=float)
