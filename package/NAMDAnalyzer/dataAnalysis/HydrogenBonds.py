@@ -157,10 +157,7 @@ class HydrogenBonds:
             #_Gets coordinates and cell dimensions
             allAtoms = self.data.dcdData[:, frame:frame+self.maxTime:self.step]
 
-            cellDims = self.data.cellDims[frame]
-            if cellDims.ndim == 1:
-                cellDims = cellDims[np.newaxis,:]
-            cellDims = np.ascontiguousarray(cellDims)
+            cellDims = self.data.cellDims[frame:frame+self.maxTime:self.step]
     
 
             #_Computes hydrogen bond autocorrelation for given frames

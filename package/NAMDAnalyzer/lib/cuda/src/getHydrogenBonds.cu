@@ -28,9 +28,6 @@ void d_getHydrogenBonds(float *acceptors, int size_acceptors, int nbrFrames,
     int row = blockIdx.y * BLOCK_SIZE + threadIdx.y;
     int col = blockIdx.x * BLOCK_SIZE + threadIdx.x;
 
-    unsigned int notBroken   = 1;
-    unsigned int t0          = 0;
-
     __syncthreads();
 
 
@@ -71,16 +68,10 @@ void d_getHydrogenBonds(float *acceptors, int size_acceptors, int nbrFrames,
             float dist = sqrtf(h_acc_x*h_acc_x + h_acc_y*h_acc_y + h_acc_z*h_acc_z); 
 
             float angle = (h_acc_x * acc_d_x + h_acc_y * acc_d_y + h_acc_z * acc_d_z);
-            angle /= ( sqrtf(h_acc_x * h_acc_x + h_acc_y * h_acc_y + h_acc_z * h_acc_z)
-                        * sqrtf(acc_d_x*acc_d_x + acc_d_y*acc_d_y + acc_d_z*acc_d_z) );
+            angle /= ( dist * sqrtf(acc_d_x*acc_d_x + acc_d_y*acc_d_y + acc_d_z*acc_d_z) );
 
             if(dist <= maxR && angle <= cosAngle)
-            {
-                if(dt == 0) 
-                    t0 = 1;
-
-                atomicAdd( &out[dt], t0 * notBroken );
-            }
+                atomicAdd( &out[dt], 1 );
 
             else
             {
@@ -88,7 +79,7 @@ void d_getHydrogenBonds(float *acceptors, int size_acceptors, int nbrFrames,
                     break;
 
                 if(continuous==1)
-                    notBroken = 0;
+                    break;
             }
 
         } // if loop, matrix boundaries
