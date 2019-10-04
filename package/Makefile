@@ -68,13 +68,13 @@ ifneq (,$(wildcard ./NAMDAnalyzer.egg-info/*))
 	rm -rf NAMDAnalyzer.egg-info
 endif
 ifneq (,$(wildcard ./NAMDAnalyzer/lib/*.pyd))
-	rm .\NAMDAnalyzer\lib\*.pyd
+	rm ./NAMDAnalyzer/lib/*.pyd
 endif
 ifneq (,$(wildcard ./NAMDAnalyzer/lib/*.cpp))
-	rm .\NAMDAnalyzer\lib\*.cpp
+	rm ./NAMDAnalyzer/lib/*.cpp
 endif
 ifneq (,$(wildcard ./NAMDAnalyzer/lib/cuda/*.lib))
-	rm .\NAMDAnalyzer\lib\cuda\*.lib
+	rm ./NAMDAnalyzer/lib/cuda/*.lib
 endif
 
 

@@ -10,7 +10,7 @@ enum DCDREADER_ERRORS
     FILE_READ_ERR   = -1,
     OUT_OF_RANGE    = -2,
     WRONG_OUT_DIMS  = -3
-} error_code;
+};
 
 
 int getDCDCoor(char *fileName, int *frames, int nbrFrames, int nbrAtoms, int *selAtoms, 
@@ -26,7 +26,7 @@ int getDCDCoor(char *fileName, int *frames, int nbrFrames, int nbrAtoms, int *se
     dcdFile = fopen(fileName, "rb");
     if(dcdFile == NULL)
     {
-        error_code = FILE_READ_ERR; 
+        enum DCDREADER_ERRORS error_code = FILE_READ_ERR; 
         return error_code;
     }
 
@@ -46,7 +46,7 @@ int getDCDCoor(char *fileName, int *frames, int nbrFrames, int nbrAtoms, int *se
 
             if(seek != 0)
             {
-                error_code = OUT_OF_RANGE;
+                enum DCDREADER_ERRORS error_code = OUT_OF_RANGE;
                 return error_code;
             }
 
@@ -55,7 +55,7 @@ int getDCDCoor(char *fileName, int *frames, int nbrFrames, int nbrAtoms, int *se
             int read = fread(record, 4, nbrAtoms, dcdFile);
             if(read != nbrAtoms)
             {
-                error_code = WRONG_OUT_DIMS;
+                enum DCDREADER_ERRORS error_code = WRONG_OUT_DIMS;
                 return error_code;
             }
 
@@ -70,7 +70,7 @@ int getDCDCoor(char *fileName, int *frames, int nbrFrames, int nbrAtoms, int *se
     fclose(dcdFile);
     free(record);
 
-    error_code = SUCCESS;
+    enum DCDREADER_ERRORS error_code = SUCCESS;
     return error_code;
 } 
 

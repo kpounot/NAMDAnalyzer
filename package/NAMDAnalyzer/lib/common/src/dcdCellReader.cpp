@@ -9,7 +9,7 @@ enum DCDCELL_ERRORS
     SUCCESS         = 0,
     FILE_READ_ERR   = -1,
     OUT_OF_RANGE    = -2,
-} error_code;
+};
 
 
 
@@ -26,7 +26,7 @@ int getDCDCell(char *fileName, int *frames, int nbrFrames, int *startPos, double
     dcdFile = fopen(fileName, "rb");
     if(dcdFile == NULL)
     {
-        error_code = FILE_READ_ERR; 
+        enum DCDCELL_ERRORS error_code = SUCCESS;
         return error_code;
     }
 
@@ -40,7 +40,7 @@ int getDCDCell(char *fileName, int *frames, int nbrFrames, int *startPos, double
 
         if(seek != 0)
         {
-            error_code = OUT_OF_RANGE;
+            enum DCDCELL_ERRORS error_code = OUT_OF_RANGE;
             return error_code;
         }
 
@@ -56,7 +56,7 @@ int getDCDCell(char *fileName, int *frames, int nbrFrames, int *startPos, double
     fclose(dcdFile);
     free(record);
 
-    error_code = SUCCESS;
+    enum DCDCELL_ERRORS error_code = SUCCESS;
     return error_code;
 } 
 
