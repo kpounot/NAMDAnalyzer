@@ -101,12 +101,13 @@ class Rotations:
 
         """
 
-        if self.axis=='x':
-            ref = np.array( [[[1, 0, 0]]] )
-        elif self.axis=='y':
-            ref = np.array( [[[0, 1, 0]]] )
-        elif self.axis=='z':
-            ref = np.array( [[[0, 0, 1]]] )
+        if isinstance(self.axis, str):
+            if self.axis=='x':
+                ref = np.array( [[[1, 0, 0]]] )
+            elif self.axis=='y':
+                ref = np.array( [[[0, 1, 0]]] )
+            elif self.axis=='z':
+                ref = np.array( [[[0, 0, 1]]] )
         else:
             ref = self.axis
 
