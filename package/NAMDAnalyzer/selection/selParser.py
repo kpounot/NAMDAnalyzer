@@ -108,7 +108,7 @@ class SelParser:
 
         #_Parses within keyword
         if re.search('within', self.selT):
-            self.withinList = self._getWithin(self.selT[self.selT.find('within'):]) 
+            self.withinList = self._getWithin(self.selT) 
 
         if self.withinList is not None:
             if self.withinList.ndim > 1:
@@ -300,18 +300,24 @@ class SelParser:
         #_Process outSel 
         if outSel != '':
             outSel = list(filter(None, outSel.strip().split('and')))
+            print(outSel)
             if outSel[-1] == '':
                 sel = self.dataContext.getWithin(distance, sel, frame=self.frame)
-            elif re.search(outSel[-1], 'same resid as'):
-                if outSel.split(' as ')[-1] != '':
-                    sel = self.dataContext.getWithin(distance, sel, outSel.split('as')[-1], frame=self.frame)
+
+            elif re.search('same resid as', outSel[-1]):
+                if outSel[-1].split(' as ')[-1] != '':
+                    sel = self.dataContext.getWithin(distance, sel, outSel[-1].split('as')[-1], 
+                                                     frame=self.frame)
                 else:
                     sel = self.dataContext.getWithin(distance, sel, frame=self.frame)
-            elif re.search(outSel[-1], 'bound to'):
-                if outSel.split(' to ')[-1] != '':
-                    sel = self.dataContext.getWithin(distance, sel, outSel.split('to')[-1], frame=self.frame)
+
+            elif re.search('bound to', outSel[-1]):
+                if outSel[-1].split(' to ')[-1] != '':
+                    sel = self.dataContext.getWithin(distance, sel, outSel[-1].split('to')[-1], 
+                                                     frame=self.frame)
                 else:
                     sel = self.dataContext.getWithin(distance, sel, frame=self.frame)
+
             else:
                 sel = self.dataContext.getWithin(distance, sel, outSel[-1], frame=self.frame)
 

@@ -11,6 +11,8 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 
+from NAMDAnalyzer.lib.pylibFuncs import py_cdf
+
 
 class Rotations:
     """ This class defines methods to compute rotational relaxation and orientation probabilities. 
@@ -107,8 +109,8 @@ class Rotations:
             ref = np.array( [[[0, 0, 1]]] )
 
 
-        self.angles     = np.arange(0, np.pi, self.dPhi)
-        self.rotDensity = np.zeros_like( self.angles )
+        self.angles     = np.arange(0, np.pi, self.dPhi, dtype='float32')
+        self.rotDensity = np.zeros_like( self.angles, dtype='float32' )
         
 
         sel1 = self.data.dcdData[self.data.selection(self.sel1)]
@@ -117,13 +119,12 @@ class Rotations:
         angles  = sel2 - sel1
         angles  = angles / np.sqrt( np.sum( angles**2, axis=2 ) )[:,:,np.newaxis]
 
-        angles  = np.arccos( np.sum(ref * angles, axis=2) )
-        angles = angles.flatten() 
+        angles = np.arccos( np.sum(ref * angles, axis=2) )
+        angles = angles.flatten().astype('float32')
 
         normF = angles.size
-        for i, val in enumerate( self.angles ):
-            self.rotDensity[i] = angles[angles < val].size / normF
-            angles = angles[angles >= val]
+
+        py_cdf(angles, self.rotDensity, self.angles[-1], self.dPhi, normF)
 
 
 

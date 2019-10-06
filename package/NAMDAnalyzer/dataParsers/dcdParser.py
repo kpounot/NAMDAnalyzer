@@ -169,6 +169,8 @@ class NAMDDCD(DCDReader, NAMDPSF):
         if type(refSel) == str:
             refSel = self.selection(refSel)
 
+        print("Given outSel = %s" % outSel)
+
         #_Gets coordinates for atoms to be used as reference
         if type(outSel) == str:
             outSel = self.selection(outSel)
