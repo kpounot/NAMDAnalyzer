@@ -300,7 +300,7 @@ class SelParser:
         #_Process outSel 
         if outSel != '':
             outSel = list(filter(None, outSel.strip().split('and')))
-            print(outSel)
+
             if outSel[-1] == '':
                 sel = self.dataContext.getWithin(distance, sel, frame=self.frame)
 
