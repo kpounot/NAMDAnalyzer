@@ -109,7 +109,7 @@ class Rotations:
             elif self.axis=='z':
                 ref = np.array( [[[0, 0, 1]]] )
         else:
-            ref = self.axis
+            ref = self.axis / np.sqrt( np.sum( self.axis**2 ) )
 
 
         self.angles     = np.arange(0, np.pi, self.dPhi, dtype='float32')

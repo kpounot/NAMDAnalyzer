@@ -31,6 +31,7 @@ except ImportError:
 from NAMDAnalyzer.dataManipulation import molFit_quaternions as molFit_q
 from NAMDAnalyzer.dataParsers.dcdReader import DCDReader
 from NAMDAnalyzer.dataParsers.psfParser import NAMDPSF
+from NAMDAnalyzer.dataParsers.pdbParser import NAMDPDB
 
 from NAMDAnalyzer.helpersFunctions.DistanceChordDiagram import ChordDiag
 
@@ -64,32 +65,35 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
 
 
-    def appendPDB(self, coor):
+    def appendPDB(self, pdbFile):
         """ Can be used to append a frame with coordinates from a pdb file.
 
             Can be used even if no .dcd file was loaded.
 
-            :arg coor: 2D array containing 3D coordinates for each atom. 
-            :type coor: np.ndarray
+            :arg pdbFile: pdb file path
 
         """
+    
+        pdb = NAMDPDB(pdbFile)
 
-        try:
-            np.append( self.dcdData, coor[:,np.newaxis,:].astype('float32'), axis=1 )
-            np.append( self.dcdFreq, self.dcdFreq[-1] )
-            np.append( self.cellDims, self.cellDims[-1] )
+        self.dcdFiles.append(pdb.getCoor()[:,np.newaxis,:])
+
+        if len(self.dcdFiles) == 1:
             self.nbrFrames += 1
             self.nbrSteps  += 1
+            self.nbrAtoms   = pdb.atomList.shape[0]
+            self.timestep   = 1
+            self.dcdFreq = np.append(self.dcdFreq, 1)
+            self.initFrame.append(0)
+            self.stopFrame.append(1)
 
+        else:
+            self.nbrFrames += 1
+            self.nbrSteps  += 1
+            self.dcdFreq = np.append(self.dcdFreq, 1)
+            self.initFrame.append(self.stopFrame[-1])
+            self.stopFrame.append(self.stopFrame[-1]+1)
 
-        except: #_If no trajectories were loaded, just create one frame and use default values
-            self.dcdData    = coor[:,np.newaxis,:].astype('float32')
-            self.dcdFreq    = np.array( [1] )
-            self.timestep   = 2
-            self.nbrFrames  = 1
-            self.nbrSteps   = 1
-            self.nbrAtoms   = coor.shape[0]
-            self.cellDims   = np.array( [[3*np.max(coor[:,0]), 3*np.max(coor[:,1]), 3*np.max(coor[:,2])]] ) 
 
 
 

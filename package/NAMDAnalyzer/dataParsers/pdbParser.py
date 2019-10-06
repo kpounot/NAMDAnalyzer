@@ -31,17 +31,20 @@ class NAMDPDB(PDBReader):
     #_Data accession methods
     #---------------------------------------------
 
-    def getCoor(self, chainIdx=0):
+    def getCoor(self, chainIdx=None):
         """ Extract coordinates from pdb data.
             
-            :arg chainIdx: index of the wanted chain in self.atomList (optional, default 0) 
+            :arg chainIdx: indices of the wanted chain(s) in self.atomList (optional, default None, all chains) 
 
         """
 
-        coor = np.zeros( (self.atomList[chainIdx].shape[0], 3) )
+        if chainIdx is None:
+            atoms = np.concatenate( self.atomList )
+        else:
+            atoms = self.atomList[chainIdx]
 
-        for i in range(self.atomList[chainIdx].shape[0]):
-            coor[i] = np.array( self.atomList[chainIdx][i].split()[6:9] )
+        coor = np.array( [ [atoms[i][30:38], atoms[i][38:46], atoms[i][46:54]] 
+                            for i in range(atoms.shape[0])] ).astype('float32') 
 
 
         return coor

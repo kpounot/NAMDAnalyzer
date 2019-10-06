@@ -20,6 +20,7 @@ except ImportError:
 
 from NAMDAnalyzer.selection.selText import SelText
 from NAMDAnalyzer.dataParsers.dcdCell import DCDCell
+from NAMDAnalyzer.dataParsers.pdbParser import NAMDPDB
 
 class DCDReader:
     """ This class allow user to import a DCD file and provides methods to extract the trajectory.
@@ -39,11 +40,11 @@ class DCDReader:
         self.stopFrame  = []
 
         self.dcdData    = self
-        self.nbrFrames  = None
-        self.timestep   = None
-        self.nbrSteps   = None
-        self.nbrAtoms   = None
-        self.dcdFreq    = None
+        self.nbrFrames  = 0
+        self.timestep   = 0
+        self.nbrSteps   = 0
+        self.nbrAtoms   = 0
+        self.dcdFreq    = []
 
         self.cellDims = DCDCell(self)
 
@@ -124,16 +125,24 @@ class DCDReader:
         out = np.zeros( (len(atoms), len(frames), len(dims) ), dtype='float32')
         tmpOut = None
         for idx, f in enumerate(self.dcdFiles):
-            fileFrames = np.arange(self.initFrame[idx], self.stopFrame[idx], dtype=int)
-            fileFrames, id1, id2 = np.intersect1d(fileFrames, frames, return_indices=True)
+            if isinstance(f, str):
+                fileFrames = np.arange(self.initFrame[idx], self.stopFrame[idx], dtype=int)
+                fileFrames, id1, id2 = np.intersect1d(fileFrames, frames, return_indices=True)
 
-            tmpOut = np.ascontiguousarray(out[:,id2], dtype='float32')
+                tmpOut = np.ascontiguousarray(out[:,id2], dtype='float32')
 
-            py_getDCDCoor(bytearray(f, 'utf-8'), id1.astype('int32'), self.nbrAtoms, atoms.astype('int32'), 
-                            dims.astype('int32'), self.cell, self.startPos[idx].astype('int32'), 
-                            tmpOut)
+                py_getDCDCoor(bytearray(f, 'utf-8'), id1.astype('int32'), self.nbrAtoms, atoms.astype('int32'), 
+                                dims.astype('int32'), self.cell, self.startPos[idx].astype('int32'), 
+                                tmpOut)
 
-            out[:,id2] = tmpOut
+                out[:,id2] = tmpOut
+
+            elif isinstance(f, np.ndarray):
+                fileFrames = np.arange(self.initFrame[idx], self.stopFrame[idx], dtype=int)
+                fileFrames, id1, id2 = np.intersect1d(fileFrames, frames, return_indices=True)
+
+                out[:,id2] = f[atoms]
+                
 
 
         return np.ascontiguousarray(out) 
