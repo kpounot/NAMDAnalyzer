@@ -41,6 +41,11 @@ cdef extern from "libFunc.h":
                     int *refSel, int refSize, int *outSel, int outSelSize,
                     int *out, float *cellDims, float distance);
 
+    void waterOrientAtSurface(float *waterO, int sizeO, float *watVec, float *prot, 
+                              int sizeP, float *out, float *cellDims, int nbrFrames, int maxR, int maxN);
+
+    void setWaterDistPBC(float *water, int sizeW, float *prot, int sizeP, float *cellDims, int nbrFrames,
+                         int nbrWAtoms);
 
     int getParallelBackend();
 
@@ -53,23 +58,29 @@ def py_getDCDCoor( fileName,
                 np.ndarray[int, ndim=1, mode="c"] startPos not None, 
                 np.ndarray[float, ndim=3, mode="c"] outArr not None): 
 
-    getDCDCoor( fileName,
+    res = getDCDCoor( fileName,
                 <int*> np.PyArray_DATA(frames), len(frames), nbrAtoms, 
                 <int*> np.PyArray_DATA(selAtoms), len(selAtoms),  
                 <int*> np.PyArray_DATA(dims), len(dims), cell,
                 <int*> np.PyArray_DATA(startPos),
                 <float*> np.PyArray_DATA(outArr) )
 
+    return res
+
+
+
 def py_getDCDCell( fileName, 
                 np.ndarray[int, ndim=1, mode="c"] frames not None, 
                 np.ndarray[int, ndim=1, mode="c"] startPos not None, 
                 np.ndarray[double, ndim=2, mode="c"] outArr not None): 
 
-    getDCDCell( fileName,
+    res = getDCDCell( fileName,
                 <int*> np.PyArray_DATA(frames), len(frames), 
                 <int*> np.PyArray_DATA(startPos),
                 <double*> np.PyArray_DATA(outArr) )
 
+
+    return res
 
 
 
@@ -167,6 +178,31 @@ def py_getWithin( np.ndarray[float, ndim=3, mode="c"] allAtoms not None,
 
 
 
+def py_waterOrientAtSurface( np.ndarray[float, ndim=3, mode="c"] waterO not None,
+                             np.ndarray[float, ndim=3, mode="c"] watVec not None,
+                             np.ndarray[float, ndim=3, mode="c"] prot not None,
+                             np.ndarray[float, ndim=2, mode="c"] out not None,
+                             np.ndarray[float, ndim=2, mode="c"] cellDims not None,
+                             maxR, maxN ):
+
+    waterOrientAtSurface(<float*> np.PyArray_DATA(waterO), waterO.shape[0], 
+                         <float*> np.PyArray_DATA(watVec), 
+                         <float*> np.PyArray_DATA(prot), prot.shape[0], 
+                         <float*> np.PyArray_DATA(out), 
+                         <float*> np.PyArray_DATA(cellDims), 
+                         waterO.shape[1], maxR, maxN);
+
+
+
+def py_setWaterDistPBC( np.ndarray[float, ndim=3, mode="c"] water not None,
+                             np.ndarray[float, ndim=3, mode="c"] prot not None,
+                             np.ndarray[float, ndim=2, mode="c"] cellDims not None,
+                             nbrWAtoms):
+
+    setWaterDistPBC(<float*> np.PyArray_DATA(water), int(water.shape[0] / nbrWAtoms), 
+                    <float*> np.PyArray_DATA(prot), prot.shape[0], 
+                    <float*> np.PyArray_DATA(cellDims), water.shape[1], nbrWAtoms);
+
 
 
 
@@ -194,6 +230,36 @@ def py_cdf(np.ndarray[float, ndim=1, mode="c"] dist not None,
 
         if rId < size_out:
             out[rId] += 1 / normFactor
+
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def py_getWaterOrientVolMap(np.ndarray[int, ndim=3, mode="c"] indices not None,
+                            np.ndarray[float, ndim=2, mode="c"] orientations not None, 
+                            np.ndarray[int, ndim=3, mode="c"] counts not None, 
+                            np.ndarray[float, ndim=3, mode="c"] out not None):
+    """ Used by the Rotations.WaterOrientAtSurface class to compute volumetric map. """
+
+
+    cdef int at
+    cdef int fr
+
+    cdef int xId
+    cdef int yId
+    cdef int zId
+
+    for at in range(indices.shape[0]):
+        for fr in range(indices.shape[1]):
+
+            xId = indices[at][fr][0]
+            yId = indices[at][fr][1]
+            zId = indices[at][fr][2]
+
+            out[xId][yId][zId]    += orientations[at][fr]
+            counts[xId][yId][zId] += 1
+
+
 
 
 

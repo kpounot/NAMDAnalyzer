@@ -41,7 +41,7 @@ class DCDCell:
             frameSel  = np.arange( start, stop, step )
 
 
-        elif isinstance(frames, (int, list, np.ndarray, np.int32, np.int64)):
+        elif isinstance(frames, (int, list, range, np.ndarray, np.int32, np.int64)):
             if isinstance(frames, (int, np.int32, np.int64)):
                 frameSel = np.array([frames])
             elif isinstance(frames, list):
@@ -62,9 +62,8 @@ class DCDCell:
 
             tmpOut = np.ascontiguousarray(out[id2], dtype='float64')
 
-            py_getDCDCell(bytearray(f, 'utf-8'), id1.astype('int32'), 
-                            self.data.startPos[idx].astype('int32'), 
-                            tmpOut)
+            self._processErrorCode( py_getDCDCell(bytearray(f, 'utf-8'), id1.astype('int32'), 
+                                    self.data.startPos[idx].astype('int32'), tmpOut) )
 
             out[id2] = tmpOut
 
@@ -75,5 +74,16 @@ class DCDCell:
 
 
 
+    def _processErrorCode(self, error_code):
+        """ Used to process return value of py_getDCDCoor function. """
 
+
+        if error_code == 0:
+            return
+
+        if error_code == -1:
+            raise IOError("Error while reading the file. Please check file path or access permissions.\n")
+
+        if error_code == -2:
+            raise IndexError("Out of range index. Please check again requested slices.\n")
 

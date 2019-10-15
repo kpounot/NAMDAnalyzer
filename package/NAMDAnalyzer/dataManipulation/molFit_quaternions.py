@@ -78,7 +78,7 @@ def alignAllMol(dcdData):
     qM = []
 
     #_Determines the correct rotations to align the molecules
-    for i in range(1, dcdData.shape[1]):
+    for i in range(0, dcdData.shape[1]):
         #_Here comes a long series of coefficient calculation
         S_xx = np.dot(dcdData[:,i,0].T, dcdData[:,0,0]).T
         S_xy = np.dot(dcdData[:,i,0].T, dcdData[:,0,1]).T

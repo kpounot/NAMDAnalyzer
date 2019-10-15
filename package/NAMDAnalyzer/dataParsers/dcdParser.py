@@ -11,6 +11,7 @@ import re
 
 from collections import namedtuple
 
+
 import matplotlib.pyplot as plt
 from matplotlib import cm, colors, colorbar
 from mpl_toolkits.mplot3d.axes3d import Axes3D
@@ -81,7 +82,7 @@ class NAMDDCD(DCDReader, NAMDPSF):
         if len(self.dcdFiles) == 1:
             self.nbrFrames += 1
             self.nbrSteps  += 1
-            self.nbrAtoms   = pdb.atomList.shape[0]
+            self.nbrAtoms   = pdb.atomList[0].shape[0]
             self.timestep   = 1
             self.dcdFreq = np.append(self.dcdFreq, 1)
             self.initFrame.append(0)
@@ -283,7 +284,7 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
         r = R.from_rotvec(rotVec)
 
-        q = r.as_quat()
+        q = molFit_q.get_bestMatrix( r.as_quat() )
 
         return molFit_q.applyRotation(self.dcdData[selection, frames], q)
 
@@ -366,7 +367,7 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
         q = molFit_q.alignAllMol(alignData)
 
-        alignData = molFit_q.applyRotation(self.dcdData[selection, frames], q)
+        alignData = molFit_q.applyRotation(alignData, q)
         
         return alignData
 
@@ -435,6 +436,8 @@ class NAMDDCD(DCDReader, NAMDPSF):
         return std
 
 
+
+
     def getRMSDperAtom(self, selection="all", align=False, frames=slice(0, None), mergeXYZ=True):
         """ Computes the RMSD for each atom in selection and for frames between begin and end.
 
@@ -466,6 +469,38 @@ class NAMDDCD(DCDReader, NAMDPSF):
         rmsd = np.mean(rmsd, axis=1)
 
         return rmsd
+
+
+
+    def getRMSDperResidue(self, selection="protein", align=False, frames=slice(0, None), mergeXYZ=True):
+        """ Computes the RMSD for each residue in selection and for selected frames.
+
+            :arg selection: selected atom, can be a single string or a list of atom indices
+            :arg align:     if True, will try to align all atoms to the ones on the first frame
+            :arg frames:    either not given to select all frames, an int, or a slice object
+            :arg mergeXYZ:  if True, uses the vector from the origin instead of each projections 
+
+            :returns: the RMSD averaged over time.
+
+        """
+
+        atoms = self.selection(selection)
+        
+        residues = atoms.getUniqueResidues().astype(int)
+        resRMSD  = np.zeros_like(residues, dtype='float32')
+
+
+        atomRMSD = self.getRMSDperAtom(selection, align, frames, mergeXYZ)
+
+
+        for idx, val in enumerate(residues):
+            resRMSD[idx] = np.mean( atomRMSD[ np.argwhere(atoms.getResidues().astype(int) == val)[:,0] ] )
+
+
+        return resRMSD
+
+
+
 
 
     def getRMSDperFrame(self, selection="all", align=False, frames=slice(0, None), mergeXYZ=True):
@@ -578,6 +613,43 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
         plt.tight_layout()
         return plt.show(block=False)
+
+
+
+    def plotRMSDperResidue(self, selection="all", align=False, frames=slice(0, None), mergeXYZ=True):
+        """ Plot the RMSD along the axis 0 of dataSet.
+            This makes use of the :func:`getRMSDperAtom` method.
+
+            If mergeXYZ is True, then it computes the distance to the origin first. 
+
+        """
+
+        rmsd = self.getRMSDperResidue(selection, align, frames, mergeXYZ)
+        xRange = np.arange(rmsd.size)
+
+        if mergeXYZ:
+            plt.plot(xRange, rmsd)
+            plt.ylabel(r'$RMSD \ (\AA)$')
+
+        else:
+            #_In case of three columns for (x, y, z) coordinates, generate three plot for each.
+            fig, ax = plt.subplots(3, 1, sharex=True)
+
+            ax[0].plot(xRange, rmsd[:,0])
+            ax[0].set_ylabel(r'$RMSD \ along \ X \ (\AA)$')
+
+            ax[1].plot(xRange, rmsd[:,1])
+            ax[1].set_ylabel(r'$RMSD \ along \ Y \ (\AA)$')
+
+            ax[2].plot(xRange, rmsd[:,2])
+            ax[2].set_ylabel(r'$RMSD \ along \ Z \ (\AA)$')
+
+        plt.xlabel('Residue')
+
+        plt.tight_layout()
+        return plt.show(block=False)
+
+
 
 
 

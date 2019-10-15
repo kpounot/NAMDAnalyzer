@@ -88,6 +88,7 @@ class SelParser:
         #_Parses frame keyword
         if re.search('frame', self.selT):
             frameTxt = self.selT[self.selT.find('frame')+6:]
+
             if re.match('[0-9]+:[0-9]+$', frameTxt):
                 frameTxt    = np.array(frameTxt.split(':')).astype(int) 
                 self.frame  = slice(*frameTxt)

@@ -131,9 +131,10 @@ class DCDReader:
 
                 tmpOut = np.ascontiguousarray(out[:,id2], dtype='float32')
 
-                py_getDCDCoor(bytearray(f, 'utf-8'), id1.astype('int32'), self.nbrAtoms, atoms.astype('int32'), 
-                                dims.astype('int32'), self.cell, self.startPos[idx].astype('int32'), 
-                                tmpOut)
+                self._processErrorCode( py_getDCDCoor(bytearray(f, 'utf-8'), id1.astype('int32'), 
+                                                      self.nbrAtoms, atoms.astype('int32'), 
+                                                      dims.astype('int32'), self.cell, 
+                                                      self.startPos[idx].astype('int32'), tmpOut) )
 
                 out[:,id2] = tmpOut
 
@@ -248,4 +249,23 @@ class DCDReader:
         self.startPos   = tempStartPos + self.startPos
         self.initFrame  = tempInitFrame + self.initFrame
         self.stopFrame  = tempStopFrame + self.stopFrame
+
+
+
+    def _processErrorCode(self, error_code):
+        """ Used to process return value of py_getDCDCoor function. """
+
+
+        if error_code == 0:
+            return
+
+        if error_code == -1:
+            raise IOError("Error while reading the file. Please check file path or access permissions.\n")
+
+        if error_code == -2:
+            raise IndexError("Out of range index. Please check again requested slices.\n")
+
+        if error_code == -3:
+            raise IndexError("Record size in trajectory file doesn't match the expected number of atoms.\n"
+                             + "Trajectory file might have been modified or is incomplete.\n")
 

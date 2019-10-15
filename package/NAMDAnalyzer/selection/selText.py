@@ -5,7 +5,7 @@ Classes
 
 """
 
-import re
+import re, os
 
 import numpy as np
 
@@ -19,7 +19,7 @@ class SelText():
         from the given :class:`Dataset` class using appropriate methods.
 
         :arg dataset: a :class:`Dataset` class instance containing psf and dcd data
-        :arg selText: a selection string (default 'all')
+        :arg selText: a selection string (default 'all'), can also be 1D array of indices
 
         If no frame is selected, all of them will be returned with :py:func:`coordinates` method.
 
@@ -34,13 +34,17 @@ class SelText():
     def __init__(self, dataset, selT='all'):
 
         self.dataset = dataset
-        self.selT    = selT
 
-        
-        tempSel = SelParser(self.dataset, self.selT)
+        if isinstance(selT, str):
+            self.selT    = selT
+            tempSel = SelParser(self.dataset, self.selT)
 
-        self._indices = tempSel.selection
-        self.frames   = tempSel.frame
+            self._indices = tempSel.selection
+            self.frames   = tempSel.frame
+        else:
+            self.selT     = ''
+            self._indices = selT
+            self.frames   = 0
 
         self.shape = self._indices.shape if isinstance(self._indices, np.ndarray) else len(self._indices)
         self.size  = self._indices.size if isinstance(self._indices, np.ndarray) else len(self._indices)
@@ -64,6 +68,39 @@ class SelText():
         """ Returns length of _indices() array. """
 
         return self._indices.size
+
+
+
+    def __add__(self, addSel):
+        """ Allows to add two different selections to get and concatenated one. """
+
+        tmp = SelText(self.dataset) 
+        tmp ._indices = np.concatenate( (self._indices, addSel._indices) )
+        tmp.selT = self.selT + ' + ' + addSel.selT
+
+        tmp.shape = tmp._indices.shape if isinstance(tmp._indices, np.ndarray) else len(tmp._indices)
+        tmp.size  = tmp._indices.size if isinstance(tmp._indices, np.ndarray) else len(tmp._indices)
+
+        tmp.iterIdx = 0
+
+        return tmp
+
+
+
+
+    def append(self, indices):
+        """ Allows to directly append a list of indices to the selection. """
+
+        self._indices = np.concatenate( (self._indices, indices) )
+
+        self.shape = self._indices.shape if isinstance(self._indices, np.ndarray) else len(self._indices)
+        self.size  = self._indices.size if isinstance(self._indices, np.ndarray) else len(self._indices)
+
+        self.iterIdx = 0
+
+
+
+
 
 
 
@@ -141,7 +178,11 @@ class SelText():
     def getName(self):
         """ Returns atom name corresponding to each selected atoms in psf file. """
 
-        return self.dataset.psfData.atoms[ self._indices ][:,4]
+        names = self.dataset.psfData.atoms[ self._indices ][:,4]
+
+        names = np.array( [name if len(name) == 4  else ' ' + name for name in names] )
+
+        return names
 
 
     def getUniqueAtomName(self):
@@ -194,7 +235,48 @@ class SelText():
             return self.dataset.dcdData[self._indices, frames]
 
 
-        
+
+    def writePDB(self, fileName=None, frame=0, coor=None):
+        """ This provides a way to write a simple .pdb file containing selected atoms.
+
+            :arg fileName: file name to be used. If None (default), the loaded .psf file name is used.
+            :arg frame:    frame to be used
+            :arg coor:     if not None, it will override the *frame* argument and directly the given
+                           coordinates instead. 
+
+        """
+            
+        if fileName is None:
+            fileName = self.dataset.psfFile[:-4]
+
+        if coor is None:
+            coor = self.coordinates(frame).squeeze()
+
+
+        with open(fileName + '.pdb', 'w') as f:
+
+            names   = self.getName()
+            resName = self.getResName()
+            resID   = self.getResidues().astype(int)
+            segName = self.getSegName()
+
+            cD = self.dataset.cellDims[frame].squeeze()
+
+            f.write('CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f P 1           1\n' 
+                        % (cD[0], cD[1], cD[2], 90.00, 90.00, 90.00) )
+
+
+            for idx, val in enumerate(coor):
+                f.write('ATOM  %5i %-4s%1s%-4s%1s%4i%1s   %8.3f%8.3f%8.3f%6.2f%6.2f      %3s\n'
+                        % ( idx+1,  
+                            names[idx], ' ', resName[idx], 
+                            segName[idx][0], resID[idx], ' ',
+                            val[0], val[1], val[2],
+                            0.00, 0.00, segName[idx] ) )
+
+            f.write('END\n')
+                            
+ 
 
 
 

@@ -7,7 +7,7 @@ from NAMDAnalyzer.selection.selParser import SelParser
 from NAMDAnalyzer.dataAnalysis.BackscatteringDataConvert import BackScatData
 from NAMDAnalyzer.dataAnalysis.ScatDiffusion import ScatDiffusion
 from NAMDAnalyzer.dataAnalysis.HydrogenBonds import HydrogenBonds
-from NAMDAnalyzer.dataAnalysis.Rotations import Rotations
+from NAMDAnalyzer.dataAnalysis.Rotations import Rotations, WaterAtProtSurface
 from NAMDAnalyzer.dataAnalysis.ResidenceTime import ResidenceTime
 from NAMDAnalyzer.dataAnalysis.RadialDensity import ( ResidueWiseWaterDensity, 
                                                       COMRadialNumberDensity, 
