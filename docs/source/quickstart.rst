@@ -174,7 +174,7 @@ Outputs of previous code:
    :width: 24 %
 .. image:: ../fig/water_orient.png
    :width: 24 %
-.. image:: ../fig/water_orient_hist.png
+.. image:: ../fig/water_orientations_hist.png
    :width: 24 %
 
 

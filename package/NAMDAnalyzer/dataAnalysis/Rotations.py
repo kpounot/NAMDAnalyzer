@@ -455,7 +455,7 @@ class WaterAtProtSurface:
 
 
 
-    def plotOrientations(self, bins=100, frames=None, kwargs={}):
+    def plotOrientations(self, bins=100, frames=None, kwargs={'lw':1}):
         """ Plots orientations of water molecule, within the range (minR, maxR) for given frame. 
         
             :arg bins:   number of bins to use
