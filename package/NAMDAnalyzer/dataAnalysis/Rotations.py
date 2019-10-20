@@ -19,7 +19,8 @@ try:
     from NAMDAnalyzer.lib.pylibFuncs import (py_cdf, 
                                              py_waterOrientAtSurface, 
                                              py_setWaterDistPBC,
-                                             py_getWaterOrientVolMap)
+                                             py_getWaterOrientVolMap,
+                                             py_waterOrientHist)
 except ImportError:
     print("NAMDAnalyzer C code was not compiled, several methods won't work.\n"
             + "Please compile it before using it.\n")
@@ -424,14 +425,15 @@ class WaterAtProtSurface:
 
 
 
+    def getOrientations(self, bins=100, frames=None):
+        """ Computes the distribution of orientations between -1 and 1 given the number of bins and
+            for given frames.
 
-    def plotOrientations(self, bins=100, frames=None, kwargs={}):
-        """ Plots orientations of water molecule, within the range (minR, maxR) for given frame. 
-        
-            :arg bins:   number of bins to use (given to matplotlib hist() function)
+            :arg bins:   number of bins to use
             :arg frames: frames to be used (either None for all frames, or slice/range/list)   
-            :arg kwargs: additional keywords arguments to give to matplotlib hist() function
-        
+
+            :returns: a tuple containing the bin edges and the orientation density
+
         """
 
         if frames is None:
@@ -440,8 +442,39 @@ class WaterAtProtSurface:
         orientations = self.orientations[:,frames].flatten()
         keepWat      = self.keepWat[:,frames].flatten()
 
-        plt.hist(orientations[keepWat], bins=bins, density=True, **kwargs)
+        edges = np.arange(-1, 1, 2 / bins)
+        hist  = np.zeros( bins, dtype='float32' )
+
+        py_waterOrientHist(orientations[keepWat], hist, bins)
+
+        hist /= hist.sum()
+
+
+        return edges, hist
+
+
+
+
+    def plotOrientations(self, bins=100, frames=None, kwargs={}):
+        """ Plots orientations of water molecule, within the range (minR, maxR) for given frame. 
+        
+            :arg bins:   number of bins to use
+            :arg frames: frames to be used (either None for all frames, or slice/range/list)   
+            :arg kwargs: additional keywords arguments to give to matplotlib plot and fill_between functions
+        
+        """
+
+        edges, hist = self.getOrientations(bins, frames)
+
+        plt.plot(edges, hist, **kwargs)
+        plt.fill_between(edges, hist, alpha=0.5, **kwargs)
+
         plt.xlabel('$cos(\\theta)$')
         plt.ylabel('P[$cos(\\theta)$]')
+
+        plt.axes().spines['top'].set_visible(False) 
+        plt.axes().spines['right'].set_visible(False) 
+
+        plt.show()
 
 

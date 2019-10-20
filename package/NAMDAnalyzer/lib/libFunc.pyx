@@ -268,6 +268,31 @@ def py_getWaterOrientVolMap(np.ndarray[int, ndim=3, mode="c"] indices not None,
 
 
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def py_waterOrientHist(np.ndarray[float, ndim=1, mode="c"] orientations not None, 
+                         np.ndarray[float, ndim=1, mode="c"] out not None, 
+                         float nbrBins):
+    """ Given an orientation array, computes the histogram in the range [-1, 1]. """
+
+
+    cdef int o
+    cdef int size_orient = orientations.size
+    cdef int size_out    = out.size 
+    cdef float angle
+    cdef int aId
+
+    cdef float dTheta = 2 / nbrBins
+
+    for o in range(size_orient):
+
+        angle = orientations[o]
+        aId = int( (angle+1) / (dTheta*1.0001) )
+
+        out[aId] += 1
+
+
+
 
 
 def py_getParallelBackend():
