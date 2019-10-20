@@ -215,6 +215,20 @@ Analysis of rotations
     rot.plotOrientationalProb()
 
 
+    #_To analyze water dipole moment orientation relative to protein surface
+    from NAMDAnalyzer.dataAnalysis.Rotations import WaterAtProtSurface
+
+    surf = WaterAtProtSurface(d, protSel='protein and segname V2 V3 V4', minR=1, maxR=5, maxN=5, watVec='D')
+    surf.compOrientations()
+    surf.generateVolMap()
+    surf.writeVolMap('myFileName', frame=0)
+
+    surf.plotOrientations()
+
+    #_A PDB file and a DX volumetric map file are generated and can be directly imported into VMD
+    #_for visualization exactly the same way it is done with APBS.
+
+
 Outputs of previous code:
 +++++++++++++++++++++++++
 
@@ -227,6 +241,12 @@ Outputs of previous code:
             </td>
             <td>
                 <img src="./docs/fig/rotOrientationProb.png">
+            </td>
+            <td>
+                <img src="./docs/fig/water_orient.png">
+            </td>
+            <td>
+                <img src="./docs/fig/water_orientations_hist.png">
             </td>
         </tr>
     </table>
