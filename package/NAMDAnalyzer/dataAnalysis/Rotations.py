@@ -279,6 +279,7 @@ class WaterAtProtSurface:
 
         self.orientations = np.ascontiguousarray(waterO[:,:,0], dtype='float32')
         self.keepWat      = np.ascontiguousarray(waterO[:,:,1], dtype=bool)
+        self.distances    = np.ascontiguousarray(waterO[:,:,2], dtype='float32')
 
 
 
@@ -425,12 +426,12 @@ class WaterAtProtSurface:
 
 
 
-    def getOrientations(self, bins=100, frames=None):
-        """ Computes the distribution of orientations between -1 and 1 given the number of bins and
+    def getOrientations(self, nbrBins=100, frames=None):
+        """ Computes the distribution of orientations between -1 and 1 given the number of nbrBins and
             for given frames.
 
-            :arg bins:   number of bins to use
-            :arg frames: frames to be used (either None for all frames, or slice/range/list)   
+            :arg nbrBins: number of bins to use
+            :arg frames:  frames to be used (either None for all frames, or slice/range/list)   
 
             :returns: a tuple containing the bin edges and the orientation density
 
@@ -442,10 +443,10 @@ class WaterAtProtSurface:
         orientations = self.orientations[:,frames].flatten()
         keepWat      = self.keepWat[:,frames].flatten()
 
-        edges = np.arange(-1, 1, 2 / bins)
-        hist  = np.zeros( bins, dtype='float32' )
+        edges = np.arange(-1, 1, 2 / nbrBins)
+        hist  = np.zeros( nbrBins, dtype='float32' )
 
-        py_waterOrientHist(orientations[keepWat], hist, bins)
+        py_waterOrientHist(orientations[keepWat], hist, nbrBins)
 
         hist /= hist.sum()
 
@@ -455,16 +456,82 @@ class WaterAtProtSurface:
 
 
 
-    def plotOrientations(self, bins=100, frames=None, kwargs={'lw':1}):
+
+
+    def getAutoCorr(self, dr=0.2, nbrBins=100):
+        """ Computes the autocorrelation function of water orientation distribution as a function of
+            the distance r. 
+            The bins are given by taking the range between minR and maxR with step dr.
+            The distributions :math:`\\rho(r)` are computed for all waters whose 
+            distance lie within the given bin edges. Then autocorrelation is computed as:
+
+            .. math::
+
+                C(\\Delta r) = \\frac{\\sum_{angles} \\rho(r_{0})\\rho(r_{0} + \\Delta r)}
+                                     {\\sum_{angles} \\rho(r_{0})\\rho(r_{0})}
+
+            :arg dr:   distance step to be used between each distribution :math:`\\rho(r)`
+            :arg nbrBins: number of bins to use to compute orientation distributions
+
+            :returns: a tuple containing an array of bin edges, and an array of correlations
+
+        """
+
+        dist = np.stack( (self.distances.flatten(), self.orientations.flatten()) )
+
+        dist = dist[:, np.argsort(dist, axis=1)[0]]
+
+
+        bins = np.arange(self.minR, self.maxR, dr)
+
+
+        rho_0 = np.zeros( nbrBins, dtype='float32' )
+
+        start = 0
+        while rho_0.sum() == 0:
+            rho_0 *= 0
+            start += 1
+            py_waterOrientHist(dist[1, dist[0] < bins[start]], rho_0, nbrBins)
+
+
+        rho_0 /= rho_0.sum()
+
+        corr = np.zeros_like( bins, dtype='float32')        
+
+        rho = np.zeros( nbrBins, dtype='float32')
+        for idx, r in enumerate(bins):
+            rho *= 0
+            if idx >= start:
+                orient = dist[1, dist[0] < r]
+                py_waterOrientHist(orient, rho, nbrBins)
+                rho /= rho.sum()
+
+                corr[idx] = np.sum( rho_0 * rho ) 
+
+                dist = dist[:, dist[0] >= r]
+
+
+        return bins[start:], corr[start:] / corr[start]
+                
+            
+
+
+
+
+
+#---------------------------------------------
+#_Plotting methods
+#---------------------------------------------
+    def plotOrientations(self, nbrBins=100, frames=None, kwargs={'lw':1}):
         """ Plots orientations of water molecule, within the range (minR, maxR) for given frame. 
         
-            :arg bins:   number of bins to use
-            :arg frames: frames to be used (either None for all frames, or slice/range/list)   
-            :arg kwargs: additional keywords arguments to give to matplotlib plot and fill_between functions
+            :arg nbrBins: number of bins to use
+            :arg frames:  frames to be used (either None for all frames, or slice/range/list)   
+            :arg kwargs:  additional keywords arguments to give to matplotlib plot and fill_between functions
         
         """
 
-        edges, hist = self.getOrientations(bins, frames)
+        edges, hist = self.getOrientations(nbrBins, frames)
 
         plt.plot(edges, hist, **kwargs)
         plt.fill_between(edges, hist, alpha=0.5, **kwargs)
@@ -478,3 +545,20 @@ class WaterAtProtSurface:
         plt.show()
 
 
+
+
+    def plotAutoCorr(self, dr=0.2, nbrBins=100):
+        """ Plot the auto-correlation function of water orientation distribution as a 
+            function of distance r.
+            This calls the :py:meth:`getAutoCorr` method with given arguments.
+
+        """
+
+        bins, corr = self.getAutoCorr(dr, nbrBins)
+
+        plt.plot(bins, corr)
+
+        plt.xlabel('distance r [$\AA$]')
+        plt.ylabel('auto-correlation')
+
+        plt.show()

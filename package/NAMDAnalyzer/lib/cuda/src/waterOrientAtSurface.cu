@@ -113,6 +113,7 @@ void d_waterOrientAtSurface(float *waterO, int sizeO, float *watVec, float *prot
 
 
         waterO[3*nbrFrames*idx + 3*frame] = cosAngle;
+        waterO[3*nbrFrames*idx + 3*frame + 2] = sqrtf(closest[closeId + 1]); // Keep track of closest one
 
     } // conditions on kernel execution
 
