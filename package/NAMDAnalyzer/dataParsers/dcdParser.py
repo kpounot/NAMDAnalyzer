@@ -61,7 +61,10 @@ class NAMDDCD(DCDReader, NAMDPSF):
             self.importDCDFile(dcdFile)
 
 
-        self.parallelBackend = py_getParallelBackend()
+        try:
+            self.parallelBackend = py_getParallelBackend()
+        except NameError:
+            self.parallelBackend = 0
 
 
 

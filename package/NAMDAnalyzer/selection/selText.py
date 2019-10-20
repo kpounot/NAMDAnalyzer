@@ -185,7 +185,7 @@ class SelText():
         return names
 
 
-    def getUniqueAtomName(self):
+    def getUniqueName(self):
         """ Returns an array of str with each atom name in selection apparing only once. """
 
         atomList = np.unique( self.dataset.psfData.atoms[ self._indices ][:,4] )

@@ -48,6 +48,8 @@ class DCDReader:
 
         self.cellDims = DCDCell(self)
 
+        self.byteorder = '<'
+
 
 
     def __getitem__(self, slices):
@@ -134,7 +136,8 @@ class DCDReader:
                 self._processErrorCode( py_getDCDCoor(bytearray(f, 'utf-8'), id1.astype('int32'), 
                                                       self.nbrAtoms, atoms.astype('int32'), 
                                                       dims.astype('int32'), self.cell, 
-                                                      self.startPos[idx].astype('int32'), tmpOut) )
+                                                      self.startPos[idx].astype('int32'), tmpOut,
+                                                      ord(self.byteorder)) )
 
                 out[:,id2] = tmpOut
 
@@ -144,6 +147,17 @@ class DCDReader:
 
                 out[:,id2] = f[atoms]
                 
+
+
+        #_Check shape and resize if necessary
+        if out.shape[0] > self.nbrAtoms:
+            out = out[:self.nbrAtoms]
+
+        if out.shape[1] > self.nbrFrames:
+            out = out[:,:self.nbrFrames]
+
+        if out.shape[2] > 3:
+            out = out[:,:,:3]
 
 
         return np.ascontiguousarray(out) 
@@ -172,7 +186,11 @@ class DCDReader:
             data = f.read(92)
 
             #_Get some simulation parameters (frames, steps and dcd frequency)
-            record = unpack('i4c9if11i', data)
+            record = unpack('%si4c9if11i' % self.byteorder, data)
+
+            if int(record[0]) != 84:
+                self.byteorder = '>'
+                record = unpack('%si4c9if11i' % self.byteorder, data)
 
             self.nbrFrames  = int(record[5])
             dcdFreq         = int(record[7])
@@ -189,7 +207,7 @@ class DCDReader:
 
             #_Get the number of atoms
             data = f.read(12)
-            self.nbrAtoms = unpack('iii', data)[1]
+            self.nbrAtoms = unpack('%siii' % self.byteorder, data)[1]
 
 
             if self.cell:
@@ -209,6 +227,9 @@ class DCDReader:
         #_Converting dcdFreq to an array of size nbrFrames for handling different dcdFreq 
         #_during conversion to time
         self.dcdFreq = np.zeros(self.nbrFrames) + dcdFreq 
+
+
+
 
 
 
@@ -235,7 +256,9 @@ class DCDReader:
         tempInitFrame   = self.initFrame
         tempStopFrame   = self.stopFrame
 
+
         self.importDCDFile(dcdFile)
+
 
         self.initFrame[0] += tempnbrFrames
         self.stopFrame[0] += tempnbrFrames
@@ -243,8 +266,8 @@ class DCDReader:
         #_Append the new data at the end, along the frame axis ('y' axis)
         self.dcdFiles   = tempDatafiles + self.dcdFiles
         self.dcdFreq    = np.append(tempdcdFreq, self.dcdFreq)
-        self.nbrFrames  += tempnbrFrames
         self.nbrSteps   += tempnbrSteps
+        self.nbrFrames  += tempnbrFrames
         self.cell       = tempCell * self.cell
         self.startPos   = tempStartPos + self.startPos
         self.initFrame  = tempInitFrame + self.initFrame

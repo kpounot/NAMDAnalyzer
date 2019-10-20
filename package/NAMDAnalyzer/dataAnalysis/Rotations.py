@@ -9,7 +9,11 @@ import sys
 
 import numpy as np
 
+import matplotlib
+matplotlib.interactive(False)
 import matplotlib.pyplot as plt
+
+from scipy.ndimage import gaussian_filter
 
 try:
     from NAMDAnalyzer.lib.pylibFuncs import (py_cdf, 
@@ -193,18 +197,23 @@ class WaterAtProtSurface:
         to determine the orientation.
         
         :arg data:    a Dataset class instance containing trajectories data 
+        :arg minR:    minimum distance from protein surface for water molecules selection
         :arg maxR:    maximum distance from protein surface for water molecules selection
         :arg maxN:    maximum number of protein atoms to be used to compute normal to surface
         :arg frames:  frames to be used to average orientations
         :arg watVec:  vector on water molecule to be used to compute orientation, 
                       can be 'D' for electric dipole moment, 'H1' for O-H1 vector or 'H2' for O-H2 vetor.
         :arg nbrVox:  number of voxels to be used in each dimensions to generate the volumetric map.
+        :arg gaussianFiltSize: possibility to use a gaussian filter on volumetric map. This calls the 
+                               ``scipy.ndimage.gaussian_filter`` method with default parameter and this
+                               argument given for *sigma* argument. Set it to 1 to not use it.
 
     """
                           
 
 
-    def __init__(self, data, protSel='protein', maxR=5, maxN=5, frames=None, watVec='D', nbrVox=256):
+    def __init__(self, data, protSel='protein', minR=0, maxR=5, maxN=5, frames=None, watVec='D', 
+                 nbrVox=200, gaussianFiltSize=-1):
 
         self.data = data
 
@@ -213,6 +222,7 @@ class WaterAtProtSurface:
         else:
             self.protSel = protSel
 
+        self.minR = minR
         self.maxR = maxR
         self.maxN = maxN
 
@@ -226,6 +236,8 @@ class WaterAtProtSurface:
 
         self.nbrVox = nbrVox
 
+        self.gaussianFiltSize = gaussianFiltSize
+
 
         self.orientations = None
 
@@ -235,8 +247,8 @@ class WaterAtProtSurface:
         """ Computes, for all selected water oxygens, the orientation of the dipole moment vector relative to
             protein surface. 
 
-            This generates a volumetric dataset of size 256*256*256, in which each voxel carries a value
-            corresponding to the angle.
+            This generates a volumetric dataset of size *nbrVox x nbrVox x nbrVox*, in which each voxel 
+            carries a value corresponding to the angle.
 
         """
 
@@ -261,11 +273,11 @@ class WaterAtProtSurface:
         cellDims = self.data.cellDims[self.frames]
     
 
-        py_waterOrientAtSurface(waterO, watVec, prot, out, cellDims, self.maxR, self.maxN) 
+        py_waterOrientAtSurface(waterO, watVec, prot, out, cellDims, self.minR, self.maxR, self.maxN) 
 
 
         self.orientations = np.ascontiguousarray(waterO[:,:,0], dtype='float32')
-        self.keepWat      = np.ascontiguousarray(waterO[:,:,1], dtype=int)
+        self.keepWat      = np.ascontiguousarray(waterO[:,:,1], dtype=bool)
 
 
 
@@ -294,7 +306,7 @@ class WaterAtProtSurface:
 
 
         water = self.data.selection('water')
-        nbrWAtoms = water.getUniqueAtomName().size
+        nbrWAtoms = water.getUniqueName().size
         water = self.data.dcdData[water,self.frames]
 
         #_Moves water molecules to their nearest atom
@@ -322,20 +334,18 @@ class WaterAtProtSurface:
         #_Get water indices on volMap based on coordinates
         indices = (water[::nbrWAtoms,:,:] / maxCoor * self.nbrVox).astype('int32')
 
-        counts = np.zeros_like(self.volMap, dtype='int32')
+
+        py_getWaterOrientVolMap(indices, self.orientations, self.keepWat.astype('int32'), self.volMap)
 
 
-        py_getWaterOrientVolMap(indices, self.orientations, counts, self.volMap)
-
-
-        counts[counts == 0] = 1
-
-        self.volMap     /= counts
         self.volOri      = np.array([0.0, 0.0, 0.0])
         self.volDeltas   = maxCoor / self.nbrVox
         self.pCoor       = prot
         self.wCoor       = water
 
+
+        if self.gaussianFiltSize > 0:
+            self.volMap = gaussian_filter(self.volMap, self.gaussianFiltSize)
 
 
 
@@ -361,14 +371,14 @@ class WaterAtProtSurface:
         wSel = self.data.selection('water')
 
         #_Find indices to keep
-        nbrWat = wSel.getUniqueAtomName().size
-        toKeep = np.zeros(nbrWat * self.keepWat.shape[0])
+        nbrWat = wSel.getUniqueName().size
+        toKeep = np.zeros(nbrWat * self.keepWat.shape[0], dtype=bool)
         for i in range(nbrWat):
-            toKeep[i::nbrWat] += self.keepWat[:,frame]
+            toKeep[i::nbrWat] = self.keepWat[:,frame]
 
 
         #_Gets water and protein coordinates for selected frame
-        wCoor = self.wCoor[toKeep.astype(bool), frame]
+        wCoor = self.wCoor[toKeep, frame]
         pCoor = self.pCoor[:,frame]
 
         coor  = np.concatenate( (pCoor, wCoor) ).squeeze()
@@ -410,4 +420,28 @@ class WaterAtProtSurface:
         sel = self.protSel + wSel
 
         sel.writePDB(fileName, coor=coor)
+
+
+
+
+
+    def plotOrientations(self, bins=100, frames=None, kwargs={}):
+        """ Plots orientations of water molecule, within the range (minR, maxR) for given frame. 
+        
+            :arg bins:   number of bins to use (given to matplotlib hist() function)
+            :arg frames: frames to be used (either None for all frames, or slice/range/list)   
+            :arg kwargs: additional keywords arguments to give to matplotlib hist() function
+        
+        """
+
+        if frames is None:
+            frames = slice(0, None)
+    
+        orientations = self.orientations[:,frames].flatten()
+        keepWat      = self.keepWat[:,frames].flatten()
+
+        plt.hist(orientations[keepWat], bins=bins, density=True, **kwargs)
+        plt.xlabel('$cos(\\theta)$')
+        plt.ylabel('P[$cos(\\theta)$]')
+
 

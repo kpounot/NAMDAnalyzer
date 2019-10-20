@@ -56,6 +56,15 @@ class DCDCell:
 
         #_Extract coordinates given selected atoms, frames and coordinates
         out = np.zeros( (len(frameSel), 6 ), dtype='float64')
+
+
+        #_If no cell information is present, returns cell dimensions big enough so that 
+        #_it does not have any effect
+        if self.data.cell == 0:
+            out += 100000
+            return np.ascontiguousarray(out[ :,[0,2,5] ]).astype('float32')
+
+
         for idx, f in enumerate(self.data.dcdFiles):
             fileFrames = np.arange(self.data.initFrame[idx], self.data.stopFrame[idx], dtype=int)
             fileFrames, id1, id2 = np.intersect1d(fileFrames, frameSel, return_indices=True)
@@ -63,7 +72,8 @@ class DCDCell:
             tmpOut = np.ascontiguousarray(out[id2], dtype='float64')
 
             self._processErrorCode( py_getDCDCell(bytearray(f, 'utf-8'), id1.astype('int32'), 
-                                    self.data.startPos[idx].astype('int32'), tmpOut) )
+                                    self.data.startPos[idx].astype('int32'), tmpOut,
+                                    ord(self.data.byteorder)) )
 
             out[id2] = tmpOut
 
@@ -86,4 +96,8 @@ class DCDCell:
 
         if error_code == -2:
             raise IndexError("Out of range index. Please check again requested slices.\n")
+
+        if error_code == -3:
+            raise IndexError("Record size in trajectory file doesn't match the expected number of values.\n"
+                             + "Trajectory file might have been modified or is incomplete.\n")
 

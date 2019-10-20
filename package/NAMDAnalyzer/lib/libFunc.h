@@ -5,9 +5,10 @@
 
 
 int getDCDCoor(char *fileName, int *frames, int nbrFrames, int nbrAtoms, int *selAtoms, 
-                int selAtomsSize, int *dims, int nbrDims, int cell, int *startPos, float *outArr);
+                int selAtomsSize, int *dims, int nbrDims, int cell, int *startPos, float *outArr,
+                char byteorder);
 
-int getDCDCell(char *fileName, int *frames, int nbrFrames, int *startPos, double *outArr);
+int getDCDCell(char *fileName, int *frames, int nbrFrames, int *startPos, double *outArr, char byteorder);
 
 
 void getHydrogenBonds(  float *acceptors, int size_acceptors, int nbrFrames,
@@ -40,8 +41,8 @@ void getWithin(float *allAtoms, int nbrAtoms, int nbrFrames,
                 int *out, float *cellDims, float distance);
 
 
-void waterOrientAtSurface(float *waterO, int sizeO, float *watVec, float *prot, 
-                          int sizeP, float *out, float *cellDims, int nbrFrames, float maxR, int maxN);
+void waterOrientAtSurface(float *waterO, int sizeO, float *watVec, float *prot, int sizeP, float *out, 
+                          float *cellDims, int nbrFrames, float minR, float maxR, int maxN);
 
 void setWaterDistPBC(float *water, int sizeW, float *prot, int sizeP, float *cellDims, int nbrFrames,
                      int nbrWAtoms);

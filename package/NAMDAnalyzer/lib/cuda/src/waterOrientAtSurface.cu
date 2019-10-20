@@ -22,7 +22,8 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=t
 
 __global__
 void d_waterOrientAtSurface(float *waterO, int sizeO, float *watVec, float *prot, int sizeP, 
-                            float *closest, float *cellDims, int nbrFrames, float maxR, int maxN, int frame)
+                            float *closest, float *cellDims, int nbrFrames, 
+                            float minR, float maxR, int maxN, int frame)
 {
     int tx  = threadIdx.x;
     int idx = blockDim.x*blockIdx.x + tx;
@@ -33,8 +34,8 @@ void d_waterOrientAtSurface(float *waterO, int sizeO, float *watVec, float *prot
     float cD_y = cellDims[3*frame + 1];
     float cD_z = cellDims[3*frame + 2];
 
- 
-    float normVec[3] = {0, 0, 0};
+    for(int i=0; i < maxN; ++i)
+        closest[closeId + 5*i + 1] = 1000;
 
     if(idx < sizeO)
     { 
@@ -61,13 +62,13 @@ void d_waterOrientAtSurface(float *waterO, int sizeO, float *watVec, float *prot
 
             float dist = sqrt(dist_x*dist_x + dist_y*dist_y + dist_z*dist_z);
 
-            if(dist <= maxR)
+            if(dist <= maxR && dist >= minR)
             {
                 waterO[3*nbrFrames*idx + 3*frame + 1] = 1;
 
                 for(int i=0; i < maxN; ++i)
                 {
-                    if(dist < closest[closeId + 5*i])
+                    if(dist < sqrtf(closest[closeId + 5*i + 1]))
                     {
                         for(int k=i+1; k < maxN; ++k)
                         {
@@ -92,20 +93,24 @@ void d_waterOrientAtSurface(float *waterO, int sizeO, float *watVec, float *prot
         } // protein atoms loop
 
 
-
         // Computes the vector normal to surface (addition of water to found atoms vectors,
         // weighed by their squared norm)
-        for(int pPos=0; pPos < maxN; ++pPos)
+        float normVec_x = 0;
+        float normVec_y = 0;
+        float normVec_z = 0;
+
+        for(int i=0; i < maxN; ++i)
         {
-            normVec[0] += closest[closeId + 5*pPos + 2] / closest[closeId + 5*pPos + 1];
-            normVec[1] += closest[closeId + 5*pPos + 3] / closest[closeId + 5*pPos + 1];
-            normVec[2] += closest[closeId + 5*pPos + 4] / closest[closeId + 5*pPos + 1];
+            normVec_x += closest[closeId + 5*i + 2] / closest[closeId + 5*i + 1];
+            normVec_y += closest[closeId + 5*i + 3] / closest[closeId + 5*i + 1];
+            normVec_z += closest[closeId + 5*i + 4] / closest[closeId + 5*i + 1];
         }
 
 
-        float cosAngle = watVec_x*normVec[0] + watVec_y*normVec[1] + watVec_z*normVec[2];
-        cosAngle /= sqrt(watVec_x*watVec_x + watVec_y*watVec_y + watVec_z*watVec_z);
-        cosAngle /= sqrt(normVec[0]*normVec[0] + normVec[1]*normVec[1] + normVec[2]*normVec[2]);
+        float cosAngle = watVec_x*normVec_x + watVec_y*normVec_y + watVec_z*normVec_z;
+        cosAngle /= sqrtf(watVec_x*watVec_x + watVec_y*watVec_y + watVec_z*watVec_z);
+        cosAngle /= sqrtf(normVec_x*normVec_x + normVec_y*normVec_y + normVec_z*normVec_z);
+
 
         waterO[3*nbrFrames*idx + 3*frame] = cosAngle;
 
@@ -117,7 +122,8 @@ void d_waterOrientAtSurface(float *waterO, int sizeO, float *watVec, float *prot
 
 
 void cu_waterOrientAtSurface_wrapper(float *waterO, int sizeO, float *watVec, float *prot, int sizeP, 
-                                     float *out, float *cellDims, int nbrFrames, float maxR, int maxN)
+                                     float *out, float *cellDims, int nbrFrames, 
+                                     float minR, float maxR, int maxN)
 {
     // Copying waterO matrix on GPU memory
     float *cu_waterO;
@@ -162,7 +168,8 @@ void cu_waterOrientAtSurface_wrapper(float *waterO, int sizeO, float *watVec, fl
         printf("Processing frame %i of %i...     \r", frame+1, nbrFrames);
 
         d_waterOrientAtSurface<<<dimGrid, dimBlock>>>(cu_waterO, sizeO, cu_watVec, cu_prot, sizeP, 
-                                                      cu_closest, cu_cellDims, nbrFrames, maxR, maxN, frame);
+                                                      cu_closest, cu_cellDims, nbrFrames, 
+                                                      minR, maxR, maxN, frame);
 
         gpuErrchk( cudaDeviceSynchronize() );
     }

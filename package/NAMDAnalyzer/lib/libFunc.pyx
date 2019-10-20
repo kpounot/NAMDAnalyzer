@@ -11,9 +11,10 @@ np.import_array()
 cdef extern from "libFunc.h":
 
     int getDCDCoor(char *fileName, int *frames, int nbrFrames, int nbrAtoms, int *selAtoms, 
-                    int selAtomsSize, int *dims, int nbrDims, int cell, int *startPos, float *outArr);
+                    int selAtomsSize, int *dims, int nbrDims, int cell, int *startPos, float *outArr,
+                    char byteorder);
 
-    int getDCDCell(char *fileName, int *frames, int nbrFrames, int *startPos, double *outArr);
+    int getDCDCell(char *fileName, int *frames, int nbrFrames, int *startPos, double *outArr, char byteorder);
 
 
     void getHydrogenBonds(  float *acceptors, int size_acceptors, int nbrFrames,
@@ -41,8 +42,8 @@ cdef extern from "libFunc.h":
                     int *refSel, int refSize, int *outSel, int outSelSize,
                     int *out, float *cellDims, float distance);
 
-    void waterOrientAtSurface(float *waterO, int sizeO, float *watVec, float *prot, 
-                              int sizeP, float *out, float *cellDims, int nbrFrames, int maxR, int maxN);
+    void waterOrientAtSurface(float *waterO, int sizeO, float *watVec, float *prot, int sizeP, float *out, 
+                              float *cellDims, int nbrFrames, float minR, float maxR, int maxN);
 
     void setWaterDistPBC(float *water, int sizeW, float *prot, int sizeP, float *cellDims, int nbrFrames,
                          int nbrWAtoms);
@@ -56,14 +57,15 @@ def py_getDCDCoor( fileName,
                 np.ndarray[int, ndim=1, mode="c"] selAtoms not None, 
                 np.ndarray[int, ndim=1, mode="c"] dims not None, cell,
                 np.ndarray[int, ndim=1, mode="c"] startPos not None, 
-                np.ndarray[float, ndim=3, mode="c"] outArr not None): 
+                np.ndarray[float, ndim=3, mode="c"] outArr not None, byteorder): 
 
     res = getDCDCoor( fileName,
                 <int*> np.PyArray_DATA(frames), len(frames), nbrAtoms, 
                 <int*> np.PyArray_DATA(selAtoms), len(selAtoms),  
                 <int*> np.PyArray_DATA(dims), len(dims), cell,
                 <int*> np.PyArray_DATA(startPos),
-                <float*> np.PyArray_DATA(outArr) )
+                <float*> np.PyArray_DATA(outArr),
+                byteorder )
 
     return res
 
@@ -72,12 +74,14 @@ def py_getDCDCoor( fileName,
 def py_getDCDCell( fileName, 
                 np.ndarray[int, ndim=1, mode="c"] frames not None, 
                 np.ndarray[int, ndim=1, mode="c"] startPos not None, 
-                np.ndarray[double, ndim=2, mode="c"] outArr not None): 
+                np.ndarray[double, ndim=2, mode="c"] outArr not None,
+                byteorder ): 
 
     res = getDCDCell( fileName,
                 <int*> np.PyArray_DATA(frames), len(frames), 
                 <int*> np.PyArray_DATA(startPos),
-                <double*> np.PyArray_DATA(outArr) )
+                <double*> np.PyArray_DATA(outArr),
+                byteorder )
 
 
     return res
@@ -183,14 +187,14 @@ def py_waterOrientAtSurface( np.ndarray[float, ndim=3, mode="c"] waterO not None
                              np.ndarray[float, ndim=3, mode="c"] prot not None,
                              np.ndarray[float, ndim=2, mode="c"] out not None,
                              np.ndarray[float, ndim=2, mode="c"] cellDims not None,
-                             maxR, maxN ):
+                             minR, maxR, maxN ):
 
     waterOrientAtSurface(<float*> np.PyArray_DATA(waterO), waterO.shape[0], 
                          <float*> np.PyArray_DATA(watVec), 
                          <float*> np.PyArray_DATA(prot), prot.shape[0], 
                          <float*> np.PyArray_DATA(out), 
                          <float*> np.PyArray_DATA(cellDims), 
-                         waterO.shape[1], maxR, maxN);
+                         waterO.shape[1], minR, maxR, maxN);
 
 
 
@@ -237,7 +241,7 @@ def py_cdf(np.ndarray[float, ndim=1, mode="c"] dist not None,
 @cython.wraparound(False)
 def py_getWaterOrientVolMap(np.ndarray[int, ndim=3, mode="c"] indices not None,
                             np.ndarray[float, ndim=2, mode="c"] orientations not None, 
-                            np.ndarray[int, ndim=3, mode="c"] counts not None, 
+                            np.ndarray[int, ndim=2, mode="c"] toKeep not None, 
                             np.ndarray[float, ndim=3, mode="c"] out not None):
     """ Used by the Rotations.WaterOrientAtSurface class to compute volumetric map. """
 
@@ -249,15 +253,18 @@ def py_getWaterOrientVolMap(np.ndarray[int, ndim=3, mode="c"] indices not None,
     cdef int yId
     cdef int zId
 
-    for at in range(indices.shape[0]):
-        for fr in range(indices.shape[1]):
+    cdef int nbrAtoms   = indices.shape[0]
+    cdef int nbrFrames  = indices.shape[1] 
 
-            xId = indices[at][fr][0]
-            yId = indices[at][fr][1]
-            zId = indices[at][fr][2]
+    for at in range(nbrAtoms):
+        for fr in range(nbrFrames):
 
-            out[xId][yId][zId]    += orientations[at][fr]
-            counts[xId][yId][zId] += 1
+            xId = indices[at,fr,0]
+            yId = indices[at,fr,1]
+            zId = indices[at,fr,2]
+
+            if(toKeep[at,fr] == 1):
+                out[xId,yId,zId]    += orientations[at,fr]
 
 
 
