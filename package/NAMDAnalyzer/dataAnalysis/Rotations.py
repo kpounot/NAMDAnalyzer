@@ -295,7 +295,7 @@ class WaterAtProtSurface:
             Eventually, for each voxel, orientation of water molecules present in the voxel limits 
             is averaged over all frames.
 
-            Using :py:meth:writeVolMap, a .pdb file and a .dx file are created and can be
+            Using :py:meth:`writeVolMap`, a .pdb file and a .dx file are created and can be
             directly imported into VMD to visualize average orientation for each voxel. 
 
         """
