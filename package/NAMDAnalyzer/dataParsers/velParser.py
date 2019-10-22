@@ -58,7 +58,7 @@ class NAMDVEL(VELReader):
             selection = self.parent.selection(selection)
 
         try: #_Try to get the masses list for each selected atoms
-            massList = self.parent.psfData.getAtomsMasses(selection) 
+            massList = selection.getMasses() 
         except AttributeError:
             print("No psf data can be found in the NAMDAnalyzer object.\n Please load a .psf file.\n")
             return
