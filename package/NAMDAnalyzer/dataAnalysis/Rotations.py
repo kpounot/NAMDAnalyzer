@@ -14,6 +14,7 @@ matplotlib.interactive(False)
 import matplotlib.pyplot as plt
 
 from scipy.ndimage import gaussian_filter
+from scipy.stats import entropy
 
 try:
     from NAMDAnalyzer.lib.pylibFuncs import (py_cdf, 
@@ -316,10 +317,10 @@ class WaterAtProtSurface:
 
 
         #_Getting minimum and maximum of all coordinates
-        min_x = np.concatenate( (water, prot) )[:,:,0].min()
-        min_y = np.concatenate( (water, prot) )[:,:,1].min()
-        min_z = np.concatenate( (water, prot) )[:,:,2].min()
-        minCoor = np.array( [min_x, min_y, min_z] )
+        min_x = np.concatenate( (water, prot) )[:,:,0].min(axis=0)
+        min_y = np.concatenate( (water, prot) )[:,:,1].min(axis=0)
+        min_z = np.concatenate( (water, prot) )[:,:,2].min(axis=0)
+        minCoor = np.array( [min_x, min_y, min_z] ).T[np.newaxis,:,:]
 
         #_Moving coordinates close to origin
         prot  -= minCoor
@@ -353,7 +354,7 @@ class WaterAtProtSurface:
 
 
 
-    def writeVolMap(self, fileName=None, frame=0):
+    def writeVolMap(self, fileName=None, frame=0, pFrames=None):
         """ Write the volumetric map containing averaged water orientations relative to protein surface.
             
             The file is in the APBS .dx format style, so that it can be imported directly into VMD.
@@ -362,6 +363,8 @@ class WaterAtProtSurface:
             :arg fileName: file name for .pdb and .dx files. If none, the name of the loaded .psf file
                            is used.
             :arg frame:    frame to be used to generate the pdb file
+            :arg pFrames:  if not None, this will be used instead for protein frame selection and 
+                           the resulting coordinates will be an average over all selected frames
 
         """
 
@@ -381,7 +384,11 @@ class WaterAtProtSurface:
 
         #_Gets water and protein coordinates for selected frame
         wCoor = self.wCoor[toKeep, frame]
-        pCoor = self.pCoor[:,frame]
+
+        if pFrames is None:
+            pCoor = self.pCoor[:,frame]
+        else:
+            pCoor = np.mean(self.pCoor[:,pFrames], axis=1)
 
         coor  = np.concatenate( (pCoor, wCoor) ).squeeze()
 
@@ -517,6 +524,57 @@ class WaterAtProtSurface:
 
 
 
+    def getDistEntropy(self, dr=0.2, nbrBins=100):
+        """ Computes the entropy of water orientation distribution as a function of the distance r. 
+            The bins are given by taking the range between minR and maxR with step dr.
+            The distributions :math:`\\rho(r)` are computed for all waters whose 
+            distance lie within the given bin edges. Then entropy is computed using scipy *entropy* routine.
+
+            :arg dr:   distance step to be used between each distribution :math:`\\rho(r)`
+            :arg nbrBins: number of bins to use to compute orientation distributions
+
+            :returns: a tuple containing an array of bin edges, and an array of entropies
+
+        """
+
+        dist = np.stack( (self.distances.flatten(), self.orientations.flatten()) )
+
+        dist = dist[:, np.argsort(dist, axis=1)[0]]
+
+
+        bins = np.arange(self.minR, self.maxR, dr)
+
+
+        ent = np.zeros_like( bins, dtype='float32')        
+
+        rho = np.zeros( nbrBins, dtype='float32')
+
+        start = 0
+        while rho.sum() == 0:
+            rho *= 0
+            start += 1
+            py_waterOrientHist(dist[1, dist[0] < bins[start]], rho, nbrBins)
+
+
+        for idx, r in enumerate(bins):
+            rho *= 0
+
+            if idx >= start:
+                orient = dist[1, dist[0] < r]
+                py_waterOrientHist(orient, rho, nbrBins)
+                rho /= rho.sum()
+
+                ent[idx] = entropy(rho)
+
+                dist = dist[:, dist[0] >= r]
+
+
+        return bins[start:], ent[start:] 
+                
+ 
+
+
+
 
 
 #---------------------------------------------
@@ -560,5 +618,23 @@ class WaterAtProtSurface:
 
         plt.xlabel('distance r [$\AA$]')
         plt.ylabel('auto-correlation')
+
+        plt.show()
+
+
+
+
+    def plotDistEntropy(self, dr=0.2, nbrBins=100):
+        """ Plot the entropy of water orientation distribution as a function of distance r.
+            This calls the :py:meth:`getDistEntropy` method with given arguments.
+
+        """
+
+        bins, ent = self.getDistEntropy(dr, nbrBins)
+
+        plt.plot(bins, ent)
+
+        plt.xlabel('distance r [$\AA$]')
+        plt.ylabel('entropy')
 
         plt.show()
