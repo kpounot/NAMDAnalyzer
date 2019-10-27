@@ -102,28 +102,6 @@ def py_compIntScatFunc( np.ndarray[float, ndim=3, mode="c"] atomPos not None,
 
 
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-def py_getCenterOfMass(np.ndarray[float, ndim=3] allAtoms, np.ndarray[double, ndim=2] atomMasses):
-    """ Computes the center of mass for all molecules in all frames and returns an array containing the 
-        center of mass coordinates (dim 1) for all frames (dim0). """
-
-
-    cdef int i
-    cdef int nbrFrames  = allAtoms.shape[1]
-    cdef np.ndarray[double, ndim=2] out = np.zeros( (allAtoms.shape[1], allAtoms.shape[2]) ) 
-
-
-    for i in range(nbrFrames):
-        COM = np.dot(allAtoms[:,i,:].T, atomMasses).T
-        COM = np.sum(COM, axis=0) / np.sum(atomMasses)
-
-        out[i] = COM
-
-
-    return out
-
-
 
 def py_getDistances( np.ndarray[float, ndim=3, mode="c"] sel1 not None,
                      np.ndarray[float, ndim=3, mode="c"] sel2 not None,
@@ -264,7 +242,7 @@ def py_getWaterOrientVolMap(np.ndarray[int, ndim=3, mode="c"] indices not None,
             zId = indices[at,fr,2]
 
             if(toKeep[at,fr] == 1):
-                out[xId,yId,zId]    += orientations[at,fr]
+                out[xId,yId,zId] += orientations[at,fr]
 
 
 
@@ -290,6 +268,59 @@ def py_waterOrientHist(np.ndarray[float, ndim=1, mode="c"] orientations not None
         aId = int( (angle+1) / (dTheta*1.0001) )
 
         out[aId] += 1
+
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def py_waterNumberDensityHist(np.ndarray[float, ndim=1, mode="c"] density not None, 
+                              np.ndarray[float, ndim=1, mode="c"] edges not None, 
+                              np.ndarray[float, ndim=1, mode="c"] out not None ):
+    """ Given an water number volumetric map, computes the histogram given provided edges. """
+
+
+    cdef int d
+    cdef float val
+
+    cdef int edgeId
+
+    cdef int size_density = density.size
+    cdef int size_edges   = edges.size
+
+    for d in range(size_density):
+        val = density[d]
+
+        for edgeId in range(size_edges - 1):
+            if val >= edges[edgeId] and val < edges[edgeId + 1]:
+                out[edgeId] += 1
+
+
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def py_getWaterDensityVolMap(np.ndarray[int, ndim=3, mode="c"] indices not None,
+                             np.ndarray[float, ndim=3, mode="c"] out not None ):
+    """ Used by the Rotations.WaterOrientAtSurface class to compute volumetric map. """
+
+
+    cdef int at
+    cdef int fr
+
+    cdef int xId
+    cdef int yId
+    cdef int zId
+
+    cdef int nbrAtoms  = indices.shape[0]
+    cdef int nbrFrames = indices.shape[1]
+
+    for at in range(nbrAtoms):
+        for fr in range(nbrFrames):
+            xId = indices[at,fr,0]
+            yId = indices[at,fr,1]
+            zId = indices[at,fr,2]
+
+            out[xId,yId,zId] += 1 / nbrFrames 
 
 
 

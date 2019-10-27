@@ -10,4 +10,5 @@ dataAnalysis
    ResidenceTime
    Rotations
    ScatDiffusion
+   VolMapDensity
 

@@ -123,7 +123,10 @@ class ResidenceTime:
         self.residues       = resSel.astype(int)
         self.residueWise_dt = dt
 
-        
+
+
+
+
 
 
 #---------------------------------------------
@@ -153,6 +156,8 @@ class ResidenceTime:
                             np.ceil(self.residueWise_dt*self.data.timestep*self.data.dcdFreq[0]*1e12))
 
         fig.show()
+
+
 
 
 

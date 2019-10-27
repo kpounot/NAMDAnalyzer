@@ -10,6 +10,7 @@ import re, os
 import numpy as np
 
 from NAMDAnalyzer.selection.selParser import SelParser
+from NAMDAnalyzer.helpersFunctions.objectConverters import fromSliceToArange
 
 
 class SelText():
@@ -25,9 +26,11 @@ class SelText():
 
         .. warning:: 
             
-            The behavior is not well defined when the multiple frames are used: ``'...within...frame 0:50:2'``.
+            The behavior is not well defined when multiple frames are used: ``'...within...frame 0:50:2'``.
             Especially, the *_indices* attribute becomes a list of array, therefore iteration or
             slicing over the class itself won't work correctly.
+            In case of selection over dcdData, use d.dcdData[mySelection[0],0] to select coordinates 
+            corresponding to first frame.
 
     """
 
@@ -71,11 +74,26 @@ class SelText():
 
 
 
+
     def __add__(self, addSel):
-        """ Allows to add two different selections to get and concatenated one. """
+        """ Allows to add two different selections to get and concatenated one. 
+        
+            The first selection can contain one or multiple frames. That is, *_indices* attribute can be
+            a list of index lists. But the second selection should contain a single frame.
+
+        """
 
         tmp = SelText(self.dataset) 
-        tmp ._indices = np.concatenate( (self._indices, addSel._indices) )
+
+        if isinstance(self._indices, list):
+            frames = fromSliceToArange(self.frames, self.dataset.nbrFrames)
+            tmp._indices = [np.sort( np.concatenate( (self._indices[i], addSel._indices) ) ) 
+                            for i, val in enumerate(frames)]
+
+        else:
+            tmp._indices = np.sort( np.concatenate( (self._indices, addSel._indices) ) ) 
+
+
         tmp.selT = self.selT + ' + ' + addSel.selT
 
         tmp.shape = tmp._indices.shape if isinstance(tmp._indices, np.ndarray) else len(tmp._indices)
@@ -91,12 +109,96 @@ class SelText():
     def append(self, indices):
         """ Allows to directly append a list of indices to the selection. """
 
-        self._indices = np.concatenate( (self._indices, indices) )
+
+        if isinstance(self._indices, list):
+            frames = fromSliceToArange(self.frames, self.dataset.nbrFrames)
+            self._indices = [np.sort( np.concatenate( (self._indices[i], indices) ) ) 
+                            for i, val in enumerate(frames)]
+
+        else:
+            self._indices = np.sort( np.concatenate( (self._indices, indices) ) ) 
+
 
         self.shape = self._indices.shape if isinstance(self._indices, np.ndarray) else len(self._indices)
         self.size  = self._indices.size if isinstance(self._indices, np.ndarray) else len(self._indices)
 
         self.iterIdx = 0
+
+
+
+
+
+
+    def getSubSelection(self, sel, returnOriId=False):
+        """ Performs a sub-selection using given selection within already selected indices. 
+            Basically, atoms that are both in initial selection and *sel* corresponding one 
+            are returned. 
+
+            :arg sel:           sub-selection to use
+            :arg returnOriId:   if True, return also indices in the range of the total number of atoms
+                                in simulation
+            
+        """
+
+        tmp = SelText(self.dataset) 
+
+        if isinstance(sel, str):
+            tempSel      = SelParser(self.dataset, sel)
+            if isinstance(self._indices, list):
+                frames = fromSliceToArange(self.frames, self.dataset.nbrFrames)
+                res = [np.intersect1d( self._indices[i], tempSel.selection, return_indices=True )
+                        for i, frame in enumerate(frames)]
+                tmp._indices = [val[1] for val in res] 
+            else:
+                res = np.intersect1d( self._indices, tempSel.selection, return_indices=True )
+                tmp._indices = res[1] 
+
+            tmp.selT     = sel + " and " + tmp.selT 
+
+
+        elif isinstance(sel, SelText):
+            if isinstance(self._indices, list):
+                frames = fromSliceToArange(self.frames, self.dataset.nbrFrames)
+                res = [np.intersect1d( self._indices[i], sel._indices, return_indices=True )
+                        for i, frame in enumerate(frames)]
+                tmp._indices = [val[1] for val in res] 
+            else:
+                res = np.intersect1d( self._indices, sel._indices, return_indices=True )
+                tmp._indices = res[1] 
+
+            tmp.selT     = sel.selT + " and " + tmp.selT 
+
+
+        else:
+            if isinstance(self._indices, list):
+                frames = fromSliceToArange(self.frames, self.dataset.nbrFrames)
+                res = [np.intersect1d( self._indices[i], sel, return_indices=True )
+                        for i, frame in enumerate(frames)]
+                tmp._indices = [val[1] for val in res] 
+            else:
+                res = np.intersect1d( self._indices, sel, return_indices=True )
+                tmp._indices = res[1] 
+
+            tmp.selT     = sel  
+
+
+        tmp.shape = tmp._indices.shape if isinstance(tmp._indices, np.ndarray) else len(tmp._indices)
+        tmp.size  = tmp._indices.size if isinstance(tmp._indices, np.ndarray) else len(tmp._indices)
+
+        tmp.iterIdx = 0
+
+
+        if isinstance(self._indices, list):
+            oriId = [val[0] for val in res]
+        else:
+            oriId = res[0]
+    
+
+
+        if returnOriId:
+            return tmp, oriId
+        else:
+            return tmp
 
 
 
@@ -228,6 +330,10 @@ class SelText():
 
         if frames is None:
             frames = self.frames
+
+        if isinstance(frames, slice):
+            frames = fromSliceToArange(frames, self.dataset.nbrFrames)
+            return [self.dataset.dcdData[sel, frames[i]] for i, sel in enumerate(self._indices)]
 
         if isinstance(self._indices, list):
             return [self.dataset.dcdData[sel, frames] for i, sel in enumerate(self._indices)]

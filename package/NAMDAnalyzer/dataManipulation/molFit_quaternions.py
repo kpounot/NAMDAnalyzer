@@ -129,6 +129,9 @@ def alignAllMol(dcdData):
             
 
 
+
+
+
 def applyRotation(dcdData, qM):
     """ Apply a rotation using given rotation matrix qM on given dcd data. 
 
@@ -136,10 +139,10 @@ def applyRotation(dcdData, qM):
 
     """
 
-    for i in range(1, dcdData.shape[1]):
+    for i in range(0, dcdData.shape[1]):
 
         #_Generating a data matrix with extra column containing zeros
-        tempData = np.zeros( (dcdData[:,i:].shape[0], dcdData[:,i,:].shape[1] + 1) )
+        tempData = np.zeros( (dcdData.shape[0], dcdData.shape[2] + 1), dtype='float32' )
         tempData[:, 1:] = dcdData[:,i,:]
 
         #_Applying the rotation

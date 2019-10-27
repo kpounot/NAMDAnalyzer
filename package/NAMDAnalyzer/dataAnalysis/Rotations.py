@@ -9,8 +9,6 @@ import sys
 
 import numpy as np
 
-import matplotlib
-matplotlib.interactive(False)
 import matplotlib.pyplot as plt
 
 from scipy.ndimage import gaussian_filter
@@ -199,6 +197,7 @@ class WaterAtProtSurface:
         to determine the orientation.
         
         :arg data:    a Dataset class instance containing trajectories data 
+        :arg protSel: selection of protein atoms to be used for calculation
         :arg minR:    minimum distance from protein surface for water molecules selection
         :arg maxR:    maximum distance from protein surface for water molecules selection
         :arg maxN:    maximum number of protein atoms to be used to compute normal to surface
@@ -285,10 +284,12 @@ class WaterAtProtSurface:
 
 
 
-    def generateVolMap(self):
+    def generateVolMap(self, align=False):
         """ Generates a volumetric map with water orientations relative to protein surface.
             
-            First, protein structures are aligned for all frames. 
+            First, if align keyword is set to True, protein structures are aligned for all frames. 
+            Else, only center of mass are aligned.
+
             Then water molecules are moved based on periodic boundary conditions applied on
             distance between water oxygen and closest protein atom, such that the volumetric map
             corresponds to the positions computed with :py:meth:compOrientations .
@@ -301,41 +302,49 @@ class WaterAtProtSurface:
 
         """
 
+        water   = self.data.selection('water')
+        nbrWAtoms = water.getUniqueName().size
+
+        fullSel = self.protSel + water 
         
-        prot = self.data.dcdData[self.protSel,self.frames]
+        if align:
+            coor = self.data.getAlignedData(self.protSel, fullSel, frames=self.frames)
+        else:
+            coor = self.data.getAlignedCenterOfMass(self.protSel, fullSel, frames=self.frames)
+
+
+        prot  = coor[ fullSel.getSubSelection(self.protSel) ]
+        water = coor[ fullSel.getSubSelection(water) ]
 
 
         cellDims = self.data.cellDims[self.frames]
 
 
-        water = self.data.selection('water')
-        nbrWAtoms = water.getUniqueName().size
-        water = self.data.dcdData[water,self.frames]
-
         #_Moves water molecules to their nearest atom
         py_setWaterDistPBC(water, prot, cellDims, nbrWAtoms)
 
 
+
         #_Getting minimum and maximum of all coordinates
-        min_x = np.concatenate( (water, prot) )[:,:,0].min(axis=0)
-        min_y = np.concatenate( (water, prot) )[:,:,1].min(axis=0)
-        min_z = np.concatenate( (water, prot) )[:,:,2].min(axis=0)
-        minCoor = np.array( [min_x, min_y, min_z] ).T[np.newaxis,:,:]
+        min_x = np.concatenate( (prot, water) )[:,:,0].min()
+        min_y = np.concatenate( (prot, water) )[:,:,1].min()
+        min_z = np.concatenate( (prot, water) )[:,:,2].min()
+        minCoor = np.array( [min_x, min_y, min_z] )
 
         #_Moving coordinates close to origin
         prot  -= minCoor
         water -= minCoor
 
-        max_x = np.concatenate( (water, prot) )[:,:,0].max() 
-        max_y = np.concatenate( (water, prot) )[:,:,1].max()
-        max_z = np.concatenate( (water, prot) )[:,:,2].max()
+        max_x = np.concatenate( (prot, water) )[:,:,0].max()
+        max_y = np.concatenate( (prot, water) )[:,:,1].max()
+        max_z = np.concatenate( (prot, water) )[:,:,2].max()
         maxCoor = np.array( [max_x, max_y, max_z] ) * 1.001
 
-        
+
         self.volMap = np.zeros( (self.nbrVox, self.nbrVox, self.nbrVox), dtype='float32')
     
         #_Get water indices on volMap based on coordinates
-        indices = (water[::nbrWAtoms,:,:] / maxCoor * self.nbrVox).astype('int32')
+        indices = (water[::nbrWAtoms] / maxCoor * self.nbrVox).astype('int32')
 
 
         py_getWaterOrientVolMap(indices, self.orientations, self.keepWat.astype('int32'), self.volMap)

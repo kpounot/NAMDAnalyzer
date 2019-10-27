@@ -19,7 +19,6 @@ from scipy.spatial.transform import Rotation as R
 
 try:
     from NAMDAnalyzer.lib.pylibFuncs import (  py_getWithin, 
-                                    py_getCenterOfMass,
                                     py_getDistances,
                                     py_cdf,
                                     py_getParallelBackend )
@@ -311,26 +310,25 @@ class NAMDDCD(DCDReader, NAMDPSF):
             print("No .psf file was loaded, please import one before using this method.")
             return
 
-        atomMasses = atomMasses.reshape(atomMasses.size, 1)
+        atomMasses = atomMasses.reshape((atomMasses.size, 1, 1))
 
         dcdData = self.dcdData[selection, frames]
-        if dcdData.ndim == 2:
-            dcdData = dcdData[:,np.newaxis,:]
 
-        centerOfMass = py_getCenterOfMass(dcdData, atomMasses)
+        centerOfMass = np.sum( dcdData * atomMasses, axis=0 ) / atomMasses.sum()
 
 
-        return centerOfMass
+        return centerOfMass.astype('float32')
 
 
 
 
-    def getAlignedCenterOfMass(self, selection='all', frames=slice(0,None)):
+    def getAlignedCenterOfMass(self, selection='all', outSel=None, frames=slice(0,None)):
         """ This method aligns the center of mass of each frame to the origin.
             It does not perform any fitting for rotations, so that it can be used for center of mass
             drift corrections if no global angular momentum is present. 
 
             :arg selection: selected atom, can be a single string or a list of atom indices
+            :arg outSel:    if not None, move atoms from this selection based on center of mass of selection
             :arg frames:    either not given to select all frames, an int, or a slice object
 
         """
@@ -341,7 +339,11 @@ class NAMDDCD(DCDReader, NAMDPSF):
             selection = self.selection(selection)
 
 
-        dataSet = self.dcdData[selection, frames] 
+        if outSel is None:
+            outSel = selection
+
+
+        dataSet = self.dcdData[outSel, frames] 
 
         centerOfMass = self.getCenterOfMass(selection, frames)
 
@@ -352,11 +354,14 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
 
 
-    def getAlignedData(self, selection, frames=slice(0, None)):
+
+    def getAlignedData(self, selection, outSel=None, frames=slice(0, None)):
         """ This method will fit all atoms between firstAtom and lastAtom for each frame between
             begin and end, using the first frame for the others to be fitted on. 
         
             :arg selection: selected atom, can be a single string or a list of atom indices
+            :arg outSel:    if not None, move atoms from this selection based transformation 
+                            matrix obtained from selection
             :arg frames:    either not given to select all frames, an int, or a slice object
 
             :returns: a similar array as the initial dataSet but with aligned coordinates.
@@ -366,9 +371,14 @@ class NAMDDCD(DCDReader, NAMDPSF):
         if type(selection) == str:
             selection = self.selection(selection)
 
-        alignData = self.getAlignedCenterOfMass(selection, frames)
+        refData   = self.getAlignedCenterOfMass(selection, None, frames)
+        q         = molFit_q.alignAllMol(refData)
 
-        q = molFit_q.alignAllMol(alignData)
+        if outSel is not None:
+            alignData = self.getAlignedCenterOfMass(selection, outSel, frames)
+        else:
+            alignData = refData
+
 
         alignData = molFit_q.applyRotation(alignData, q)
         
