@@ -1,3 +1,6 @@
+# Vi swap
+.*.swp
+
 # Prerequisites
 *.d
 
