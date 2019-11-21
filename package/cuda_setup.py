@@ -109,6 +109,7 @@ pylibFuncs_ext   = Extension( "NAMDAnalyzer.lib.pylibFuncs",
                                     cudaSrcPath + "setWaterDistPBC.cpp", 
                                     "NAMDAnalyzer/lib/common/src/" + "dcdReader.cpp", 
                                     "NAMDAnalyzer/lib/common/src/" + "dcdCellReader.cpp", 
+                                    "NAMDAnalyzer/lib/common/src/" + "getEndian.cpp", 
                                     "NAMDAnalyzer/lib/" + "libFunc.pyx"],
                                    library_dirs=["NAMDAnalyzer/lib/cuda", cudaLib],
                                    extra_objects=[
