@@ -1,21 +1,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <endian.h>
-
 #include "../../libFunc.h"
-
-
-#if __BYTE_ORDER == __BIG_ENDIAN
-#define sysbyteorder (">")
-#else
-#define sysbyteorder ("<")
-#endif
+#include "getEndian.h"
 
 
 #define swapBytes(val) \
     ( (((val) >> 24) & 0x000000FF) | (((val) >>  8) & 0x0000FF00) | \
       (((val) <<  8) & 0x00FF0000) | (((val) << 24) & 0xFF000000) )
+
+
+
 
 
 enum DCDREADER_ERRORS
@@ -36,6 +31,8 @@ int getDCDCoor(char *fileName, int *frames, int nbrFrames, int nbrAtoms, int *se
     char *record = (char*) malloc(nbrAtoms*sizeof(float)); // Used to store coordinates for each frame
 
     int seek;
+
+    char sysbyteorder = getEndian();
 
 
     dcdFile = fopen(fileName, "rb");
@@ -74,7 +71,7 @@ int getDCDCoor(char *fileName, int *frames, int nbrFrames, int nbrAtoms, int *se
                 return error_code;
             }
 
-            if(*sysbyteorder != byteorder)
+            if(sysbyteorder != byteorder)
             {
                 for(int i=0; i < nbrAtoms; ++i)
                     swapBytes( *(int*) &record[4*i] );

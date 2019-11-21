@@ -1,16 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <endian.h>
-
 #include "../../libFunc.h"
+#include "getEndian.h"
 
-
-#if __BYTE_ORDER == __BIG_ENDIAN
-#define sysbyteorder (">")
-#else
-#define sysbyteorder ("<")
-#endif
 
 #define swapBytes(val) \
     ( (((val) >> 56) & 0x00000000000000FF) | (((val) >> 40) & 0x000000000000FF00) | \
@@ -38,6 +31,7 @@ int getDCDCell(char *fileName, int *frames, int nbrFrames, int *startPos, double
 
     int seek;
 
+    char sysbyteorder = getEndian();
 
 
     dcdFile = fopen(fileName, "rb");
@@ -72,7 +66,7 @@ int getDCDCell(char *fileName, int *frames, int nbrFrames, int *startPos, double
 
 
 
-        if(*sysbyteorder != byteorder)
+        if(sysbyteorder != byteorder)
         {
             for(int i=0; i < 6; ++i)
                 swapBytes( *(long*) &record[8*i] );
