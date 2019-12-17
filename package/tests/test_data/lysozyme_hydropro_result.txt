@@ -1,0 +1,171 @@
+      ------------------------------------------------------------
+                 HYDROPRO, Version 10, September 2011   
+              A. Ortega, D. Amoros, J. Garcia de la Torre, 
+      "Prediction of hydrodynamic and other solution properties of 
+          rigid proteins from atomic- and residue-level models" 
+                Biophys. J. 101, 892-898 (2011). 
+      ------------------------------------------------------------
+
+
+                          SUMMARY OF DATA AND RESULTS
+  
+                            This file : lysozyme300k-res.txt          
+                                 Case : lysozyme_300k                 
+                      Structural file : lys_3ijv_prot.pdb             
+  
+  Radius of elements in primary model : 2.90 Angs.
+         Type of hydropro calculation : 1
+  
+                           Temperature:   7.0 centigrade
+                     Solvent viscosity:  0.01863 poise
+                      Molecular weight:    14320. Da
+        Solute partial specific volume: 0.732 cm^3/g
+                      Solution density: 1.106 g/cm^3
+  
+   Translational diffusion coefficient:  5.697E-07 cm^2/s
+                    Radius of gyration:  1.472E-07 cm
+                                Volume:  2.350E-20 cm^3
+      Rotational diffusion coefficient:  1.136E+07 s^-1
+                   Relaxation time (1):  1.792E-08 s
+                   Relaxation time (2):  1.685E-08 s
+                   Relaxation time (3):  1.673E-08 s
+                   Relaxation time (4):  1.411E-08 s
+                   Relaxation time (5):  1.411E-08 s
+      Harmonic mean (correlation) time:  1.579E-08 s
+                   Intrinsic viscosity:  3.320E+00 cm^3/g
+             Sedimentation coefficient:  6.679E-01 Svedberg
+  
+
+                        List of equivalent radii
+
+                         Translational:  1.933E-07
+                             Gyration :  1.900E-07
+                               Volume :  1.777E-07
+                          Rotation (1):  2.071E-07
+                          Rotation (2):  2.029E-07
+                          Rotation (3):  2.024E-07
+                          Rotation (4):  1.912E-07
+                          Rotation (5):  1.912E-07
+                          Rotation (h):  1.970E-07
+                   Intrinsic viscosity:  1.961E-07
+                      Longest distance:  2.682E-07
+  
+                     Longest distance :  5.363E-07 cm
+
+
+
+                Calculation of scattering form factor, P vs h
+                                  h           P(h)
+                           0.00E+00       1.00E+00
+                           9.53E+05       9.95E-01
+                           1.91E+06       9.78E-01
+                           2.86E+06       9.52E-01
+                           3.81E+06       9.15E-01
+                           4.76E+06       8.71E-01
+                           5.72E+06       8.19E-01
+                           6.67E+06       7.62E-01
+                           7.62E+06       7.00E-01
+                           8.57E+06       6.36E-01
+                           9.53E+06       5.71E-01
+                           1.05E+07       5.07E-01
+                           1.14E+07       4.44E-01
+                           1.24E+07       3.85E-01
+                           1.33E+07       3.29E-01
+                           1.43E+07       2.77E-01
+                           1.52E+07       2.31E-01
+                           1.62E+07       1.90E-01
+                           1.71E+07       1.54E-01
+                           1.81E+07       1.23E-01
+                           1.91E+07       9.71E-02
+                           2.00E+07       7.55E-02
+                           2.10E+07       5.80E-02
+                           2.19E+07       4.41E-02
+                           2.29E+07       3.32E-02
+                           2.38E+07       2.48E-02
+                           2.48E+07       1.87E-02
+                           2.57E+07       1.42E-02
+                           2.67E+07       1.11E-02
+                           2.76E+07       8.98E-03
+                           2.86E+07       7.65E-03
+                           2.95E+07       6.84E-03
+                           3.05E+07       6.40E-03
+                           3.14E+07       6.17E-03
+                           3.24E+07       6.07E-03
+                           3.33E+07       6.01E-03
+                           3.43E+07       5.95E-03
+                           3.52E+07       5.86E-03
+                           3.62E+07       5.71E-03
+                           3.72E+07       5.50E-03
+                           3.81E+07       5.25E-03
+                           3.91E+07       4.94E-03
+                           4.00E+07       4.61E-03
+                           4.10E+07       4.25E-03
+                           4.19E+07       3.89E-03
+                           4.29E+07       3.53E-03
+                           4.38E+07       3.19E-03
+                           4.48E+07       2.88E-03
+                           4.57E+07       2.60E-03
+                           4.67E+07       2.35E-03
+                           4.76E+07       2.15E-03
+
+
+                          Distribution of distances
+
+         50 intervals between RMIN and RMAX centered at R; 
+                          Values of p(R)
+
+
+        RMIN(cm)    RMAX(cm)     R(cm)    p(R)(cm^(-1))
+        0.000E+00   1.073E-08   5.363E-09   3.856E+04
+        1.073E-08   2.145E-08   1.609E-08   1.967E+05
+        2.145E-08   3.218E-08   2.682E-08   4.629E+05
+        3.218E-08   4.291E-08   3.754E-08   8.220E+05
+        4.291E-08   5.363E-08   4.827E-08   1.250E+06
+        5.363E-08   6.436E-08   5.900E-08   1.731E+06
+        6.436E-08   7.509E-08   6.973E-08   2.246E+06
+        7.509E-08   8.582E-08   8.045E-08   2.764E+06
+        8.582E-08   9.654E-08   9.118E-08   3.268E+06
+        9.654E-08   1.073E-07   1.019E-07   3.744E+06
+        1.073E-07   1.180E-07   1.126E-07   4.179E+06
+        1.180E-07   1.287E-07   1.234E-07   4.558E+06
+        1.287E-07   1.395E-07   1.341E-07   4.868E+06
+        1.395E-07   1.502E-07   1.448E-07   5.098E+06
+        1.502E-07   1.609E-07   1.555E-07   5.238E+06
+        1.609E-07   1.716E-07   1.663E-07   5.286E+06
+        1.716E-07   1.824E-07   1.770E-07   5.247E+06
+        1.824E-07   1.931E-07   1.877E-07   5.124E+06
+        1.931E-07   2.038E-07   1.984E-07   4.921E+06
+        2.038E-07   2.145E-07   2.092E-07   4.644E+06
+        2.145E-07   2.253E-07   2.199E-07   4.301E+06
+        2.253E-07   2.360E-07   2.306E-07   3.905E+06
+        2.360E-07   2.467E-07   2.414E-07   3.473E+06
+        2.467E-07   2.574E-07   2.521E-07   3.025E+06
+        2.574E-07   2.682E-07   2.628E-07   2.581E+06
+        2.682E-07   2.789E-07   2.735E-07   2.161E+06
+        2.789E-07   2.896E-07   2.843E-07   1.781E+06
+        2.896E-07   3.004E-07   2.950E-07   1.448E+06
+        3.004E-07   3.111E-07   3.057E-07   1.163E+06
+        3.111E-07   3.218E-07   3.164E-07   9.249E+05
+        3.218E-07   3.325E-07   3.272E-07   7.282E+05
+        3.325E-07   3.433E-07   3.379E-07   5.675E+05
+        3.433E-07   3.540E-07   3.486E-07   4.368E+05
+        3.540E-07   3.647E-07   3.594E-07   3.306E+05
+        3.647E-07   3.754E-07   3.701E-07   2.448E+05
+        3.754E-07   3.862E-07   3.808E-07   1.764E+05
+        3.862E-07   3.969E-07   3.915E-07   1.231E+05
+        3.969E-07   4.076E-07   4.023E-07   8.284E+04
+        4.076E-07   4.184E-07   4.130E-07   5.361E+04
+        4.184E-07   4.291E-07   4.237E-07   3.310E+04
+        4.291E-07   4.398E-07   4.344E-07   1.935E+04
+        4.398E-07   4.505E-07   4.452E-07   1.062E+04
+        4.505E-07   4.613E-07   4.559E-07   5.387E+03
+        4.613E-07   4.720E-07   4.666E-07   2.510E+03
+        4.720E-07   4.827E-07   4.774E-07   1.091E+03
+        4.827E-07   4.934E-07   4.881E-07   4.334E+02
+        4.934E-07   5.042E-07   4.988E-07   1.424E+02
+        5.042E-07   5.149E-07   5.095E-07   3.341E+01
+        5.149E-07   5.256E-07   5.203E-07   4.500E+00
+        5.256E-07   5.363E-07   5.310E-07   1.308E-01
+
+           Check for normalization:
+           (RMAX-RMIN)*SUM(p(R))=  1.000E+00  SHOULD BE= 1

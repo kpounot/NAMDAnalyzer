@@ -11,14 +11,19 @@ int getDCDCoor(char *fileName, int *frames, int nbrFrames, int nbrAtoms, int *se
 int getDCDCell(char *fileName, int *frames, int nbrFrames, int *startPos, double *outArr, char byteorder);
 
 
-void getHydrogenBonds(  float *acceptors, int size_acceptors, int nbrFrames,
-                        float *donors, int size_donors,
-                        float *hydrogens, int size_hydrogens, 
-                        float *cellDims,
-                        float *out, int maxTime, int step, int nbrTimeOri,
-                        float maxR, float minAngle, int continuous);
+void getHBCorr(  float *acceptors, int size_acceptors, int nbrFrames,
+                 float *donors, int size_donors,
+                 float *hydrogens, int size_hydrogens, 
+                 float *cellDims,
+                 float *out, int maxTime, int step, int nbrTimeOri,
+                 float maxR, float minAngle, int continuous);
 
 
+void getHBNbr(  float *acceptors, int size_acceptors, int nbrFrames,
+                float *donors, int size_donors,
+                float *hydrogens, int size_hydrogens, 
+                float *cellDims, float *out, 
+                float maxR, float minAngle );
 
 void compIntScatFunc(float *atomPos, int atomPos_dim0, int atomPos_dim1, int atomPos_dim2, 
                      float *qVecs, int qVecs_dim0, int qVecs_dim1, int qVecs_dim2, 

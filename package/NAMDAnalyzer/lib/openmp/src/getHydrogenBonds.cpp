@@ -6,7 +6,7 @@
 #include "../../libFunc.h"
 
 
-void getHydrogenBonds(  float *acceptors, int size_acceptors, int nbrFrames,
+void getHBCorr(  float *acceptors, int size_acceptors, int nbrFrames,
                         float *donors, int size_donors,
                         float *hydrogens, int size_hydrogens, 
                         float *cellDims,

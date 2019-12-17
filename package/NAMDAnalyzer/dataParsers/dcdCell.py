@@ -32,6 +32,7 @@ class DCDCell:
     def __getitem__(self, frames):
 
         frameSel = np.arange(self.data.nbrFrames, dtype=int)
+        coorSel  = np.arange(3)
 
         if isinstance(frames, slice):
             start = frames.start if frames.start is not None else 0
@@ -49,6 +50,37 @@ class DCDCell:
             else:
                 frameSel = frames
 
+
+
+        elif len(frames) == 2:
+
+            if isinstance(frames[0], slice):
+                start = frames[0].start if frames[0].start is not None else 0
+                stop  = frames[0].stop if frames[0].stop is not None else self.data.nbrFrames
+                step  = frames[0].step if frames[0].step is not None else 1
+
+                frameSel  = np.arange( start, stop, step )
+
+            if isinstance(frames[0], (int, list, np.ndarray)):
+                frameSel = np.array([frames[0]]) if isinstance(frames[0], int) else frames[0]
+
+
+            if isinstance(frames[1], slice):
+                start = frames[1].start if frames[1].start is not None else 0
+                stop  = frames[1].stop if frames[1].stop is not None else 3
+                step  = frames[1].step if frames[1].step is not None else 1
+
+                coorSel = np.arange( start, stop, step )
+
+            if isinstance(frames[1], (int, list, np.ndarray)):
+                coorSel = np.array([frames[1]]) if isinstance(frames[1], int) else frames[1]
+
+
+
+        elif len(frames) > 2:
+            print("Too many dimensions requested, maximum is 2.")
+            return
+
         else:
             print("Selection couldn't be understood, please use slicing to select cell dimensions.")
             return
@@ -62,7 +94,7 @@ class DCDCell:
         #_it does not have any effect
         if self.data.cell == 0:
             out += 100000
-            return np.ascontiguousarray(out[ :,[0,2,5] ]).astype('float32')
+            return np.ascontiguousarray(out[ :,[0,2,5] ]).astype('float32')[:,coorSel]
 
 
         for idx, f in enumerate(self.data.dcdFiles):
@@ -78,8 +110,9 @@ class DCDCell:
             out[id2] = tmpOut
 
 
+            out = out[:,[0,2,5]]
 
-        return np.ascontiguousarray(out[ :,[0,2,5] ]).astype('float32')
+        return np.ascontiguousarray(out[:,coorSel], dtype='float32')
 
 
 

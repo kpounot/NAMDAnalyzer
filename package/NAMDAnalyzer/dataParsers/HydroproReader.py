@@ -16,7 +16,7 @@ import numpy as np
 
 class HydroproReader:
     """ This class can be used to extract usefule information from a hydropro result file that
-        can be used with ScatDiffusion module from NamdAnalyzer. 
+        can be used with ScatDiffusion module from NAMDAnalyzer. 
 
         :arg resFile: result file as obtained from HydroPro software
 

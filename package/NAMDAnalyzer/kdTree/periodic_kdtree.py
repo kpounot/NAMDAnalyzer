@@ -1,4 +1,4 @@
-""" This is the periodicCKDTree class was written by Patrick Varilly.
+""" This is the periodicCKDTree class written by Patrick Varilly.
 
 Some minor modifications were done to make it work with Python 3
 

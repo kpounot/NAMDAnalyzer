@@ -13,7 +13,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 try:
-    from NAMDAnalyzer.lib.pylibFuncs import py_getHydrogenBonds
+    from NAMDAnalyzer.lib.pylibFuncs import py_getHBCorr
 except ImportError:
     print("NAMDAnalyzer C code was not compiled, several methods won't work.\n"
             + "Please compile it before using it.\n")
@@ -64,6 +64,8 @@ class HydrogenBonds:
 
         self.cc = np.ascontiguousarray( np.zeros( self.times.size ), dtype='float32' )
         self.ic = np.ascontiguousarray( np.zeros( self.times.size ), dtype='float32' )
+
+        self.nbrHB = None
 
 
     def _processDonors(self, donors):
@@ -161,12 +163,12 @@ class HydrogenBonds:
     
 
             #_Computes hydrogen bond autocorrelation for given frames
-            py_getHydrogenBonds(allAtoms[acceptors],
-                                self.times.size,
-                                allAtoms[donors], allAtoms[hydrogens],
-                                cellDims,
-                                corr, self.maxTime,
-                                self.step, self.nbrTimeOri, self.maxR, self.minAngle, continuous)
+            py_getHBCorr(allAtoms[acceptors],
+                         self.times.size,
+                         allAtoms[donors], allAtoms[hydrogens],
+                         cellDims,
+                         corr, self.maxTime,
+                         self.step, self.nbrTimeOri, self.maxR, self.minAngle, continuous)
 
 
 
@@ -175,6 +177,36 @@ class HydrogenBonds:
             else:
                 self.ic += corr / (corr[0] * self.nbrTimeOri)
 
+
+
+
+    def compHBNumber(self, frames=None):
+        """ Computes the number of hydrogen bonds for each selected frame.
+
+            Both distances and angles are computed exactly, without any approximation, 
+            to single-point precision.
+
+            :arg frames: the frames from which the number of hydrogen bonds will be determined.
+
+            The result, a 1D array containing the number of hydrogen bonds for each frame is
+            stored in the self.nbrHB class attribute.
+
+        """
+
+        if frames is None:
+            frames = np.arange(self.data.nbrFrames)
+
+
+        #_Get the acceptors for each selected frame
+        acceptors = self.data.selection( self.acceptors + ' frame %i' % frame)
+        acceptors = self.data.dcdData[acceptors, frames]
+
+        #_Processes selections
+        if self.hydrogens is None:
+            donors, hydrogens   = self._processDonors( self.donors + ' frame %i' % frame)
+        else:
+            donors = self.data.selection( self.donors + ' frame %i' % frame)
+            hydrogens = self.data.selection( self.hydrogens + ' frame %i' % frame)
 
 
                      
