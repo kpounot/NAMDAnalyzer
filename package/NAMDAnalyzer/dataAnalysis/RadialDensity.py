@@ -266,7 +266,7 @@ class COMRadialNumberDensity:
     """
 
 
-    def __init__(self, data, sel='protH', dr=0.5, maxR=60, frame=-1):
+    def __init__(self, data, sel='protH', dr=0.5, maxR=60, frame=0):
 
         
         self.data = data
@@ -288,7 +288,7 @@ class COMRadialNumberDensity:
         density = np.zeros( radii.size, dtype='float32' )
 
         #_Set center of mass to the origin and computes distances from origin for all atoms
-        dist = self.data.getAlignedCenterOfMass(self.sel, self.frame)
+        dist = self.data.getAlignedCenterOfMass(self.sel, self.frame).squeeze()
         dist = np.sqrt( np.dot(dist, dist.T) ).flatten()
         dist = dist[dist > 0]
 

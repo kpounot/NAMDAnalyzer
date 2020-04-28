@@ -103,7 +103,7 @@ class SelParser:
 
 
         else:
-            self.frame = 1
+            self.frame = 0
 
 
 

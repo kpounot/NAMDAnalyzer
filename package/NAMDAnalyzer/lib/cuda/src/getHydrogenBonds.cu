@@ -139,11 +139,11 @@ void getHBCorr_wrapper(  float *acceptors, int size_acceptors, int nbrFrames,
     dim3 dimGrid( ceil( (float)size_donors/BLOCK_SIZE), ceil( (float)size_acceptors/BLOCK_SIZE), 1);
 
     d_getHBCorr<<<dimGrid, dimBlock>>>(cu_acceptors, size_acceptors, 
-                                                          nbrFrames, cu_donors, 
-                                                          size_donors, cu_hydrogens, size_hydrogens, 
-                                                          cu_cellDims,
-                                                          cu_out, maxTime, step, nbrTimeOri, 
-                                                          maxR, cosAngle, continuous);
+                                       nbrFrames, cu_donors, 
+                                       size_donors, cu_hydrogens, size_hydrogens, 
+                                       cu_cellDims,
+                                       cu_out, maxTime, step, nbrTimeOri, 
+                                       maxR, cosAngle, continuous);
     gpuErrchk( cudaDeviceSynchronize() );
 
     // Copying result back into host memory
@@ -269,6 +269,8 @@ void getHBNbr_wrapper(  float *acceptors, int size_acceptors, int nbrFrames,
 
     for(int frame=0; frame < nbrFrames; ++frame)
     {
+        printf("Processing frame %i of %i...        \r", frame+1, nbrFrames);
+
         d_getHBNbr<<<dimGrid, dimBlock>>>(cu_acceptors, size_acceptors, 
                                            nbrFrames, cu_donors, 
                                            size_donors, cu_hydrogens, size_hydrogens, 

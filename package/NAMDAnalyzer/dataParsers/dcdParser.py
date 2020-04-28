@@ -11,6 +11,7 @@ import re
 
 from collections import namedtuple
 
+import matplotlib
 
 import matplotlib.pyplot as plt
 from matplotlib import cm, colors, colorbar
@@ -64,6 +65,7 @@ class NAMDDCD(DCDReader, NAMDPSF):
             self.parallelBackend = py_getParallelBackend()
         except NameError:
             self.parallelBackend = 0
+
 
 
 
@@ -328,7 +330,7 @@ class NAMDDCD(DCDReader, NAMDPSF):
             drift corrections if no global angular momentum is present. 
 
             :arg selection: selected atom, can be a single string or a list of atom indices
-            :arg outSel:    if not None, move atoms from this selection based on center of mass of selection
+            :arg outSel:    if not None, move atoms from outSel based on center of mass of selection
             :arg frames:    either not given to select all frames, an int, or a slice object
 
         """
@@ -341,6 +343,8 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
         if outSel is None:
             outSel = selection
+        elif type(outSel) == str:
+            outSel = self.selection(outSel)
 
 
         dataSet = self.dcdData[outSel, frames] 
@@ -407,6 +411,84 @@ class NAMDDCD(DCDReader, NAMDPSF):
         return dcdData
 
  
+
+
+    def getProtVolume(self, selection='protein', frame=0):
+        """ Computes an approximate volume of the protein by summing the volume of each
+            amino acids in the provided selection.
+
+            :arg selection: selection to be used. Should be obviously a protein.
+            :arg frame:     frame to be used to compute the volume
+            :arg volType:   type of volume to be used, either 'IMGT' (from imgt.org),
+                            'hard-sphere' or 'vdW' (the latter standing for van der Waals volume)
+
+            :returns: the volume in :math:`\\AA^3`
+
+            References:
+
+            .. [#] http://proteinsandproteomics.org/content/free/tables_1/table08.pdf
+            .. [#] http://www.imgt.org/IMGTeducation/Aide-memoire/_UK/aminoacids/abbreviation.html#refs
+
+        """
+
+        resVol1 = { 'ALA': 92, 'ARG': 225, 'ASN': 135, 'ASP': 125, 'CYS': 106,
+                    'GLN': 161, 'GLU': 155, 'GLY': 66, 'HIS': 167, 'HSE': 167,
+                    'HSD': 167, 'HSP': 167, 'ILE': 169, 'LEU': 168, 'LYS': 171,
+                    'MET': 171, 'PHE': 203, 'PRO': 129, 'SER': 99, 'THR': 122,
+                    'TRP': 240, 'TYR': 203, 'VAL': 142 }
+
+        
+        resVol2 = { 'ALA': 88.6, 'ARG': 173.4, 'ASN': 114.1, 'ASP': 111.1, 'CYS': 108.5,
+                    'GLN': 143.8, 'GLU': 138.4, 'GLY': 60.1, 'HIS': 153.2, 'HSE': 153.2,
+                    'HSD': 153.2, 'HSP': 153.2, 'ILE': 166.7, 'LEU': 166.7, 'LYS': 168.6,
+                    'MET': 162.9, 'PHE': 189.9, 'PRO': 112.7, 'SER': 89.0, 'THR': 116.1,
+                    'TRP': 227.8, 'TYR': 193.6, 'VAL': 140.0 } 
+
+
+
+        sel = self.selection(selection)
+        sel.frame = frame
+
+        nbrRes = sel.getSubSelection(selection + ' and name CA').size 
+
+        vol1 = 0
+        vol2 = 0
+        for resID in range(nbrRes):
+            tmpSel = sel.getSubSelection('resid %s' % str(resID+1))
+
+            vol1 += resVol1[tmpSel.getUniqueResName()[0]]
+            vol2 += resVol2[tmpSel.getUniqueResName()[0]]
+
+
+        return (vol1 + vol2) / 2
+
+
+
+    def getSpecVolume(self, selection='protein', frame=0):
+        """ Estimates protein specific volume based on volume estimation.
+
+            :arg selection: selection to be used. Should be obviously a protein.
+            :arg frame:     frame to be used to compute the volume
+            :arg volType:   type of volume to be used, either 'hard-sphere' or 'vdW' 
+                            (the latter standing for van der Waals volume)
+
+            :returns: the specific volume in :math:`\\cm^3 / g` 
+
+        """
+
+        massP = np.sum( self.getAtomsMasses(selection) )
+
+        protVol = self.getProtVolume(selection, frame) * 1e-24
+
+        specVol = protVol / massP * 6.02214076e23
+
+        return specVol
+
+
+
+
+
+
 
 
 
@@ -813,6 +895,7 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
         """
 
+        matplotlib.interactive(False)
 
         chord = ChordDiag(self, sel1, sel2, frames, startDist, maxDist, step, lwStep, resList, labelStep)
 

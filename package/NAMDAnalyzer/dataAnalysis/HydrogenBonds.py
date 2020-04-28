@@ -13,7 +13,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 try:
-    from NAMDAnalyzer.lib.pylibFuncs import py_getHBCorr
+    from NAMDAnalyzer.lib.pylibFuncs import py_getHBCorr, py_getHBNbr
 except ImportError:
     print("NAMDAnalyzer C code was not compiled, several methods won't work.\n"
             + "Please compile it before using it.\n")
@@ -198,18 +198,30 @@ class HydrogenBonds:
 
 
         #_Get the acceptors for each selected frame
-        acceptors = self.data.selection( self.acceptors + ' frame %i' % frame)
+        acceptors = self.data.selection( self.acceptors )
         acceptors = self.data.dcdData[acceptors, frames]
 
         #_Processes selections
         if self.hydrogens is None:
-            donors, hydrogens   = self._processDonors( self.donors + ' frame %i' % frame)
+            donors, hydrogens   = self._processDonors( self.donors )
         else:
-            donors = self.data.selection( self.donors + ' frame %i' % frame)
-            hydrogens = self.data.selection( self.hydrogens + ' frame %i' % frame)
+            donors = self.data.selection( self.donors )
+            hydrogens = self.data.selection( self.hydrogens )
 
+        donors = self.data.dcdData[donors, frames]
+        hydrogens = self.data.dcdData[hydrogens, frames]
+
+
+        cellDims = self.data.cellDims[frames]
+
+        #_To store final result for each time interval
+        out = np.ascontiguousarray( np.zeros( acceptors.shape[1] ), dtype='float32' )
+
+        py_getHBNbr(acceptors, acceptors.shape[1], donors, hydrogens,
+                     cellDims, out, self.maxR, self.minAngle)
 
                      
+        self.nbrHB = out
 
 
 

@@ -80,7 +80,7 @@ class ChordDiag:
 
         self.lwStep = lwStep
         self.labelStep = labelStep
-        self.cmap = cm.get_cmap('summer')
+        self.cmap = cm.get_cmap('viridis')
         self.norm = colors.Normalize(self.startDist, self.maxDist)
 
 
@@ -99,12 +99,14 @@ class ChordDiag:
         for idx, r in enumerate(self.rList):
             keep = np.argwhere( self.dist < r )
             keep = np.column_stack( (self.sel1[keep[:,0]], self.sel2[keep[:,1]]) )
-    
-            if keep.ndim == 2:
+
+            if keep.shape[0] > 0:
                 #_Keeps only on index per residue
                 keep = np.unique( self.data.psfData.atoms[keep][:,:,2], axis=0 ).astype(int)
 
                 self.resPairsList.append( keep )
+            else:
+                self.resPairsList.append( np.array([]) )
                 
 
 
@@ -119,7 +121,7 @@ class ChordDiag:
         
         for idx, r in enumerate(self.rList):
             pts = 2 * np.pi * (self.resPairsList[idx].flatten() - 1) / self.resList.size
-            self.ax.scatter( pts, np.ones_like(pts), color=self.cmap(self.norm(r)), 
+            self.ax.scatter( pts, np.ones_like(pts), color=self.cmap(self.norm(r-self.step/2)), 
                              alpha=(1 - r / (2*self.maxDist)), ec=None)
 
 
@@ -143,7 +145,7 @@ class ChordDiag:
                                (pt[1], 1)],
                               [mpath.MOVETO, mpath.CURVE4, mpath.CURVE4, mpath.CURVE4] )
 
-                patch = mpatches.PathPatch( path, fill=False, ec=self.cmap(self.norm(r)),
+                patch = mpatches.PathPatch( path, fill=False, ec=self.cmap(self.norm(r-self.step/2)),
                                             alpha=(1 - r / (2*self.maxDist)),
                                             lw=(self.maxDist/r)*self.lwStep )
 
@@ -165,7 +167,10 @@ class ChordDiag:
         self.ax     = self.figure.add_subplot(self.grid[0], projection='polar')
 
         cb = self.figure.add_subplot(self.grid[1])
-        self.cb = colorbar.ColorbarBase(cb, cmap=self.cmap, norm=self.norm)
+        cmap = colors.LinearSegmentedColormap.from_list('dist', 
+                                            [self.cmap(self.norm(r-self.step/2)) for r in self.rList[::-1]],
+                                            N = self.rList.size)
+        self.cb = colorbar.ColorbarBase(cb, cmap=cmap, norm=self.norm)
         cb.set_ylabel('Distance [$\AA$]')
 
         self.ax.spines['polar'].set_visible(False) 

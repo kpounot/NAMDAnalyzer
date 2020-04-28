@@ -8,7 +8,9 @@ Classes
 import sys
 import numpy as np
 
-from scipy.spatial import ConvexHull, Voronoi
+from collections import defaultdict
+
+from scipy.spatial import ConvexHull, Voronoi, Delaunay
 from scipy.interpolate import interp1d
 from scipy.special import spherical_jn
 from scipy.optimize import root
@@ -53,27 +55,42 @@ class ScatDiffusion(HydroproReader):
         self.roots  = None
 
 
+
+
 #---------------------------------------------
 #_Computation methods
 #---------------------------------------------
-    def compEffVolFrac(self, massP, solventVol=1):
+    def compEffVolFrac(self, massP, solventVol=1, compSpecVol=False, selection='protein', frame=0):
         """ Computes the hydrodynamic radius based on translational diffusion coefficient in the dilute limit
             and uses the relation, effPhi = phi * (Rh/R)**3 to get the effective volume fraction. 
             
-            :arg massP:      mass of protein used in the experiment (in grams)
-            :arg solventVol: volume of solvent used (in cm^3), to compute initial volume fraction """
+            :arg massP:       mass of protein used in the experiment (in grams)
+            :arg solventVol:  volume of solvent used (in cm^3), to compute initial volume fraction 
+            :arg compSpecVol: if True, computes the specific volume based in protein sequence instead
+                              of using the one from HYDROPRO.
+            :arg selection:   if compSpecVol is True, use the given selection to compute the specific volume
+            :arg frame:       if compSpecVol is True, use the given frame to compute the specific volume
+            
+        """
+
+        if compSpecVol:
+            vol     = self.dataset.getProtVolume(selection, frame) * 1e-24
+            specVol = self.dataset.getSpecVolume(selection, frame)
+        else:
+            vol     = self.params.vol
+            specVol = self.params.specVol
 
 
-        R = ( 3/(4*np.pi) * self.params.vol )**(1/3)
+        R = ( 3/(4*np.pi) * vol )**(1/3)
 
-        phi = self.params.specVol * massP / (solventVol + self.params.specVol * massP)
+        phi = specVol * massP / (solventVol + specVol * massP)
 
         self.effPhi = phi * (self.params.rh / R)**3
 
 
 
 
-    def compCorrectedDt(self):
+    def _compCorrectedDt(self):
         """ Computes the translational diffusion coefficient in crowded solution based on protein's 
             effective volume fraction phi and translational diffusion coefficient Ds0 in the dilute limit. 
         
@@ -91,23 +108,30 @@ class ScatDiffusion(HydroproReader):
 
 
 
-    def compCorrectedDs(self):
+    def _compCorrectedDr(self):
         """ Computes the rotational diffusion coefficient in crowded solution based on protein's 
             effective volume fraction phi and rotational diffusion coefficient in the dilute limit. 
 
         """
 
-        self.Dr = self.params.dr0 * (1 - 1.3 * self.effPhi**2) 
+        self.Dr = self.params.dr0 * (1 - 0.631*self.effPhi - 0.726*self.effPhi**2)
 
 
 
 
 
 
-    def compAppDiffCoeff(self, qVals, maxN=100, density_dr=1, maxDensityR=60, frame=-1):
-        """ Computes apparent diffusion coefficient based on corrected diffusion coefficients Dt and Dr. 
+    def compAppDiffCoeff(self, qVals, maxN=100, density_dr=1, maxDensityR=60, frame=-1, minMethod='lm'):
+        """ Computes apparent diffusion coefficient D based on corrected diffusion coefficients Dt and Dr. 
         
             As Dt and Dr are in [cm] and [s] units, the obtained result is given in cm^2/s 
+
+            :arg qVals:         a list of scattering vector amplitude values to compute D (in [angström])
+            :arg maxN:          maximum number of spherical bessel function to be used  
+            :arg density_dr:    increment value for the radius r used to compute the radial density from the 
+                                protein center-of-mass
+            :arg maxDensityR:   maximum radius to be used to compute the radial density
+            :arg frame:         frame to be used on the loaded trajectory to compute the radial density 
 
         """ 
 
@@ -121,8 +145,8 @@ class ScatDiffusion(HydroproReader):
         #_Pre-process q-values and diffusion coefficients
         qVals = np.array( qVals ).astype('f') * 1e8 #_Conversion to cm^(-1)
 
-        self.compCorrectedDt()
-        self.compCorrectedDs()
+        self._compCorrectedDt()
+        self._compCorrectedDr()
 
         #_Computes the density
         density = COMRadialNumberDensity(self.dataset, 'protH', dr=density_dr, 
@@ -131,8 +155,7 @@ class ScatDiffusion(HydroproReader):
         density = ( density.radii, density.density )
 
 
-
-        solRoot = root(self.fitFuncAppDiffCoeff, x0=self.Dt, args=(qVals, density, maxN), method='lm') 
+        solRoot = root(self._fitFuncAppDiffCoeff, x0=self.Dt, args=(qVals, density, maxN), method=minMethod) 
 
         self.roots = solRoot
                 
@@ -141,7 +164,7 @@ class ScatDiffusion(HydroproReader):
 
 
 
-    def fitFuncAppDiffCoeff(self, D, qVals, density, maxN=100):
+    def _fitFuncAppDiffCoeff(self, D, qVals, density, maxN=100):
         """ Fitting function to compute apparent diffusion coefficient. """
 
 
@@ -161,58 +184,84 @@ class ScatDiffusion(HydroproReader):
 
 
 
-#---------------------------------------------
-#_Other physical parameters (solute volume, D2O density,...)
-#---------------------------------------------
-    def getProtVolume(self, frame=-1):
-        """ Estimates protein volume using ConvexHull for each residue.
-            A scaling of 10 is used for each residue to take into account 
-            an average atom volume of 10 Angströms.
-            
-            There should be only one protein in the trajectories. 
-            
-            Returns volume in cm**3 
 
-        """
-
-        selProt = self.dataset.getSelection('protein')
-
-        nbrResid = int(self.dataset.psfData.atoms[selProt,2][-1])
+    def compDt(self, qVals, D, Dr, maxN=100, density_dr=1, maxDensityR=60, frame=-1, 
+                init_Dt=None, minMethod='lm'):
+        """ Computes coefficients Dt based on the apparent diffusion coefficient D and theoretical Dr. 
         
-        vol = 0
-        for i in range(nbrResid):
-            residRange = np.argwhere( self.dataset.psfData.atoms[selProt,2] == str(i+1) )[:,0]
-            vol += ConvexHull(self.dataset.dcdData[residRange, frame]).volume * 10
+            Dt is given in [cm^2/s]. 
+
+            :arg qVals:         a list of scattering vector amplitude values to compute D (in [angström])
+            :arg D:             the apparent self-diffusion coefficient from neutron scattering
+            :arg Dr:            the rotational diffusion coefficient from neutron scattering
+            :arg maxN:          maximum number of spherical bessel function to be used  
+            :arg density_dr:    increment value for the radius r used to compute the radial density from the 
+                                protein center-of-mass
+            :arg maxDensityR:   maximum radius to be used to compute the radial density
+            :arg frame:         frame to be used on the loaded trajectory to compute the radial density 
+            :arg init_Dt:       initial guess for Dt
+            :arg Dr_scaling:    scaling factor for Dr
 
 
-        return vol * 1e-24
+        """ 
+
+
+        if self.effPhi is None:
+            print("The effective volume fraction was not computed.\n"
+                    + "Use self.compEffVolFrac() method before calling this method.\n")
+            return
+
+
+        if init_Dt is None:
+            self._compCorrectedDt()
+            init_Dt = self.Dt
+
+
+        #_Pre-process q-values and diffusion coefficients
+        qVals = np.array( qVals ).astype('f') * 1e8 #_Conversion to cm^(-1)
+
+
+        #_Computes the density
+        density = COMRadialNumberDensity(self.dataset, 'protH', dr=density_dr, 
+                                         maxR=maxDensityR, frame=frame)
+        density.compDensity()
+        density = ( density.radii, density.density )
+
+
+        solRoot = root(self._fitFunc_Dt, x0=init_Dt, 
+                       args=(D, Dr, qVals, density, maxN), method=minMethod) 
+
+        self.Dt_estimate = solRoot.x[0]
+                
+
+
+
+    def _fitFunc_Dt(self, Dt, D, Dr, qVals, density, maxN=100):
+        """ Fitting function to compute apparent diffusion coefficient. """
+
+        dist, density = density
+        dist = dist[:,np.newaxis] * 1e-8
+        density = density[:,np.newaxis] 
+
+        res = np.zeros(qVals.size)
+        for n in range(maxN):
+            Bn = (2*n+1) * np.sum( density * spherical_jn(n, qVals*dist)**2, axis=0 )
+            res += ( Bn * (Dr * n*(n+1) + (Dt - D) * qVals**2) 
+                            / (Dr * n*(n+1) + (Dt + D) * qVals**2)**2 )
+
+
+        return res
 
 
 
 
 
-    def getSpecVolume(self, frame=-1):
-        """ Estimates protein specific volume based on volume estimation.
-
-            There should be only one protein in the trajectories. 
-            
-            Returns specific volume in cm**3 / g 
-
-        """
-
-        massP = np.sum( self.dataset.getAtomsMasses('protein') )
-
-        protVol = self.getProtVolume(frame)
-
-        specVol = protVol / massP * 6.02214076e23
-
-        return specVol
 
 
-
-
-
-
+#---------------------------------------------
+#_Other physical parameters (D2O density and viscosity)
+#---------------------------------------------
+    @classmethod
     def getViscosityD2O(self, T, dT=None):
         """ Calculates the viscosity of D2O in units of [Pa*s] for given temperature in units of [K]
             Dependence of viscosity on temperature was determined by Cho et al. (1999)
@@ -248,6 +297,7 @@ class ScatDiffusion(HydroproReader):
 
 
 
+    @classmethod
     def getDensityD2O(self, T):
         """ Calculates the density of D2O in units of [g/cm^3] for given temperature T in [K]
             

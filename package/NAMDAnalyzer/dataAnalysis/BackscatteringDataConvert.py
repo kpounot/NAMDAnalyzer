@@ -205,14 +205,19 @@ class BackScatData:
 
 
 
-    def compMSD(self, frameNbr=100, selection='protNonExchH', frames=slice(0, None, 1), alignCOM=True):
+    def compMSD(self, nbrFrames=20, selection='protNonExchH', frames=slice(0, None, 1), alignCOM=True,
+                nbrSubFrames=10):
         """ Computes the Mean-Squared Displacement for the given number of frames, which should correspond
             to the max time scale probed by the instrument.
 
-            :arg frameNbr:  number of frames to be used (time interval)
-            :arg selection: atom selection to be used to compute MSD
-            :arg frames:    either None to select all frames, an int, or a slice object
-            :arg alignCOM:  whether center of mass should be aligned or not 
+            :arg nbrFrames:      number of frames to be used (time interval)
+            :arg selection:     atom selection to be used to compute MSD
+            :arg frames:        either None to select all frames, or a slice object
+            :arg alignCOM:      whether center of mass should be aligned or not 
+            :arg nbrSubFrames:  number of sub-selection of frames to be averaged on. Basically, the
+                                selected frames are sliced to generate the given number of subsets.
+                                The MSD is computed for each subset, then the average and the standard
+                                deviation are computed.
 
             Result is stored in *MSD* attribute
 
@@ -224,20 +229,37 @@ class BackScatData:
 
         #_ALign center of masses if required
         if alignCOM:
-            self.dataset.setCenterOfMassAligned('all', frames)
+            atomPos = self.dataset.getAlignedCenterOfMass('all', selection, frames).astype('float32')
+        else:
+            atomPos = self.dataset.dcdData[selection, frames].astype('float32')
 
 
-        atomPos = self.dataset.dcdData[selection, frames].astype('float32')
+        #_Parses the 'frames' argument
+        if isinstance(frames, slice):
+            start  = frames.start if frames.start is not None else 0
+            stop   = frames.stop - nbrFrames if frames.stop is not None else self.dataset.nbrFrames - nbrFrames
+            step   = int(np.ceil(((stop - nbrFrames) - start) / nbrSubFrames))
+        elif frames is None:
+            start = 0
+            stop  = self.dataset.nbrFrames - nbrFrames
+            step  = int(np.ceil(stop / nbrSubFrames))
+        else:
+            raise TypeError('The argument `frames` should be either None or a `slice` object')
 
 
-        oriSlice = slice(frameNbr, None) if frameNbr > 0 else slice(0, None)
-        endSlice = slice(0, -frameNbr) if frameNbr > 0 else slice(0, None)
+        frames = np.arange(start, stop - nbrFrames, step)
+
 
         #_Computes intermediate scattering function for one timestep, averaged over time origins
-        displacement = np.sum((atomPos[:,oriSlice] - atomPos[:,endSlice])**2, axis=2)
+        tmpMSD = []
+        for frm in frames:
+            displacement = np.sum((atomPos[:,frm+nbrFrames:frm+step+nbrFrames] - atomPos[:,frm:frm+step])**2, 
+                                   axis=2)
+            tmpMSD.append(displacement.mean())
 
+        tmpMSD = np.array(tmpMSD)
 
-        self.MSD = displacement.mean(), displacement.std()
+        self.MSD = tmpMSD.mean(), tmpMSD.std()
 
 
 

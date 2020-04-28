@@ -135,6 +135,6 @@ setup(  name='NAMDAnalyzer',
         url='github.com/kpounot/NAMDAnalyzer',
         py_modules=['NAMDAnalyzer.Dataset'],
         packages=packagesList,
-        ext_modules=cythonize( [pylibFuncs_ext]),
+        ext_modules=cythonize( [pylibFuncs_ext] ),
         cmdclass={'build_ext': build_ext_subclass})
 
