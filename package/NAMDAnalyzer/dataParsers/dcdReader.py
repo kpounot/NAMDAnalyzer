@@ -46,6 +46,8 @@ class DCDReader:
         self.nbrAtoms   = 0
         self.dcdFreq    = []
 
+        self.cell = 0
+
         self.cellDims = DCDCell(self)
 
         self.byteorder = '<'
