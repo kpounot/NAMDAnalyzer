@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+
 #include "../../libFunc.h"
 #include "getEndian.h"
 
@@ -18,21 +19,26 @@ enum DCDREADER_ERRORS
     SUCCESS         = 0,
     FILE_READ_ERR   = -1,
     OUT_OF_RANGE    = -2,
-    WRONG_OUT_DIMS  = -3
+    FILE_SEEK_ERR   = -3
 };
 
 
-int getDCDCoor(char *fileName, int *frames, int nbrFrames, int nbrAtoms, int *selAtoms, 
-                int selAtomsSize, int *dims, int nbrDims, int cell, int *startPos, float *outArr,
+int getDCDCoor(char *fileName, long *frames, int nbrFrames, long nbrAtoms, long *selAtoms, 
+                int selAtomsSize, long *dims, int nbrDims, int cell, long *startPos, float *outArr,
                 char byteorder)
 {
     FILE *dcdFile;
 
-    char *record = (char*) malloc(nbrAtoms*sizeof(float)); // Used to store coordinates for each frame
+    // Used to store coordinates for each frame
+    char *record = (char*) malloc(nbrAtoms * 4);
+
+    char sysbyteorder = getEndian();
 
     int seek;
 
-    char sysbyteorder = getEndian();
+    long int pos;
+
+    float res;
 
 
     dcdFile = fopen(fileName, "rb");
@@ -43,6 +49,9 @@ int getDCDCoor(char *fileName, int *frames, int nbrFrames, int nbrAtoms, int *se
     }
 
 
+    fseek(dcdFile, 0, SEEK_END);
+    long int fileSize = ftell(dcdFile);
+
 
     for(int frameId=0; frameId < nbrFrames; ++frameId)
     {
@@ -51,10 +60,23 @@ int getDCDCoor(char *fileName, int *frames, int nbrFrames, int nbrAtoms, int *se
 
         for(int dimId=0; dimId < nbrDims; ++dimId)
         {
+
             if(cell)
-                seek = fseek(dcdFile, startPos[frame] + dims[dimId]*(4*nbrAtoms+8) + 60, SEEK_SET);
+            {
+                pos = startPos[frame] + dims[dimId] * (4 * nbrAtoms + 8) + 60;
+                seek = fseek(dcdFile, pos, SEEK_SET);
+            }
             else
-                seek = fseek(dcdFile, startPos[frame] + dims[dimId]*(4*nbrAtoms+8) + 4, SEEK_SET);
+            {
+                pos = startPos[frame] + dims[dimId] * (4 * nbrAtoms + 8) + 4;
+                seek = fseek(dcdFile, pos, SEEK_SET);
+            }
+
+            if(pos > fileSize)
+            {
+                enum DCDREADER_ERRORS error_code = OUT_OF_RANGE;
+                return error_code;
+            }
 
             if(seek != 0)
             {
@@ -62,26 +84,15 @@ int getDCDCoor(char *fileName, int *frames, int nbrFrames, int nbrAtoms, int *se
                 return error_code;
             }
 
-
-            // Reads the record, x, y and z coordinates for each atom, flanked by integers of 4 bytes.
-            int read = fread(record, 4, nbrAtoms, dcdFile);
-            if(read != nbrAtoms)
-            {
-                enum DCDREADER_ERRORS error_code = WRONG_OUT_DIMS;
-                return error_code;
-            }
-
-            if(sysbyteorder != byteorder)
-            {
-                for(int i=0; i < nbrAtoms; ++i)
-                    swapBytes( *(int*) &record[4*i] );
-            }
-
+            fread(record, 4, selAtoms[selAtomsSize - 1] + 1, dcdFile);
 
             // Copy coordinates in 'out' array
             for(int atomId=0; atomId < selAtomsSize; ++atomId)
             {
-                float res = *(float*) &record[ 4*selAtoms[atomId] ];
+                if(sysbyteorder != byteorder)
+                    swapBytes(*record);
+
+                res = *(float*) &record[4 * selAtoms[atomId]];
                 outArr[nbrDims*nbrFrames*atomId + nbrDims*frameId + dimId] = res;
             }
         }

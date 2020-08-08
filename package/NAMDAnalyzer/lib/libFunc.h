@@ -4,8 +4,8 @@
 
 
 
-int getDCDCoor(char *fileName, int *frames, int nbrFrames, int nbrAtoms, int *selAtoms, 
-                int selAtomsSize, int *dims, int nbrDims, int cell, int *startPos, float *outArr,
+int getDCDCoor(char *fileName, long *frames, int nbrFrames, long nbrAtoms, long *selAtoms, 
+                int selAtomsSize, long *dims, int nbrDims, int cell, long *startPos, float *outArr,
                 char byteorder);
 
 int getDCDCell(char *fileName, int *frames, int nbrFrames, int *startPos, double *outArr, char byteorder);

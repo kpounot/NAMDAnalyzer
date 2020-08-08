@@ -22,9 +22,12 @@ pyxPath = "NAMDAnalyzer/lib/"
 srcPath = "NAMDAnalyzer/lib/openmp/src/" 
 
 #_The following is used to compile with openmp with both mingGW and msvc
-copt =  {'msvc': ['/openmp', '/Ox', '/fp:fast']  ,
-         'mingw32'  : ['-fopenmp','-ffast-math','-march=native'] ,
-         'unix'     : ['-fopenmp','-ffast-math','-march=native'] }
+copt =  {'msvc'     : ['/openmp', '/Ox', '/fp:fast', 
+                       '-D_FILE_OFFSET_BITS=64', '-D_LARGEFILE_SOURCE=1'],
+         'mingw32'  : ['-fopenmp','-ffast-math','-march=native', 
+                       '-D_FILE_OFFSET_BITS=64', '-D_LARGEFILE_SOURCE=1'],
+         'unix'     : ['-fopenmp','-ffast-math','-march=native', 
+                       '-D_FILE_OFFSET_BITS=64', '-D_LARGEFILE_SOURCE=1']}
 lopt =  {'mingw32'  : ['-fopenmp'],
          'unix'     : ['-fopenmp'] }
 

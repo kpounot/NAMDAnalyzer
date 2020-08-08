@@ -4,7 +4,7 @@ dataAnalysis
 .. toctree::
    :maxdepth: 1
 
-   BackscatteringDataConvert
+   IncoherentScat
    HydrogenBonds
    RadialDensity
    ResidenceTime

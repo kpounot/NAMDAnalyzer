@@ -1,3 +1,7 @@
+import os
+
+filePath = os.path.dirname(os.path.abspath(__file__))
+
 from NAMDAnalyzer.Dataset import Dataset
 
 
@@ -12,7 +16,7 @@ def test_initDataset_default(emptyDataset):
 def test_initDataset_psf(customDataset):
     """ Test initialization with a .psf file. """
 
-    assert isinstance(customDataset('./test_data/ubq_ws.psf'), Dataset)
+    assert isinstance(customDataset(filePath + '/test_data/ubq_ws.psf'), Dataset)
 
 
 
@@ -20,7 +24,7 @@ def test_initDataset_psf(customDataset):
 def test_initDataset_dcd(customDataset):
     """ Test initialization with a .dcd file. """
 
-    assert isinstance(customDataset('./test_data/ubq_ws.dcd'), Dataset)
+    assert isinstance(customDataset(filePath + '/test_data/ubq_ws.dcd'), Dataset)
 
 
 
@@ -28,7 +32,7 @@ def test_initDataset_dcd(customDataset):
 def test_initDataset_vel(customDataset):
     """ Test initialization with a .vel file. """
 
-    assert isinstance(customDataset('./test_data/ubq_ws.vel'), Dataset)
+    assert isinstance(customDataset(filePath + '/test_data/ubq_ws.vel'), Dataset)
 
 
 
@@ -36,7 +40,7 @@ def test_initDataset_vel(customDataset):
 def test_initDataset_log(customDataset):
     """ Test initialization with a .log file. """
 
-    assert isinstance(customDataset('./test_data/ubq_ws.log'), Dataset)
+    assert isinstance(customDataset(filePath + '/test_data/ubq_ws.log'), Dataset)
 
 
 
@@ -44,7 +48,7 @@ def test_initDataset_log(customDataset):
 def test_initDataset_pdb(customDataset):
     """ Test initialization with a .pdb file. """
 
-    assert isinstance(customDataset('./test_data/ubq_ws.pdb'), Dataset)
+    assert isinstance(customDataset(filePath + '/test_data/ubq_ws.pdb'), Dataset)
 
 
 
@@ -60,7 +64,7 @@ def test_initDataset_full(fullDataset):
 def test_importFile_guessType(emptyDataset):
     """ Test the importFile method without file type specification. """
 
-    emptyDataset.importFile('./test_data/ubq_ws.psf')
+    emptyDataset.importFile(filePath + '/test_data/ubq_ws.psf')
 
     assert emptyDataset.psfData.atoms.shape == (6682, 9)
 
@@ -70,7 +74,7 @@ def test_importFile_guessType(emptyDataset):
 def test_importFile_fixedType(emptyDataset):
     """ Test the importFile method with file type specification. """
 
-    emptyDataset.importFile('./test_data/ubq_ws.psf', fileType='psf')
+    emptyDataset.importFile(filePath + '/test_data/ubq_ws.psf', fileType='psf')
 
     assert emptyDataset.psfData.atoms.shape == (6682, 9)
 

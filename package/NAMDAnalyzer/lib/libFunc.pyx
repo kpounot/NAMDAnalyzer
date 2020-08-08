@@ -10,8 +10,8 @@ np.import_array()
 
 cdef extern from "libFunc.h":
 
-    int getDCDCoor(char *fileName, int *frames, int nbrFrames, int nbrAtoms, int *selAtoms, 
-                    int selAtomsSize, int *dims, int nbrDims, int cell, int *startPos, float *outArr,
+    int getDCDCoor(char *fileName, long *frames, int nbrFrames, long nbrAtoms, long *selAtoms, 
+                    int selAtomsSize, long *dims, int nbrDims, int cell, long *startPos, float *outArr,
                     char byteorder);
 
     int getDCDCell(char *fileName, int *frames, int nbrFrames, int *startPos, double *outArr, char byteorder);
@@ -60,17 +60,17 @@ cdef extern from "libFunc.h":
 
 
 def py_getDCDCoor( fileName, 
-                np.ndarray[int, ndim=1, mode="c"] frames not None, nbrAtoms,
-                np.ndarray[int, ndim=1, mode="c"] selAtoms not None, 
-                np.ndarray[int, ndim=1, mode="c"] dims not None, cell,
-                np.ndarray[int, ndim=1, mode="c"] startPos not None, 
+                np.ndarray[long, ndim=1, mode="c"] frames not None, nbrAtoms,
+                np.ndarray[long, ndim=1, mode="c"] selAtoms not None, 
+                np.ndarray[long, ndim=1, mode="c"] dims not None, cell,
+                np.ndarray[long, ndim=1, mode="c"] startPos not None, 
                 np.ndarray[float, ndim=3, mode="c"] outArr not None, byteorder): 
 
     res = getDCDCoor( fileName,
-                <int*> np.PyArray_DATA(frames), len(frames), nbrAtoms, 
-                <int*> np.PyArray_DATA(selAtoms), len(selAtoms),  
-                <int*> np.PyArray_DATA(dims), len(dims), cell,
-                <int*> np.PyArray_DATA(startPos),
+                <long*> np.PyArray_DATA(frames), len(frames), nbrAtoms, 
+                <long*> np.PyArray_DATA(selAtoms), len(selAtoms),  
+                <long*> np.PyArray_DATA(dims), len(dims), cell,
+                <long*> np.PyArray_DATA(startPos),
                 <float*> np.PyArray_DATA(outArr),
                 byteorder )
 

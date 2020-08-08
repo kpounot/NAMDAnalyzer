@@ -3,3 +3,7 @@ scipy
 matplotlib
 ipython
 cython
+flake8
+pytest
+pytest-cov
+codecov

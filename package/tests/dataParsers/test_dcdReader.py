@@ -1,3 +1,7 @@
+import os
+
+filePath = os.path.dirname(os.path.abspath(__file__))
+
 def test_getTrajArray(fullDataset):
     """ Test trajectory coordinates accessor. """
 
@@ -10,7 +14,7 @@ def test_getTrajArray(fullDataset):
 def test_importDCD(emptyDataset):
     """ Test the importDCDFile method. """
 
-    emptyDataset.importDCDFile('./test_data/ubq_ws.dcd')
+    emptyDataset.importDCDFile(filePath + '/../test_data/ubq_ws.dcd')
 
     assert emptyDataset.nbrFrames == 10
 
@@ -20,7 +24,7 @@ def test_importDCD(emptyDataset):
 def test_appendDCD(fullDataset):
     """ Test the appendDCD method. """
 
-    fullDataset.appendDCD('./test_data/ubq_ws.dcd')
+    fullDataset.appendDCD(filePath + '/../test_data/ubq_ws.dcd')
 
     assert fullDataset.nbrFrames == 20
 

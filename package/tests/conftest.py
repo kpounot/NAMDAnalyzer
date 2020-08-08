@@ -1,7 +1,9 @@
+import os
 import pytest
 
 from NAMDAnalyzer.Dataset import Dataset
 
+filePath = os.path.dirname(os.path.abspath(__file__))
 
 @pytest.fixture
 def emptyDataset():
@@ -10,11 +12,11 @@ def emptyDataset():
 
 @pytest.fixture
 def fullDataset(scope='package'):
-    return Dataset( './test_data/ubq_ws.psf', 
-                    './test_data/ubq_ws.dcd',
-                    './test_data/ubq_ws.pdb',
-                    './test_data/ubq_ws.log',
-                    './test_data/ubq_ws.vel' )
+    return Dataset( filePath + '/test_data/ubq_ws.psf', 
+                    filePath + '/test_data/ubq_ws.dcd',
+                    filePath + '/test_data/ubq_ws.pdb',
+                    filePath + '/test_data/ubq_ws.log',
+                    filePath + '/test_data/ubq_ws.vel' )
 
 
 @pytest.fixture

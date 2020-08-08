@@ -13,7 +13,7 @@ from collections import namedtuple
 
 class LOGReader:
     """ Class used to read and extract data from a .log/.out file which
-        is simply the standard NAMD output. 
+        is simply the standard NAMD output.
 
     """
 
@@ -24,13 +24,13 @@ class LOGReader:
 
     def importLOGFile(self, logFile):
         """ Imports a new file and store the result in self.logData.
-            If something already exists in self.logData, it will be deleted. 
+            If something already exists in self.logData, it will be deleted.
 
         """
 
         self.logFile = logFile
 
-        #_Open the file and get the lines
+        # Open the file and get the lines
         try:
             with open(logFile, 'r', encoding='utf-16') as fileToRead:
                 raw_data = fileToRead.read().splitlines()
@@ -39,11 +39,13 @@ class LOGReader:
             with open(logFile, 'r') as fileToRead:
                 raw_data = fileToRead.read().splitlines()
 
-        except:    
-            print("Error while reading the file.\nPlease check the file path given in argument.")
-            return 
+        except Exception as e:
+            print("Error while reading the file.\n"
+                  "Please check the file path given in argument.")
+            print(e)
+            return
 
-        #_Store each lines corresponding to energies output to a list
+        # Store each lines corresponding to energies output to a list
         entries = []
         for line in raw_data:
             if re.search('^ENERGY:', line):
@@ -54,34 +56,38 @@ class LOGReader:
                 self.etitle = line.split()[1:]
 
 
-        #_Create a namedtuple so that data are stored in a secured way and can be retrieved using keywords
-        dataTuple = namedtuple('dataTuple', " ".join(self.etitle)) 
+        # Create a namedtuple so that data are stored in a secured
+        # way and can be retrieved using keywords
+        dataTuple = namedtuple('dataTuple', " ".join(self.etitle))
 
-        #_This dictionary is meant to be used to easily retrieve data series and column labels
+        # This dictionary is meant to be used to easily retrieve data
+        # series and column labels
         self.keywordsDict = {}
         for i, title in enumerate(self.etitle):
-            self.keywordsDict[title] = i   
+            self.keywordsDict[title] = i
 
-        #_Convert the python list to numpy array for easier manipulation
+        # Convert the python list to numpy array for easier manipulation
         entries = np.array(entries).astype(float)
 
-        #_Store the data in the namedtuple according to their column/keyword
-        self.logData = dataTuple(*[ entries[:,col] for col, val in enumerate(entries[0]) ]) 
+        # Store the data in the namedtuple according to their column/keyword
+        self.logData = dataTuple(
+            *[entries[:, col] for col, val in enumerate(entries[0])])
 
 
 
     def appendLOG(self, logFile):
         """ Method to append output data to the already loaded ones.
-            Timestep number is simply continued by adding the last timestep from initial logData if
-            the first one is set to zero. 
+            Timestep number is simply continued by adding the last
+            timestep from initial logData if the first one is set to zero.
 
         """
 
         try:
-            self.logData #_Checking if a log file has been loaded already, print an error message if not.
+            self.logData  # Checking if a log file has been loaded already.
         except AttributeError:
-            print("No output file (.log or .out) was loaded.\n" 
-                   + "Please load one before with importLOGFile using this method.\n")
+            print("No output file (.log or .out) was loaded.\n"
+                  "Please load one before with importLOGFile "
+                  "using this method.\n")
             return
 
         tempData  = self.logData
@@ -89,17 +95,15 @@ class LOGReader:
 
         self.importLOGFile(logFile)
 
-        #_Adding last timestep number and applying correction for possible different timesteps
+        # Adding last timestep number and applying correction
+        # for possible different timesteps
         if tempData.TS[0] == 0:
-            tempData = tempData._replace(TS = self.logData.TS[-1] 
-                                                                 + tempData.TS 
-                                                                 * (self.timestep 
-                                                                 / old_tstep) )
+            tempData = tempData._replace(TS = self.logData.TS[-1]
+                                         + tempData.TS
+                                         * (self.timestep
+                                         / old_tstep))
 
         for i, etitle in enumerate(self.logData.etitle):
-            self.logData.dataSet = self.logData.dataSet._replace( **{etitle: 
-                                                    np.append(self.logData.dataSet[i], tempData.dataSet[i])} )
- 
-
-
-
+            self.logData.dataSet = self.logData.dataSet._replace(
+                **{etitle: np.append(self.logData.dataSet[i],
+                                     tempData.dataSet[i])})
