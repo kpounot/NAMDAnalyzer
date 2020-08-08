@@ -1,3 +1,14 @@
+.. image:: https://readthedocs.org/projects/namdanalyzer/badge/?version=latest
+    :target: https://namdanalyzer.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
+      
+.. image:: https://circleci.com/gh/kpounot/NAMDAnalyzer.svg?style=svg
+    :target: https://circleci.com/gh/kpounot/NAMDAnalyzer
+
+.. image:: https://codecov.io/gh/kpounot/NAMDAnalyzer/branch/master/graph/badge.svg
+    :target: https://codecov.io/gh/kpounot/NAMDAnalyzer
+
+
 NAMDAnalyzer
 ============
 
