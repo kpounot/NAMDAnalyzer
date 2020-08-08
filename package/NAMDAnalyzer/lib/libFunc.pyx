@@ -10,19 +10,26 @@ np.import_array()
 
 cdef extern from "libFunc.h":
 
-    int getDCDCoor(char *fileName, int *frames, int nbrFrames, int nbrAtoms, int *selAtoms, 
-                    int selAtomsSize, int *dims, int nbrDims, int cell, int *startPos, float *outArr,
+    int getDCDCoor(char *fileName, long *frames, int nbrFrames, long nbrAtoms, long *selAtoms, 
+                    int selAtomsSize, long *dims, int nbrDims, int cell, long *startPos, float *outArr,
                     char byteorder);
 
     int getDCDCell(char *fileName, int *frames, int nbrFrames, int *startPos, double *outArr, char byteorder);
 
 
-    void getHydrogenBonds(  float *acceptors, int size_acceptors, int nbrFrames,
+    void getHBCorr(float *acceptors, int size_acceptors, int nbrFrames,
                             float *donors, int size_donors,
                             float *hydrogens, int size_hydrogens, 
                             float *cellDims,
                             float *out, int maxTime, int step, int nbrTimeOri,
                             float maxR, float minAngle, int continuous);
+
+
+    void getHBNbr(  float *acceptors, int size_acceptors, int nbrFrames,
+                    float *donors, int size_donors,
+                    float *hydrogens, int size_hydrogens, 
+                    float *cellDims, float *out, 
+                    float maxR, float minAngle );
 
 
     void compIntScatFunc(float *atomPos, int atomPos_dim0, int atomPos_dim1, int atomPos_dim2, 
@@ -53,17 +60,17 @@ cdef extern from "libFunc.h":
 
 
 def py_getDCDCoor( fileName, 
-                np.ndarray[int, ndim=1, mode="c"] frames not None, nbrAtoms,
-                np.ndarray[int, ndim=1, mode="c"] selAtoms not None, 
-                np.ndarray[int, ndim=1, mode="c"] dims not None, cell,
-                np.ndarray[int, ndim=1, mode="c"] startPos not None, 
+                np.ndarray[long, ndim=1, mode="c"] frames not None, nbrAtoms,
+                np.ndarray[long, ndim=1, mode="c"] selAtoms not None, 
+                np.ndarray[long, ndim=1, mode="c"] dims not None, cell,
+                np.ndarray[long, ndim=1, mode="c"] startPos not None, 
                 np.ndarray[float, ndim=3, mode="c"] outArr not None, byteorder): 
 
     res = getDCDCoor( fileName,
-                <int*> np.PyArray_DATA(frames), len(frames), nbrAtoms, 
-                <int*> np.PyArray_DATA(selAtoms), len(selAtoms),  
-                <int*> np.PyArray_DATA(dims), len(dims), cell,
-                <int*> np.PyArray_DATA(startPos),
+                <long*> np.PyArray_DATA(frames), len(frames), nbrAtoms, 
+                <long*> np.PyArray_DATA(selAtoms), len(selAtoms),  
+                <long*> np.PyArray_DATA(dims), len(dims), cell,
+                <long*> np.PyArray_DATA(startPos),
                 <float*> np.PyArray_DATA(outArr),
                 byteorder )
 
@@ -130,18 +137,33 @@ def py_getRadialNbrDensity( np.ndarray[float, ndim=3, mode="c"] sel1 not None,
 
 
 
-def py_getHydrogenBonds( np.ndarray[float, ndim=3, mode="c"] acceptors not None, nbrFrames,
+def py_getHBCorr( np.ndarray[float, ndim=3, mode="c"] acceptors not None, nbrFrames,
                          np.ndarray[float, ndim=3, mode="c"] donors not None,
                          np.ndarray[float, ndim=3, mode="c"] hydrogens not None,
                          np.ndarray[float, ndim=2, mode="c"] cellDims not None,
                          np.ndarray[float, ndim=1, mode="c"] out not None,
                          maxTime, step, nbrTimeOri, maxR, minAngle, continuous):
-    getHydrogenBonds(<float*> np.PyArray_DATA(acceptors), int(acceptors.shape[0]), nbrFrames, 
+    getHBCorr(<float*> np.PyArray_DATA(acceptors), int(acceptors.shape[0]), nbrFrames, 
                         <float*> np.PyArray_DATA(donors), int(donors.shape[0]), 
                         <float*> np.PyArray_DATA(hydrogens), int(hydrogens.shape[0]), 
                         <float*> np.PyArray_DATA(cellDims), 
                         <float*> np.PyArray_DATA(out),
                         maxTime, step, nbrTimeOri, maxR, minAngle, continuous)
+
+
+
+
+def py_getHBNbr( np.ndarray[float, ndim=3, mode="c"] acceptors not None, nbrFrames,
+                         np.ndarray[float, ndim=3, mode="c"] donors not None,
+                         np.ndarray[float, ndim=3, mode="c"] hydrogens not None,
+                         np.ndarray[float, ndim=2, mode="c"] cellDims not None,
+                         np.ndarray[float, ndim=1, mode="c"] out not None,
+                         maxR, minAngle):
+    getHBNbr(<float*> np.PyArray_DATA(acceptors), int(acceptors.shape[0]), nbrFrames, 
+                        <float*> np.PyArray_DATA(donors), int(donors.shape[0]), 
+                        <float*> np.PyArray_DATA(hydrogens), int(hydrogens.shape[0]), 
+                        <float*> np.PyArray_DATA(cellDims), 
+                        <float*> np.PyArray_DATA(out), maxR, minAngle)
 
 
 

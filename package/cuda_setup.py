@@ -47,9 +47,12 @@ except KeyError:
 
 
 #_The following is used to compile with openmp with both mingGW and msvc
-copt =  {'msvc'     : ['/openmp', '/Ox', '/fp:fast'],
-         'mingw32'  : ['-fopenmp','-ffast-math','-march=native'], 
-         'unix'     : ['-fopenmp','-ffast-math','-march=native'] }
+copt =  {'msvc'     : ['/openmp', '/Ox', '/fp:fast', 
+                       '-D_FILE_OFFSET_BITS=64', '-D_LARGEFILE_SOURCE=1'],
+         'mingw32'  : ['-fopenmp','-ffast-math','-march=native', 
+                       '-D_FILE_OFFSET_BITS=64', '-D_LARGEFILE_SOURCE=1'], 
+         'unix'     : ['-fopenmp','-ffast-math','-march=native', 
+                       '-D_FILE_OFFSET_BITS=64', '-D_LARGEFILE_SOURCE=1']}
 lopt =  {'mingw32'  : ['-fopenmp'],
          'unix'     : ['-fopenmp']}
 
@@ -135,6 +138,6 @@ setup(  name='NAMDAnalyzer',
         url='github.com/kpounot/NAMDAnalyzer',
         py_modules=['NAMDAnalyzer.Dataset'],
         packages=packagesList,
-        ext_modules=cythonize( [pylibFuncs_ext]),
+        ext_modules=cythonize( [pylibFuncs_ext] ),
         cmdclass={'build_ext': build_ext_subclass})
 

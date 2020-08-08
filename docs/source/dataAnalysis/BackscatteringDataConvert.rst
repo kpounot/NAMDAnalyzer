@@ -1,5 +1,0 @@
-BackscatteringDataConvert
-=========================
-
-.. automodule:: BackscatteringDataConvert
-   :members:

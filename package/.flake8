@@ -1,0 +1,17 @@
+[flake8]
+ignore=E303,E301,F405,E221,F403,E251,E902,W503,E731,W605,F401,E203
+exclude=
+    .git,
+    __pycache__,
+    conf.py,
+    old,
+    build,
+    dist,
+    deprecated/
+    tests/
+    NAMDAnalyzer/kdTree
+    NAMDAnalyzer/dataManipulation/deprecated
+    setup.py
+    conf.py
+    __main__.py
+    *__init__.py
