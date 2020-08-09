@@ -25,8 +25,7 @@ jobs:
           command: |
             . venv/bin/activate
             cd package
-            make build
-            make install
+            python3 setup.py install
 
       # Step 4: run linter and tests
       - run:
