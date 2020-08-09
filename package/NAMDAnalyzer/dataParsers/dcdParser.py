@@ -898,7 +898,7 @@ _UK/aminoacids/abbreviation.html#refs
         if startDist is None:
             startDist = step
 
-        rList  = np.arange(maxDist, startDist, -step
+        rList  = np.arange(maxDist, startDist, -step)
 
         cmap = cm.get_cmap('hot')
         norm = colors.Normalize(startDist, maxDist)

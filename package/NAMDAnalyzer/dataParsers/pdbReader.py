@@ -75,7 +75,7 @@ class PDBReader:
             # and clear the former to start a new model/chain
             elif (re.search('^TER', line)
                   or re.search('^ENDMDL', line)
-                  or re.search('^END', line):
+                  or re.search('^END', line)):
                 if tempAtomList != []:
                     self.atomList.append(np.copy(tempAtomList))
                 if tempHetAtomList != []:
