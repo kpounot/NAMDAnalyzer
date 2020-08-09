@@ -666,7 +666,7 @@ _UK/aminoacids/abbreviation.html#refs
 
 
         atomRMSD = self.getRMSDperAtom(
-            selection, alignCOM, align, frames, mergeXYZ)
+            selection, alignCOM, align, frames)
 
 
         for idx, val in enumerate(residues):
@@ -740,24 +740,8 @@ _UK/aminoacids/abbreviation.html#refs
         std = self.getSTDperAtom(selection, align, frames, mergeXYZ)
         xRange = self.timestep * np.cumsum(self.dcdFreq[frames])
 
-        if mergeXYZ:
-            plt.plot(xRange, std)
-            plt.ylabel(r'$STD \ (\AA)$')
-
-        else:
-            # In case of three columns for (x, y, z) coordinates,
-            # generate three plot for each.
-            fig, ax = plt.subplots(3, 1, sharex=True)
-
-            ax[0].plot(xRange, std[:, 0])
-            ax[0].set_ylabel(r'$STD \ along \ X \ (\AA)$')
-
-            ax[1].plot(xRange, std[:, 1])
-            ax[1].set_ylabel(r'$STD \ along \ Y \ (\AA)$')
-
-            ax[2].plot(xRange, std[:, 2])
-            ax[2].set_ylabel(r'$STD \ along \ Z \ (\AA)$')
-
+        plt.plot(xRange, std)
+        plt.ylabel(r'$STD \ (\AA)$')
         plt.xlabel(r'$Atom \ index$')
 
         plt.tight_layout()
@@ -776,24 +760,8 @@ _UK/aminoacids/abbreviation.html#refs
         rmsd = self.getRMSDperAtom(selection, alignCOM, align, frames)
         xRange = np.arange(rmsd.size)
 
-        if mergeXYZ:
-            plt.plot(xRange, rmsd)
-            plt.ylabel(r'$RMSD \ (\AA)$')
-
-        else:
-            # In case of three columns for (x, y, z) coordinates,
-            # generate three plot for each.
-            fig, ax = plt.subplots(3, 1, sharex=True)
-
-            ax[0].plot(xRange, rmsd[:, 0])
-            ax[0].set_ylabel(r'$RMSD \ along \ X \ (\AA)$')
-
-            ax[1].plot(xRange, rmsd[:, 1])
-            ax[1].set_ylabel(r'$RMSD \ along \ Y \ (\AA)$')
-
-            ax[2].plot(xRange, rmsd[:, 2])
-            ax[2].set_ylabel(r'$RMSD \ along \ Z \ (\AA)$')
-
+        plt.plot(xRange, rmsd)
+        plt.ylabel(r'$RMSD \ (\AA)$')
         plt.xlabel(r'$Atom \ index$')
 
         plt.tight_layout()
@@ -811,24 +779,8 @@ _UK/aminoacids/abbreviation.html#refs
         rmsd = self.getRMSDperResidue(selection, alignCOM, align, frames)
         xRange = np.arange(rmsd.size)
 
-        if mergeXYZ:
-            plt.plot(xRange, rmsd)
-            plt.ylabel(r'$RMSD \ (\AA)$')
-
-        else:
-            # In case of three columns for (x, y, z) coordinates,
-            # generate three plot for each.
-            fig, ax = plt.subplots(3, 1, sharex=True)
-
-            ax[0].plot(xRange, rmsd[:, 0])
-            ax[0].set_ylabel(r'$RMSD \ along \ X \ (\AA)$')
-
-            ax[1].plot(xRange, rmsd[:, 1])
-            ax[1].set_ylabel(r'$RMSD \ along \ Y \ (\AA)$')
-
-            ax[2].plot(xRange, rmsd[:, 2])
-            ax[2].set_ylabel(r'$RMSD \ along \ Z \ (\AA)$')
-
+        plt.plot(xRange, rmsd)
+        plt.ylabel(r'$RMSD \ (\AA)$')
         plt.xlabel('Residue')
 
         plt.tight_layout()
@@ -923,7 +875,7 @@ _UK/aminoacids/abbreviation.html#refs
         ax[1].xaxis.set_ticks([], [])
         ax[1].tick_params(labelright=True, labelleft=True)
 
-        cb = colorbar.ColorbarBase(ax[0], cmap=cmap, norm=norm)
+        colorbar.ColorbarBase(ax[0], cmap=cmap, norm=norm)
         ax[0].yaxis.set_ticks_position('left')
         ax[0].yaxis.set_label_position('left')
         ax[0].set_ylabel('Distance [$\AA$]')
