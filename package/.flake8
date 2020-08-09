@@ -14,4 +14,5 @@ exclude=
     setup.py,
     conf.py,
     __main__.py,
-    *__init__.py
+    *__init__.py,
+    venv*

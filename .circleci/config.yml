@@ -33,7 +33,7 @@ jobs:
           name: run tests
           command: |
             . venv/bin/activate
-            flake8 package/NAMDAnalyzer --exclude=venv* --config=package/.flake8 --statistics
+            flake8 package/NAMDAnalyzer --config=package/.flake8 --statistics
             pytest package/tests -v --cov=NAMDAnalyzer
 
       # Step 5: run codecov
