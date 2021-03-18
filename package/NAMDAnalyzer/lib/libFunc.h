@@ -5,10 +5,11 @@
 
 
 int getDCDCoor(char *fileName, long *frames, int nbrFrames, long nbrAtoms, long *selAtoms, 
-                int selAtomsSize, long *dims, int nbrDims, int cell, long *startPos, float *outArr,
-                char byteorder);
+                int selAtomsSize, long *dims, int nbrDims, int cell, long long *startPos, 
+                float *outArr, char byteorder);
 
-int getDCDCell(char *fileName, int *frames, int nbrFrames, int *startPos, double *outArr, char byteorder);
+int getDCDCell(char *fileName, int *frames, int nbrFrames, long long *startPos, 
+               double *outArr, char byteorder);
 
 
 void getHBCorr(  float *acceptors, int size_acceptors, int nbrFrames,
@@ -28,7 +29,7 @@ void getHBNbr(  float *acceptors, int size_acceptors, int nbrFrames,
 void compIntScatFunc(float *atomPos, int atomPos_dim0, int atomPos_dim1, int atomPos_dim2, 
                      float *qVecs, int qVecs_dim0, int qVecs_dim1, int qVecs_dim2, 
                      float *out, int out_dim0, int out_dim1, 
-                     int nbrTS, int nbrTimeOri);
+                     int nbrTS, int nbrTimeOri, float *scatLength);
 
 
 

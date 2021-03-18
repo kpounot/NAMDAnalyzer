@@ -49,9 +49,9 @@ class SelParser:
 
 
         self.keywords   = ['protein', 'water', 'backbone', 'waterH',
-                           'hbhydrogens', 'hydrogen', 'protNonExchH',
-                           'protH', 'proteinH', 'all', 'hbdonors',
-                           'hbacceptors']
+                           'hbhydrogens', 'hydrogen', 'protExchH', 
+                           'protNonExchH', 'protH', 'proteinH', 
+                           'all', 'hbdonors', 'hbacceptors']
 
 
         self.selTxtDict = {'^index'  : 'index',

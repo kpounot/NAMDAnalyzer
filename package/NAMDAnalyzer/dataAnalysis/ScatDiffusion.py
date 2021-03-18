@@ -18,7 +18,6 @@ from scipy.optimize import root
 
 from NAMDAnalyzer.helpersFunctions import ConstantsAndModels as CM
 from NAMDAnalyzer.dataAnalysis.RadialDensity import RadialNumberDensity
-from NAMDAnalyzer.dataParsers.dcdParser import COMRadialNumberDensity
 
 try:
     from NAMDAnalyzer.lib.pylibFuncs import py_compIntScatFunc

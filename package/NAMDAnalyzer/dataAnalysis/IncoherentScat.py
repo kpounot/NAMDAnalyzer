@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 from matplotlib import cm, colors
 from mpl_toolkits.mplot3d.axes3d import Axes3D
 
-from scipy.fftpack import fft, fftfreq, fftshift
+from scipy.fft import fft, fftfreq, fftshift
 
 from threading import Thread
 
@@ -107,24 +107,31 @@ class IncoherentScat:
         qArray = np.ascontiguousarray(qArray, dtype=np.float32)
 
 
+        scatLength = self.dataset.psfData.nScatLength_inc[selection]
+        scatLength = scatLength.astype('float32')
+
+
         corr = np.zeros((qArray.shape[0], 2 * nbrTS), dtype=np.float32)
 
 
         # Get timestep array
-        timestep = []
-        for i in range(nbrTS):
-            timestep.append(i * frames.step * self.dataset.timestep
-                            * self.dataset.dcdFreq[0])
+        step = frames.step if frames.step is not None else 1
 
+        step *= ((atomPos.shape[1] - nbrTimeOri) / nbrTS)
+
+        timestep = np.arange(nbrTS) * step 
+        timestep *= self.dataset.timestep 
+        timestep *= self.dataset.dcdFreq[0]
 
         print("Computing intermediate scattering function...\n")
 
-        py_compIntScatFunc(atomPos, qArray, corr, nbrTS, nbrTimeOri)
+        py_compIntScatFunc(atomPos, qArray, corr, nbrTS, 
+                           nbrTimeOri, scatLength)
 
         # Convert to complex array
         corr = corr[:, ::2] + 1j * corr[:, 1::2]
 
-        self.interFunc = corr, np.array(timestep)
+        self.interFunc = corr, timestep
 
         print("\nDone\n")
 
@@ -135,7 +142,8 @@ class IncoherentScat:
                 frames=slice(0, None, 1), norm=True, nbrTS=200):
         """ This method performs a multiplication of the inverse Fourier
             transform given resolution function with the computed
-            intermediate function to get the instrumental signal.
+            intermediate function to get the instrumental dynamic
+            structure factor.
 
             :arg qValList:   list of q-values to be used
             :arg nbrTimeOri: number of time origins to be averaged over
@@ -210,15 +218,15 @@ class IncoherentScat:
 
 
         self.compDSF(qValList, nbrTimeOri, resFunc, selection,
-                     alignCOM, frames, nbrTS)
+                     alignCOM, frames, norm, nbrTS)
 
         print("Using Fourier transform on all DSF to obtain "
               "full scattering function.\n")
 
-        eisf, timesteps = self.DSF
+        dsf, timesteps = self.DSF
 
         # Performs the Fourier transform
-        scatFunc = fftshift(fft(eisf, axis=1), axes=1)
+        scatFunc = fftshift(fft(dsf, axis=1), axes=1)
         scatFunc = np.absolute(scatFunc)**2 / scatFunc.shape[1]
 
         # Convert time to energies in micro-electron volts

@@ -9,8 +9,6 @@ def fromSliceToArange(sliceObj, maxN):
                        Useful when slice.stop attribute is None.
 
     """
-
-
     # Process start argument
     if sliceObj.start is None:
         start = 0

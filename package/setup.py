@@ -11,8 +11,6 @@ Options._directive_defaults['language_level'] = 3
 
 import numpy as np
 
-import site
-
 
 with open('../README.rst', 'r') as f:
     description = f.read()
@@ -21,15 +19,15 @@ with open('../README.rst', 'r') as f:
 pyxPath = "NAMDAnalyzer/lib/"
 srcPath = "NAMDAnalyzer/lib/openmp/src/" 
 
+filePath = os.path.abspath(__file__)
+dirPath = filePath[:filePath.find('setup.py')]
+
 #_The following is used to compile with openmp with both mingGW and msvc
-copt =  {'msvc'     : ['/openmp', '/Ox', '/fp:fast', 
-                       '-D_FILE_OFFSET_BITS=64', '-D_LARGEFILE_SOURCE=1'],
-         'mingw32'  : ['-fopenmp','-ffast-math','-march=native', 
-                       '-D_FILE_OFFSET_BITS=64', '-D_LARGEFILE_SOURCE=1'],
-         'unix'     : ['-fopenmp','-ffast-math','-march=native', 
-                       '-D_FILE_OFFSET_BITS=64', '-D_LARGEFILE_SOURCE=1']}
+copt =  {'msvc'     : ['/openmp', '/Ox', '/fp:fast'],
+         'mingw32'  : ['-fopenmp','-ffast-math','-march=native'], 
+         'unix'     : ['-fopenmp','-ffast-math','-march=native']} 
 lopt =  {'mingw32'  : ['-fopenmp'],
-         'unix'     : ['-fopenmp'] }
+         'unix'     : ['-fopenmp']}
 
 
 
@@ -43,18 +41,20 @@ class build_ext_subclass( build_ext ):
         if c in lopt.keys():
             for e in self.extensions:
                 e.extra_link_args = lopt[ c ]
+
         build_ext.build_extensions(self)
 
 
 
 
-packagesList = [    'NAMDAnalyzer.dataManipulation',
-                    'NAMDAnalyzer.dataParsers',
-                    'NAMDAnalyzer.dataAnalysis',
-                    'NAMDAnalyzer.selection',
-                    'NAMDAnalyzer.lib',
-                    'NAMDAnalyzer.kdTree',
-                    'NAMDAnalyzer.helpersFunctions' ]
+packagesList = ['NAMDAnalyzer',    
+                'NAMDAnalyzer.dataManipulation',
+                'NAMDAnalyzer.dataParsers',
+                'NAMDAnalyzer.dataAnalysis',
+                'NAMDAnalyzer.selection',
+                'NAMDAnalyzer.lib',
+                'NAMDAnalyzer.kdTree',
+                'NAMDAnalyzer.helpersFunctions']
 
 
 #_Defines extensions
@@ -73,22 +73,17 @@ pylibFuncs_ext   = Extension( "NAMDAnalyzer.lib.pylibFuncs",
                                     "NAMDAnalyzer/lib/" + "libFunc.pyx"],
                                    language='c++',
                                    include_dirs=[srcPath, np.get_include(),
-                                                 "NAMDAnalyzer/lib/common/src"])
+                                                 "NAMDAnalyzer/lib/common/src/"])
 
 
 
-
-
-
-
-setup(  name='NAMDAnalyzer',
-        version='1.0',
-        description=description,
-        author='Kevin Pounot',
-        author_email='kpounot@hotmail.fr',
-        url='github.com/kpounot/NAMDAnalyzer',
-        py_modules=['NAMDAnalyzer.Dataset'],
-        packages=packagesList,
-        ext_modules=cythonize( [pylibFuncs_ext]),
-        cmdclass={'build_ext': build_ext_subclass})
-
+setup(name='NAMDAnalyzer',
+      version='1.0',
+      description=description,
+      author='Kevin Pounot',
+      author_email='kpounot@hotmail.fr',
+      url='github.com/kpounot/NAMDAnalyzer',
+      packages=packagesList,
+      package_dir={'NAMDAnalyzer': dirPath + 'NAMDAnalyzer'},
+      ext_modules=cythonize([pylibFuncs_ext]),
+      cmdclass={'build_ext': build_ext_subclass})

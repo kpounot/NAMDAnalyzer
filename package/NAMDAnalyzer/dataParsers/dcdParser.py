@@ -40,6 +40,8 @@ from NAMDAnalyzer.helpersFunctions.DistanceChordDiagram import ChordDiag
 
 from NAMDAnalyzer.kdTree.getWithin_kdTree import getWithin_kdTree
 
+from NAMDAnalyzer.helpersFunctions.objectConverters import fromSliceToArange
+
 
 
 class NAMDDCD(DCDReader, NAMDPSF):
@@ -392,7 +394,13 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
 
 
-    def getAlignedData(self, selection, outSel=None, frames=slice(0, None)):
+    def getAlignedData(
+        self, 
+        selection, 
+        outSel=None, 
+        frames=slice(0, None), 
+        ref=None
+    ):
         """ This method will fit all atoms between firstAtom and lastAtom for
             each frame between begin and end, using the first frame for the
             others to be fitted on.
@@ -403,6 +411,8 @@ class NAMDDCD(DCDReader, NAMDPSF):
                             transformation matrix obtained from selection
             :arg frames:    either not given to select all frames, an int,
                             or a slice object
+            :arg ref:       reference frame for alignment. If None, the first
+                            frame of the selected frames will be used.
 
             :returns: a similar array as the initial dataset but with
                       aligned coordinates.
@@ -411,6 +421,12 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
         if type(selection) == str:
             selection = self.selection(selection)
+
+        if isinstance(frames, slice):
+            frames = fromSliceToArange(frames, self.nbrFrames)
+
+        if ref is not None:
+            np.insert(frames, 0, ref)
 
         refData = self.getAlignedCenterOfMass(selection, None, frames)
         q       = molFit_q.alignAllMol(refData)
@@ -562,6 +578,51 @@ _UK/aminoacids/abbreviation.html#refs
 # --------------------------------------------
 # Data analysis methods
 # --------------------------------------------
+    def getResidueWiseMSD(self, selection, align=False, alignCOM=True, 
+                          frames=slice(0, None)):
+        """Compute the mean-square displacement for each residue in the selection.
+
+        Parameters
+        ----------
+        selection : np.ndarray or str
+            Selection of atoms.
+        align : bool
+            If True, will align the molecules prior to MSD computation.
+        alignCOM : bool
+            If True, will align the center-of-mass in each frame.
+        frames : slice, range, np.ndarray
+            Frames to be used for MSD computation, the step will define the 
+            time interval for the MSD.
+
+        Returns
+        -------
+        A list containing the mean-square displacement for each residue.
+
+        """
+        out = []
+        selAtoms = self.selection(selection)
+
+        if align:
+            allCoor = self.getAlignedData(selAtoms, frames=frames)
+        elif alignCOM:
+            allCoor = self.getAlignedCenterOfMass(
+                selAtoms, frames=frames
+            )
+        else:
+            allCoor = self.dcdData[selAtoms, frames]
+
+        residues = selAtoms.getUniqueResidues()
+
+        for idx, resid in enumerate(residues):
+            print("Processing resid %i of %i" % (idx + 1, residues.size), end='\r')
+            sel = self.selection(selection + ' and resid %s' % resid)
+            vals, id1, id2 = np.intersect1d(sel, selAtoms, return_indices=True)
+            coor = allCoor[id2]
+            msd = ((coor[:, 1:] - coor[:, :-1]) ** 2).sum(-1)
+            out.append(msd.mean())
+
+        return out
+
     def getSTDperAtom(self, selection="all", align=False,
                       frames=slice(0, None), mergeXYZ=True):
         """ Computes the standard deviation for each atom in selection
@@ -585,7 +646,7 @@ _UK/aminoacids/abbreviation.html#refs
 
         # Align selected atoms for each selected frames
         if align:
-            data = self.getAlignedData(selection, frames)
+            data = self.getAlignedData(selection, frames=frames)
         else:
             data = self.dcdData[selection, frames]
 
@@ -599,16 +660,14 @@ _UK/aminoacids/abbreviation.html#refs
 
         return std
 
-
-
-
-    def getRMSDperAtom(self, selection="all", alignCOM=True, align=False,
-                       frames=slice(0, None)):
+    def getRMSDperAtom(self, selection="all", ref=0, alignCOM=True, 
+                       align=False, frames=slice(0, None)):
         """ Computes the RMSD for each atom in selection and for frames
             between begin and end.
 
             :arg selection: selected atom, can be a single string or a
                             list of atom indices
+            :arg ref:       reference frame to compute the RMSD.
             :arg alignCOM:  if True, will try to align the center of mass of
                             the selection to the first frame
             :arg align:     if True, will try to align all atoms to the ones
@@ -626,28 +685,27 @@ _UK/aminoacids/abbreviation.html#refs
 
         # Align selected atoms for each selected frames
         if align:
-            data = self.getAlignedData(selection, frames)
+            data = self.getAlignedData(selection, frames=frames)
         elif alignCOM:
-            data = self.getAlignedCenterOfMass(selection, frames)
+            data = self.getAlignedCenterOfMass(selection, frames=frames)
         else:
             data = self.dcdData[selection, frames]
 
-        rmsd = data - data[:, 0][:, np.newaxis, :]
-        rmsd = np.sqrt(np.sum(rmsd**2, axis=2))
+        rmsd = data - data[:, [int(ref)]]
+        rmsd = np.sum(rmsd**2, axis=2)
 
-        rmsd = np.mean(rmsd, axis=1)
+        rmsd = np.sqrt(np.mean(rmsd, axis=1))
 
         return rmsd
 
-
-
-    def getRMSDperResidue(self, selection="protein", alignCOM=True,
+    def getRMSDperResidue(self, selection="protein", ref=0, alignCOM=True,
                           align=False, frames=slice(0, None)):
         """ Computes the RMSD for each residue in selection
             and for selected frames.
 
             :arg selection: selected atom, can be a single string
                             or a list of atom indices
+            :arg ref:       reference frame to compute the RMSD.
             :arg alignCOM:  if True, will try to align the center of
                             mass of the selection to the first frame
             :arg align:     if True, will try to align all atoms to
@@ -658,28 +716,18 @@ _UK/aminoacids/abbreviation.html#refs
             :returns: the RMSD averaged over time.
 
         """
-
-        atoms = self.selection(selection)
-
-        residues = atoms.getUniqueResidues().astype(int)
+        allAtoms = self.selection(selection)
+        residues = allAtoms.getUniqueResidues()
         resRMSD  = np.zeros_like(residues, dtype='float32')
-
-
         atomRMSD = self.getRMSDperAtom(
-            selection, alignCOM, align, frames)
-
+            allAtoms, alignCOM, align, frames)
 
         for idx, val in enumerate(residues):
+            atoms = self.selection(selection + " and resid %s" % val)
             resRMSD[idx] = np.mean(
-                atomRMSD[np.argwhere(
-                    atoms.getResidues().astype(int) == val)[:, 0]])
+                atomRMSD[np.isin(allAtoms.getIndices(), atoms.getIndices())])
 
-
-        return resRMSD
-
-
-
-
+        return resRMSD[:residues.size]
 
     def getRMSDperFrame(self, selection="all", alignCOM=True,
                         align=False, frames=slice(0, None)):
@@ -705,24 +753,17 @@ _UK/aminoacids/abbreviation.html#refs
 
         # Align selected atoms for each selected frames
         if align:
-            data = self.getAlignedData(selection, frames)
+            data = self.getAlignedData(selection, frames=frames)
         elif alignCOM:
-            data = self.getAlignedCenterOfMass(selection, frames)
+            data = self.getAlignedCenterOfMass(selection, frames=frames)
         else:
             data = self.dcdData[selection, frames]
 
-        rmsd = data - data[:, 0][:, np.newaxis, :]
-        rmsd = np.sqrt(np.sum(rmsd**2, axis=2))
-        rmsd = np.mean(rmsd, axis=0)
+        rmsd = data - data[:, [0]]
+        rmsd = np.sum(rmsd**2, axis=2)
+        rmsd = np.sqrt(np.mean(rmsd, axis=0))
 
         return rmsd
-
-
-
-
-
-
-
 
 # --------------------------------------------
 # Plotting methods
@@ -747,9 +788,6 @@ _UK/aminoacids/abbreviation.html#refs
         plt.tight_layout()
         return plt.show(block=False)
 
-
-
-
     def plotRMSDperAtom(self, selection="all", alignCOM=True, align=False,
                         frames=slice(0, None)):
         """ Plot the RMSD along the axis 0 of dataset.
@@ -766,8 +804,6 @@ _UK/aminoacids/abbreviation.html#refs
 
         plt.tight_layout()
         return plt.show(block=False)
-
-
 
     def plotRMSDperResidue(self, selection="all", alignCOM=True, align=False,
                            frames=slice(0, None)):
@@ -786,11 +822,6 @@ _UK/aminoacids/abbreviation.html#refs
         plt.tight_layout()
         return plt.show(block=False)
 
-
-
-
-
-
     def plotRMSDperFrame(self, selection="all", alignCOM=True, align=False,
                          frames=slice(0, None)):
         """ Plot the RMSD along the axis 1 of dataset.
@@ -808,10 +839,6 @@ _UK/aminoacids/abbreviation.html#refs
 
         plt.tight_layout()
         return plt.show(block=False)
-
-
-
-
 
     def plotAveragedDistances_parallelPlot(self, sel1, sel2=None, frames=None,
                                            startDist=None,
@@ -882,8 +909,6 @@ _UK/aminoacids/abbreviation.html#refs
 
 
         return fig.show()
-
-
 
     def plotAveragedDistances_chordDiagram(self, sel1, sel2=None, frames=None,
                                            startDist=None, maxDist=10, step=2,

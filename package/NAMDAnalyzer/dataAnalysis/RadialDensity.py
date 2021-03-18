@@ -136,12 +136,6 @@ class ResidueWiseWaterDensity:
         fig.show()
 
 
-
-
-
-
-
-
 class RadialNumberDensity:
     """ Computes the radial density distribution from center of mass
         of selected atoms using the given dr interval.
@@ -216,11 +210,11 @@ class RadialNumberDensity:
         density = np.zeros(radii.size, dtype='float32')
 
 
-        sel1 = self.data.dcdData[self.sel1, self.frames]
+        sel1 = self.data[self.sel1, self.frames]
         if self.sameSel:
             sel2 = sel1
         else:
-            sel2 = self.data.dcdData[self.sel2, self.frames]
+            sel2 = self.data[self.sel2, self.frames]
 
         cellDims = self.data.cellDims[self.frames]
 

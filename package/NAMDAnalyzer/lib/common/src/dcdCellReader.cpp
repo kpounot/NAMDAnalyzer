@@ -23,7 +23,8 @@ enum DCDCELL_ERRORS
 
 
 
-int getDCDCell(char *fileName, int *frames, int nbrFrames, int *startPos, double *outArr, char byteorder)
+int getDCDCell(char *fileName, int *frames, int nbrFrames, long long *startPos, 
+               double *outArr, char byteorder)
 {
     FILE *dcdFile;
 
@@ -33,28 +34,24 @@ int getDCDCell(char *fileName, int *frames, int nbrFrames, int *startPos, double
 
     char sysbyteorder = getEndian();
 
-
     dcdFile = fopen(fileName, "rb");
     if(dcdFile == NULL)
     {
-        enum DCDCELL_ERRORS error_code = SUCCESS;
+        enum DCDCELL_ERRORS error_code = FILE_READ_ERR;
         return error_code;
     }
-
-
 
     for(int frameId=0; frameId < nbrFrames; ++frameId)
     {
         int frame = frames[frameId];
 
-        seek = fseek(dcdFile, startPos[frame] + 4, SEEK_SET);
+        seek = fseeko64(dcdFile, startPos[frame] + 4, SEEK_SET);
 
         if(seek != 0)
         {
             enum DCDCELL_ERRORS error_code = OUT_OF_RANGE;
             return error_code;
         }
-
 
         // Reads the record, x, y and z coordinates for each atom, flanked by integers of 4 bytes.
         int read = fread(record, 8, 6, dcdFile);
@@ -64,12 +61,10 @@ int getDCDCell(char *fileName, int *frames, int nbrFrames, int *startPos, double
             return error_code;
         }
 
-
-
         if(sysbyteorder != byteorder)
         {
             for(int i=0; i < 6; ++i)
-                swapBytes( *(long*) &record[8*i] );
+                swapBytes( *(char*) &record[8*i] );
         }
 
         for(int i=0; i < 6; ++i)

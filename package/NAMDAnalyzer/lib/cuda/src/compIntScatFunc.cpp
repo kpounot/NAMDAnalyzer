@@ -2,13 +2,13 @@
 
 void cu_compIntScatFunc_wrapper(float *atomPos, int atomPos_dim0, int atomPos_dim1, int atomPos_dim2, 
                                 float *qVecs, int qVecs_dim0, int qVecs_dim1, int qVecs_dim2, 
-                                float *out, int nbrTS, int nbrTimeOri);
+                                float *out, int nbrTS, int nbrTimeOri, float *scatLength);
 
 
 void compIntScatFunc(float *atomPos, int atomPos_dim0, int atomPos_dim1, int atomPos_dim2, 
                      float *qVecs, int qVecs_dim0, int qVecs_dim1, int qVecs_dim2, 
                      float *out, int out_dim0, int out_dim1, 
-                     int nbrTS, int nbrTimeOri)
+                     int nbrTS, int nbrTimeOri, float *scatLength)
 {
     /*  The function computes the intermediate neutron incoherent scattering function.
      *  Using given atom positions, minimum and maximum timesteps, and the desired number of time bins,
@@ -27,6 +27,6 @@ void compIntScatFunc(float *atomPos, int atomPos_dim0, int atomPos_dim1, int ato
 
 
     cu_compIntScatFunc_wrapper(atomPos, atomPos_dim0, atomPos_dim1, atomPos_dim2, qVecs, qVecs_dim0, 
-                        qVecs_dim1, qVecs_dim2, out, nbrTS, nbrTimeOri);
+                        qVecs_dim1, qVecs_dim2, out, nbrTS, nbrTimeOri, scatLength);
 }
 

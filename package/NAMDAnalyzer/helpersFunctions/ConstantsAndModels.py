@@ -7,15 +7,11 @@ fMaxBoltzDist = lambda x, T: (2 / np.sqrt(np.pi * (T * kB_kcal)**3)
 fgaussianModel = lambda x, a, b, c: (a / (np.sqrt(2 * np.pi) * c)
                                      * np.exp(-(x - b)**2 / (2 * c**2)))
 
-# Ideal resolution for SHPERES instrument, FWHM of 0.66e-6 eV (single gaussian)
-FTresFuncSPHERES = lambda x: (np.exp(-x**2 * np.pi**2 * 0.66e-6 / 2)
-                              * np.sqrt(np.pi * 0.66e-6))
+# Ideal resolution for SPHERES instrument, FWHM of 0.66e-6 eV (single gaussian)
+FTresFuncSPHERES  = lambda x: (np.exp(-x**2 * np.pi**2 
+                              * (0.66e-6 / 4.135e-15)**2))
 
-
-FTvoigtSPHERES   = lambda x: (0.05 * np.pi * np.exp(-x * 0.28e-6**2)
-                              + 0.95
-                              * np.exp(-x**2 * np.pi**2 * 0.28e6**2 / 2)
-                              * np.sqrt(np.pi * 0.28e-6))
+FTresFuncGaussian = lambda x, width: np.exp(-x**2 * np.pi**2 * width**2)
 
 
 

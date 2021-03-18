@@ -18,10 +18,10 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=t
 __global__
 void compIntScatFunc(float *atomPos, int atomPos_dim0, int atomPos_dim1, float *out,
                      float *qVecs, int qVecs_dim0, int qVecs_dim1, 
-                     int nbrTS, int nbrTimeOri, int qValId, int dt) 
+                     int nbrTS, int nbrTimeOri, int qValId, int dt, float *scatLength) 
 {
     int atomId  = blockDim.x * blockIdx.x + threadIdx.x;
-    int TSIncr  = (atomPos_dim1 / nbrTS);
+    int TSIncr  = (float)(atomPos_dim1 - nbrTimeOri) / (float)nbrTS;
 
     extern __shared__ float s_qVecs[];
     for(int i=threadIdx.x; i < 3*qVecs_dim1; i+=BLOCK_SIZE)
@@ -63,9 +63,10 @@ void compIntScatFunc(float *atomPos, int atomPos_dim0, int atomPos_dim1, float *
         } // time origins loop 
 
 
+        float scatL = scatLength[atomId];
 
-        atomicAdd( &(out[2*(qValId*nbrTS + dt)]), sum_re / (nbrTS*qVecs_dim1) );
-        atomicAdd( &(out[2*(qValId*nbrTS + dt) + 1]), sum_im / (nbrTS*qVecs_dim1) );
+        atomicAdd( &(out[2*(qValId*nbrTS + dt)]), scatL*scatL * sum_re / (nbrTS*qVecs_dim1) );
+        atomicAdd( &(out[2*(qValId*nbrTS + dt) + 1]), scatL*scatL * sum_im / (nbrTS*qVecs_dim1) );
 
     } // condition on atom index
 
@@ -78,7 +79,7 @@ void compIntScatFunc(float *atomPos, int atomPos_dim0, int atomPos_dim1, float *
 
 void cu_compIntScatFunc_wrapper(float *atomPos, int atomPos_dim0, int atomPos_dim1, int atomPos_dim2, 
                                 float *qVecs, int qVecs_dim0, int qVecs_dim1, int qVecs_dim2, 
-                                float *out, int nbrTS, int nbrTimeOri)
+                                float *out, int nbrTS, int nbrTimeOri, float *scatLength)
 {
     // Copying atomPos matrix on GPU memory
     float *cu_atomPos;
@@ -91,6 +92,13 @@ void cu_compIntScatFunc_wrapper(float *atomPos, int atomPos_dim0, int atomPos_di
     size_t size_qVecs = qVecs_dim0 * qVecs_dim1 * qVecs_dim2 * sizeof(float);
     gpuErrchk( cudaMalloc(&cu_qVecs, size_qVecs) );
     gpuErrchk( cudaMemcpy(cu_qVecs, qVecs, size_qVecs, cudaMemcpyHostToDevice) );
+
+    // Copying qVecs matrix on GPU memory
+    float *cu_scatLength;
+    size_t size_scatLength = atomPos_dim0 * sizeof(float);
+    gpuErrchk( cudaMalloc(&cu_scatLength, size_scatLength) );
+    gpuErrchk( cudaMemcpy(cu_scatLength, scatLength, size_scatLength, cudaMemcpyHostToDevice) );
+
 
     // Copying out matrix on GPU memory
     float *cu_out;
@@ -112,7 +120,8 @@ void cu_compIntScatFunc_wrapper(float *atomPos, int atomPos_dim0, int atomPos_di
             compIntScatFunc<<<nbrBlocks, BLOCK_SIZE, sharedMemSize>>>(cu_atomPos, atomPos_dim0, 
                                                                 atomPos_dim1, cu_out, cu_qVecs, 
                                                                 qVecs_dim0, qVecs_dim1, nbrTS, 
-                                                                nbrTimeOri, qValId, dt);
+                                                                nbrTimeOri, qValId, dt,
+                                                                cu_scatLength);
             gpuErrchk( cudaDeviceSynchronize() );
         }
     }
