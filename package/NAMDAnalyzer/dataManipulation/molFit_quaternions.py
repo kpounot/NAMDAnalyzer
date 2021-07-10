@@ -20,29 +20,21 @@ def q_mult(q1, q2):
     x = w1 * x2 + x1 * w2 + y1 * z2 - z1 * y2
     y = w1 * y2 + y1 * w2 + z1 * x2 - x1 * z2
     z = w1 * z2 + z1 * w2 + x1 * y2 - y1 * x2
-
     return w, x, y, z
-
 
 
 def q_conjugate(q):
     w, x, y, z = q
-
     return (w, -x, -y, -z)
-
-
 
 
 def qv_mult(v1, q1):
     q2 = np.insert(v1, 0, [0.0])
-
     return q_mult(q_mult(q1, q2), q_conjugate(q1))[1:]
-
 
 
 def get_bestMatrix(q):
     w, x, y, z = q
-
     qM = np.array([[w, -x, -y, -z],
                    [x, w, z, -y],
                    [y, -z, w, x],
@@ -60,15 +52,12 @@ def alignAllMol(dcdData):
         the first frames coordinates. Then, the matrix to be solved
         for eigenvalues and eigenvectors is constructed and solved
 
-
         :arg dcdData:  array containing trajectory coordinates for wanted
                        frames with shape (atoms, frames, coordinates)
         :type dcdData: :class:`.numpy.ndarray`
 
-
         :returns: A list of 4 by 4 rotation matrices to be applied on
                   *dcdData* array
-
 
         This procedure is based on the [Horn_1987]_
         and [Theobald_2005]_ papers.
@@ -79,8 +68,6 @@ def alignAllMol(dcdData):
         .. [Theobald_2005] https://doi.org/10.1107/S0108767305015266
 
     """
-
-
     qM = []
 
     # Determines the correct rotations to align the molecules
@@ -116,17 +103,12 @@ def alignAllMol(dcdData):
 
         eigval, eigvec = np.linalg.eig(M)
 
-        bestVec = eigvec[:, np.argwhere(eigval == np.max(eigval))[0][0]]
+        bestVec = eigvec[:, np.argmax(eigval)]
 
         # Obtain the rotation matrix
         qM.append(get_bestMatrix(bestVec))
 
-
     return qM
-
-
-
-
 
 
 def applyRotation(dcdData, qM):
@@ -135,7 +117,6 @@ def applyRotation(dcdData, qM):
         :returns: rotated dcd data
 
     """
-
     for i in range(0, dcdData.shape[1]):
 
         # Generating a data matrix with extra column containing zeros
@@ -148,6 +129,5 @@ def applyRotation(dcdData, qM):
 
         # Writing the data back in dcdData
         dcdData[:, i, :] = tempData[:, 1:]
-
 
     return dcdData

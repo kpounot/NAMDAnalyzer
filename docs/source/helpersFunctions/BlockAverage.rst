@@ -1,0 +1,5 @@
+BlockAverage
+============
+
+.. automodule:: blockAverage
+   :members:

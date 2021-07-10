@@ -1,0 +1,5 @@
+Structure
+=========
+
+.. automodule:: structure
+   :members:

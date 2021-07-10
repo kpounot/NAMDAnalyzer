@@ -185,6 +185,7 @@ void cu_waterOrientAtSurface_wrapper(float *waterO, int sizeO, float *watVec, fl
     cudaFree(cu_watVec);
     cudaFree(cu_prot);
     cudaFree(cu_cellDims);
+    cudaFree(cu_closest);
 
 }
 

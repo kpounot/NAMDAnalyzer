@@ -55,7 +55,7 @@ class SelText():
         elif isinstance(
                 selT, (range, list, np.ndarray, int, np.int32, np.int64)
         ):
-            selT = np.array(selT).flatten()
+            selT = np.array(selT).flatten().astype(str)
             self.selT = "index " + " ".join(selT)
             tempSel = SelParser(self.dataset, self.selT)
             self._indices = tempSel.selection
@@ -78,12 +78,18 @@ class SelText():
         self.iterIdx = 0
 
     def __getitem__(self, index):
-        """ Makes sel iterable over _indices.
+        """Makes sel iterable over _indices.
 
-            This calls *_indices* method directly. Such that everything
-            is managed by numpy.ndarray object.
+        For standard slices or integers, this calls *_indices* method directly. 
+        Such that everything is managed by numpy.ndarray object.
+
+        If index if a string or another SelText instance, it selects the 
+        indices from self that match with the other selection.
 
         """
+        if isinstance(index, (str, SelText)):
+            return self.getSubSelection(index, returnOriId=True)[1]
+
         return self._indices[index]
 
     def __len__(self):
@@ -144,7 +150,7 @@ class SelText():
 
             :arg sel:           sub-selection to use
             :arg returnOriId:   if True, return also indices in the range
-                                of the total number of atoms in simulation
+                                of the first, original selection
 
         """
         tmp = SelText(self.dataset)
@@ -157,15 +163,14 @@ class SelText():
                                       tempSel.selection,
                                       return_indices=True)
                        for i, frame in enumerate(frames)]
-                tmp._indices = [val[1] for val in res]
+                tmp._indices = [val[0] for val in res]
             else:
                 res = np.intersect1d(self._indices,
                                      tempSel.selection,
                                      return_indices=True)
-                tmp._indices = res[1]
+                tmp._indices = res[0]
 
             tmp.selT = sel + " and " + tmp.selT
-
 
         elif isinstance(sel, SelText):
             if isinstance(self._indices, list):
@@ -174,15 +179,14 @@ class SelText():
                                       sel._indices,
                                       return_indices=True)
                        for i, frame in enumerate(frames)]
-                tmp._indices = [val[1] for val in res]
+                tmp._indices = [val[0] for val in res]
             else:
                 res = np.intersect1d(self._indices,
                                      sel._indices,
                                      return_indices=True)
-                tmp._indices = res[1]
+                tmp._indices = res[0]
 
             tmp.selT = sel.selT + " and " + tmp.selT
-
 
         else:
             if isinstance(self._indices, list):
@@ -191,10 +195,10 @@ class SelText():
                                       sel,
                                       return_indices=True)
                        for i, frame in enumerate(frames)]
-                tmp._indices = [val[1] for val in res]
+                tmp._indices = [val[0] for val in res]
             else:
                 res = np.intersect1d(self._indices, sel, return_indices=True)
-                tmp._indices = res[1]
+                tmp._indices = res[0]
 
             tmp.selT = sel
 
@@ -207,9 +211,9 @@ class SelText():
         tmp.iterIdx = 0
 
         if isinstance(self._indices, list):
-            oriId = [val[0] for val in res]
+            oriId = [val[1] for val in res]
         else:
-            oriId = res[0]
+            oriId = res[1]
 
         if returnOriId:
             return tmp, oriId

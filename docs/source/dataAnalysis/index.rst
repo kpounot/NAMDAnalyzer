@@ -11,4 +11,6 @@ dataAnalysis
    Rotations
    ScatDiffusion
    VolMapDensity
+   Inertia
+   Structure
 
