@@ -40,6 +40,8 @@ from NAMDAnalyzer.helpersFunctions.DistanceChordDiagram import ChordDiag
 
 from NAMDAnalyzer.kdTree.getWithin_kdTree import getWithin_kdTree
 
+from NAMDAnalyzer.helpersFunctions.objectConverters import fromSliceToArange
+
 
 
 class NAMDDCD(DCDReader, NAMDPSF):
@@ -52,25 +54,15 @@ class NAMDDCD(DCDReader, NAMDPSF):
         :arg dcdFile: NAMD .dcd file to be used
 
     """
-
     def __init__(self, psfFile, dcdFile=None):
-
         NAMDPSF.__init__(self, psfFile)
-
         DCDReader.__init__(self)
-
         if dcdFile:
             self.importDCDFile(dcdFile)
-
-
         try:
             self.parallelBackend = py_getParallelBackend()
         except NameError:
             self.parallelBackend = 0
-
-
-
-
 
     def appendPDB(self, pdbFile):
         """ Can be used to append a frame with coordinates from a pdb file.
@@ -80,11 +72,8 @@ class NAMDDCD(DCDReader, NAMDPSF):
             :arg pdbFile: pdb file path
 
         """
-
         pdb = NAMDPDB(pdbFile)
-
         self.dcdFiles.append(pdb.getCoor()[:, np.newaxis, :])
-
         if len(self.dcdFiles) == 1:
             self.nbrFrames += 1
             self.nbrSteps  += 1
@@ -100,9 +89,6 @@ class NAMDDCD(DCDReader, NAMDPSF):
             self.dcdFreq    = np.append(self.dcdFreq, 1)
             self.initFrame.append(self.stopFrame[-1])
             self.stopFrame.append(self.stopFrame[-1] + 1)
-
-
-
 
 # --------------------------------------------
 # Distances and within selections
@@ -123,10 +109,7 @@ class NAMDDCD(DCDReader, NAMDPSF):
                       sel2 column-wise.
 
         """
-
-
         sameSel = 0
-
         if isinstance(sel1, str) and isinstance(sel2, str):
             if set(sel1.split(' ')) == set(sel2.split(' ')):
                 sameSel = 1
@@ -159,11 +142,7 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
         py_getDistances(sel1, sel2, out, cellDims, sameSel)
 
-
         return out
-
-
-
 
     def getWithin(self, distance, refSel, outSel='all', frame=0):
         """ Selects all atoms that within the given distance of the
@@ -183,8 +162,6 @@ class NAMDDCD(DCDReader, NAMDPSF):
                       and atom indices are returned directly.
 
         """
-
-
         # Get the coordinates corresponding to the selection
         if type(refSel) == str:
             refSel = self.selection(refSel)
@@ -201,7 +178,6 @@ class NAMDDCD(DCDReader, NAMDPSF):
         keepIdx = np.zeros((allAtoms.shape[0], allAtoms.shape[1]),
                            dtype='int32')
 
-
         if self.parallelBackend == 2 or outSel.size <= 10000:
             py_getWithin(allAtoms, refSel.astype('int32'),
                          outSel.astype('int32'),
@@ -211,17 +187,11 @@ class NAMDDCD(DCDReader, NAMDPSF):
                              outSel.astype('int32'),
                              keepIdx, cellDims, distance)
 
-
         if keepIdx.shape[1] == 1:
             keepIdx = keepIdx.flatten()
             keepIdx = np.argwhere(keepIdx)[:, 0]
 
-
         return keepIdx
-
-
-
-
 
     def getWithinCOM(self, distance, COM, outSel=None, frame=0,
                      getSameResid=False):
@@ -244,12 +214,9 @@ class NAMDDCD(DCDReader, NAMDPSF):
             :returns: list of selected atom indices.
 
         """
-
-
         # Get the indices corresponding to the selection
         if type(outSel) == str:
             outSel = self.getSelection(outSel)
-
 
         frameAll = np.ascontiguousarray(
             self.dcdData[:, frame], dtype='float32')
@@ -259,28 +226,20 @@ class NAMDDCD(DCDReader, NAMDPSF):
         # Initialize boolean array for atom selection
         keepIdx  = np.zeros(self.dcdData.shape[0], dtype='int32')
 
-
         py_getWithin(frameAll, usrSel, keepIdx, distance)
-
 
         if outSel is not None:
             # Creates an array of boolean for logical_and
             outSelBool = np.zeros(self.dcdData.shape[0], dtype=bool)
             outSelBool[outSel] = 1  # Sets selected atoms indices to 1
-
             keepIdx = np.logical_and(outSelBool, keepIdx.astype(bool))
-
 
         keepIdx = np.argwhere(keepIdx)[:, 0]
 
         if getSameResid:
             keepIdx = self.getSameResidueAs(keepIdx)
 
-
         return keepIdx
-
-
-
 
 # --------------------------------------------
 # Special accessors and data modifiers
@@ -300,7 +259,6 @@ class NAMDDCD(DCDReader, NAMDPSF):
                             or a slice object
 
         """
-
         # Get the indices corresponding to the selection
         if type(selection) == str:
             selection = self.selection(selection)
@@ -313,12 +271,9 @@ class NAMDDCD(DCDReader, NAMDPSF):
               "with angle %f rad...\n" % (x, y, z, norm))
 
         r = R.from_rotvec(rotVec)
-
         q = molFit_q.get_bestMatrix(r.as_quat())
 
         return molFit_q.applyRotation(self.dcdData[selection, frames], q)
-
-
 
     def getCenterOfMass(self, selection, frames=slice(0, None)):
         """ Computes the center of mass for selected atoms and frames.
@@ -329,29 +284,21 @@ class NAMDDCD(DCDReader, NAMDPSF):
                             or a slice object
 
         """
-
         if type(selection) == str:
             selection = self.selection(selection)
 
         try:  # Check if a psf file has been loaded
             atomMasses = selection.getMasses()
-
         except AttributeError:
             print("No .psf file was loaded, please import one "
                   "before using this method.")
             return
 
         atomMasses = atomMasses.reshape((atomMasses.size, 1, 1))
-
         dcdData = self.dcdData[selection, frames]
-
         centerOfMass = np.sum(dcdData * atomMasses, axis=0) / atomMasses.sum()
 
-
         return centerOfMass.astype('float32')
-
-
-
 
     def getAlignedCenterOfMass(self, selection='all', outSel=None,
                                frames=slice(0, None)):
@@ -368,31 +315,29 @@ class NAMDDCD(DCDReader, NAMDPSF):
                             or a slice object
 
         """
-
         # Get the indices corresponding to the selection
         if type(selection) == str:
             selection = self.selection(selection)
-
 
         if outSel is None:
             outSel = selection
         if type(outSel) == str:
             outSel = self.selection(outSel)
 
-
         dataset = self.dcdData[outSel, frames]
-
         centerOfMass = self.getCenterOfMass(selection, frames)
-
         # Substract the center of mass coordinates to each atom for each frame
         dataset = dataset - centerOfMass
 
         return dataset
 
-
-
-
-    def getAlignedData(self, selection, outSel=None, frames=slice(0, None)):
+    def getAlignedData(
+        self, 
+        selection, 
+        outSel=None, 
+        frames=slice(0, None), 
+        ref=None
+    ):
         """ This method will fit all atoms between firstAtom and lastAtom for
             each frame between begin and end, using the first frame for the
             others to be fitted on.
@@ -403,14 +348,19 @@ class NAMDDCD(DCDReader, NAMDPSF):
                             transformation matrix obtained from selection
             :arg frames:    either not given to select all frames, an int,
                             or a slice object
+            :arg ref:       reference frame for alignment. If None, the first
+                            frame of the selected frames will be used.
 
             :returns: a similar array as the initial dataset but with
                       aligned coordinates.
 
         """
-
         if type(selection) == str:
             selection = self.selection(selection)
+        if isinstance(frames, slice):
+            frames = fromSliceToArange(frames, self.nbrFrames)
+        if ref is not None:
+            np.insert(frames, 0, ref)
 
         refData = self.getAlignedCenterOfMass(selection, None, frames)
         q       = molFit_q.alignAllMol(refData)
@@ -420,48 +370,31 @@ class NAMDDCD(DCDReader, NAMDPSF):
         else:
             alignData = refData
 
-
         alignData = molFit_q.applyRotation(alignData, q)
 
         return alignData
-
-
-
-
-
 
     def getPBC(self, selection='all', frames=slice(0, None)):
         """ This method applies periodic boundary conditions on all
             selected atom coordinates for each frame selected.
 
         """
-
         if isinstance(selection, str):
             selection = self.selection(selection)
-
 
         dcdData = np.copy(self.dcdData[selection, frames])
 
         dcdData -= (self.cellDims[frames]
                     * np.floor(dcdData / self.cellDims[frames]))
 
-
         return dcdData
 
-
-
-
-    def getProtVolume(self, selection='protein', frame=0):
+    def getProtVolume(self, selection='protein'):
         """ Computes an approximate volume of the protein by summing the
             volume of each amino acids in the provided selection.
 
             :arg selection: selection to be used. Should be obviously
                             a protein.
-            :arg frame:     frame to be used to compute the volume
-            :arg volType:   type of volume to be used, either 'IMGT'
-                            (from imgt.org),
-                            'hard-sphere' or 'vdW'
-                            (the latter standing for van der Waals volume)
 
             :returns: the volume in :math:`\\AA^3`
 
@@ -473,13 +406,11 @@ content/free/tables_1/table08.pdf
 _UK/aminoacids/abbreviation.html#refs
 
         """
-
         resVol1 = {'ALA': 92, 'ARG': 225, 'ASN': 135, 'ASP': 125, 'CYS': 106,
                    'GLN': 161, 'GLU': 155, 'GLY': 66, 'HIS': 167, 'HSE': 167,
                    'HSD': 167, 'HSP': 167, 'ILE': 169, 'LEU': 168, 'LYS': 171,
                    'MET': 171, 'PHE': 203, 'PRO': 129, 'SER': 99, 'THR': 122,
                    'TRP': 240, 'TYR': 203, 'VAL': 142}
-
 
         resVol2 = {'ALA': 88.6, 'ARG': 173.4, 'ASN': 114.1, 'ASP': 111.1,
                    'CYS': 108.5, 'GLN': 143.8, 'GLU': 138.4, 'GLY': 60.1,
@@ -488,50 +419,30 @@ _UK/aminoacids/abbreviation.html#refs
                    'PHE': 189.9, 'PRO': 112.7, 'SER': 89.0, 'THR': 116.1,
                    'TRP': 227.8, 'TYR': 193.6, 'VAL': 140.0}
 
-
-
-        sel = self.selection(selection)
-        sel.frame = frame
-
-        nbrRes = sel.getSubSelection(selection + ' and name CA').size
+        sel = self.selection(selection + ' and name CA')
 
         vol1 = 0
         vol2 = 0
-        for resID in range(nbrRes):
-            tmpSel = sel.getSubSelection('resid %s' % str(resID + 1))
-
-            vol1 += resVol1[tmpSel.getUniqueResName()[0]]
-            vol2 += resVol2[tmpSel.getUniqueResName()[0]]
-
+        for resName in sel.getResName():
+            vol1 += resVol1[resName]
+            vol2 += resVol2[resName]
 
         return (vol1 + vol2) / 2
 
-
-
-    def getSpecVolume(self, selection='protein', frame=0):
+    def getSpecVolume(self, selection='protein'):
         """ Estimates protein specific volume based on volume estimation.
 
             :arg selection: selection to be used.
                             Should be obviously a protein.
-            :arg frame:     frame to be used to compute the volume
-            :arg volType:   type of volume to be used, either
-                            'hard-sphere' or 'vdW'
-                            (the latter standing for van der Waals volume)
 
             :returns: the specific volume in :math:`\\cm^3 / g`
 
         """
-
         massP = np.sum(self.getAtomsMasses(selection))
-
-        protVol = self.getProtVolume(selection, frame) * 1e-24
-
+        protVol = self.getProtVolume(selection) * 1e-24
         specVol = protVol / massP * 6.02214076e23
 
         return specVol
-
-
-
 
     def getGyrationRadius(self, selection='protein', frames=slice(0, None)):
         """ Computes the radius of gyration for the given selection and frames.
@@ -542,324 +453,13 @@ _UK/aminoacids/abbreviation.html#refs
                             on the first frame
 
         """
-
         sel = self.selection(selection)
-
         com = self.getCenterOfMass(selection, frames)
-
         gyrR = sel.getMasses()[:, np.newaxis] * np.sum(
             (self.dcdData[sel, frames] - com)**2, 2)
         gyrR = np.sqrt(gyrR.sum(0) / sel.getMasses().sum())
 
         return gyrR
-
-
-
-
-
-
-
-# --------------------------------------------
-# Data analysis methods
-# --------------------------------------------
-    def getSTDperAtom(self, selection="all", align=False,
-                      frames=slice(0, None), mergeXYZ=True):
-        """ Computes the standard deviation for each atom in selection
-            and averaged over selected frames.
-
-            :arg selection: selected atom, can be a single string or a
-                            list of atom indices
-            :arg align:     if True, will try to align all atoms to the
-                            ones on the first frame
-            :arg end:       last frame to be used + 1
-            :arg mergeXYZ:  if True, uses the vector from the origin
-                            instead of each projections
-
-            :returns: the standard deviation averaged over time.
-
-        """
-
-        # Get the indices corresponding to the selection
-        if type(selection) == str:
-            selection = self.selection(selection)
-
-        # Align selected atoms for each selected frames
-        if align:
-            data = self.getAlignedData(selection, frames)
-        else:
-            data = self.dcdData[selection, frames]
-
-        # Computes the standard deviation
-        if mergeXYZ:
-            std = np.sqrt(np.sum(data**2, axis=2))
-            std = np.std(std, axis=1)
-
-        else:
-            std = np.std(data, axis=1)
-
-        return std
-
-
-
-
-    def getRMSDperAtom(self, selection="all", alignCOM=True, align=False,
-                       frames=slice(0, None)):
-        """ Computes the RMSD for each atom in selection and for frames
-            between begin and end.
-
-            :arg selection: selected atom, can be a single string or a
-                            list of atom indices
-            :arg alignCOM:  if True, will try to align the center of mass of
-                            the selection to the first frame
-            :arg align:     if True, will try to align all atoms to the ones
-                            on the first frame
-            :arg frames:    either not given to select all frames, an int,
-                            or a slice object
-
-            :returns: the RMSD averaged over time.
-
-        """
-
-        # Get the indices corresponding to the selection
-        if type(selection) == str:
-            selection = self.selection(selection)
-
-        # Align selected atoms for each selected frames
-        if align:
-            data = self.getAlignedData(selection, frames)
-        elif alignCOM:
-            data = self.getAlignedCenterOfMass(selection, frames)
-        else:
-            data = self.dcdData[selection, frames]
-
-        rmsd = data - data[:, 0][:, np.newaxis, :]
-        rmsd = np.sqrt(np.sum(rmsd**2, axis=2))
-
-        rmsd = np.mean(rmsd, axis=1)
-
-        return rmsd
-
-
-
-    def getRMSDperResidue(self, selection="protein", alignCOM=True,
-                          align=False, frames=slice(0, None)):
-        """ Computes the RMSD for each residue in selection
-            and for selected frames.
-
-            :arg selection: selected atom, can be a single string
-                            or a list of atom indices
-            :arg alignCOM:  if True, will try to align the center of
-                            mass of the selection to the first frame
-            :arg align:     if True, will try to align all atoms to
-                            the ones on the first frame
-            :arg frames:    either not given to select all frames,
-                            an int, or a slice object
-
-            :returns: the RMSD averaged over time.
-
-        """
-
-        atoms = self.selection(selection)
-
-        residues = atoms.getUniqueResidues().astype(int)
-        resRMSD  = np.zeros_like(residues, dtype='float32')
-
-
-        atomRMSD = self.getRMSDperAtom(
-            selection, alignCOM, align, frames, mergeXYZ)
-
-
-        for idx, val in enumerate(residues):
-            resRMSD[idx] = np.mean(
-                atomRMSD[np.argwhere(
-                    atoms.getResidues().astype(int) == val)[:, 0]])
-
-
-        return resRMSD
-
-
-
-
-
-    def getRMSDperFrame(self, selection="all", alignCOM=True,
-                        align=False, frames=slice(0, None)):
-        """ Computes the RMSD for each atom in selection and for
-            frames between begin and end.
-
-            :arg selection: selected atom, can be a single string or
-                            a list of atom indices
-            :arg alignCOM:  if True, will try to align the center of mass of
-                            the selection to the first frame
-            :arg align:     if True, will try to align all atoms to the ones
-                            on the first frame
-            :arg frames:    either not given to select all frames, an int,
-                            or a slice object
-
-            :returns: the RMSD averaged over all selected atoms.
-
-        """
-
-        # Get the indices corresponding to the selection
-        if type(selection) == str:
-            selection = self.selection(selection)
-
-        # Align selected atoms for each selected frames
-        if align:
-            data = self.getAlignedData(selection, frames)
-        elif alignCOM:
-            data = self.getAlignedCenterOfMass(selection, frames)
-        else:
-            data = self.dcdData[selection, frames]
-
-        rmsd = data - data[:, 0][:, np.newaxis, :]
-        rmsd = np.sqrt(np.sum(rmsd**2, axis=2))
-        rmsd = np.mean(rmsd, axis=0)
-
-        return rmsd
-
-
-
-
-
-
-
-
-# --------------------------------------------
-# Plotting methods
-# --------------------------------------------
-    def plotSTDperAtom(self, selection="all", align=False,
-                       frames=slice(0, None), mergeXYZ=True):
-        """ Plot the standard deviation along the axis 0 of dataset.
-            This makes use of the :func:`getSTDperAtom` method.
-
-            If mergeXYZ is True, then computes the distance
-            to the origin first.
-
-        """
-
-        std = self.getSTDperAtom(selection, align, frames, mergeXYZ)
-        xRange = self.timestep * np.cumsum(self.dcdFreq[frames])
-
-        if mergeXYZ:
-            plt.plot(xRange, std)
-            plt.ylabel(r'$STD \ (\AA)$')
-
-        else:
-            # In case of three columns for (x, y, z) coordinates,
-            # generate three plot for each.
-            fig, ax = plt.subplots(3, 1, sharex=True)
-
-            ax[0].plot(xRange, std[:, 0])
-            ax[0].set_ylabel(r'$STD \ along \ X \ (\AA)$')
-
-            ax[1].plot(xRange, std[:, 1])
-            ax[1].set_ylabel(r'$STD \ along \ Y \ (\AA)$')
-
-            ax[2].plot(xRange, std[:, 2])
-            ax[2].set_ylabel(r'$STD \ along \ Z \ (\AA)$')
-
-        plt.xlabel(r'$Atom \ index$')
-
-        plt.tight_layout()
-        return plt.show(block=False)
-
-
-
-
-    def plotRMSDperAtom(self, selection="all", alignCOM=True, align=False,
-                        frames=slice(0, None)):
-        """ Plot the RMSD along the axis 0 of dataset.
-            This makes use of the :func:`getRMSDperAtom` method.
-
-        """
-
-        rmsd = self.getRMSDperAtom(selection, alignCOM, align, frames)
-        xRange = np.arange(rmsd.size)
-
-        if mergeXYZ:
-            plt.plot(xRange, rmsd)
-            plt.ylabel(r'$RMSD \ (\AA)$')
-
-        else:
-            # In case of three columns for (x, y, z) coordinates,
-            # generate three plot for each.
-            fig, ax = plt.subplots(3, 1, sharex=True)
-
-            ax[0].plot(xRange, rmsd[:, 0])
-            ax[0].set_ylabel(r'$RMSD \ along \ X \ (\AA)$')
-
-            ax[1].plot(xRange, rmsd[:, 1])
-            ax[1].set_ylabel(r'$RMSD \ along \ Y \ (\AA)$')
-
-            ax[2].plot(xRange, rmsd[:, 2])
-            ax[2].set_ylabel(r'$RMSD \ along \ Z \ (\AA)$')
-
-        plt.xlabel(r'$Atom \ index$')
-
-        plt.tight_layout()
-        return plt.show(block=False)
-
-
-
-    def plotRMSDperResidue(self, selection="all", alignCOM=True, align=False,
-                           frames=slice(0, None)):
-        """ Plot the RMSD along the axis 0 of dataset.
-            This makes use of the :func:`getRMSDperAtom` method.
-
-        """
-
-        rmsd = self.getRMSDperResidue(selection, alignCOM, align, frames)
-        xRange = np.arange(rmsd.size)
-
-        if mergeXYZ:
-            plt.plot(xRange, rmsd)
-            plt.ylabel(r'$RMSD \ (\AA)$')
-
-        else:
-            # In case of three columns for (x, y, z) coordinates,
-            # generate three plot for each.
-            fig, ax = plt.subplots(3, 1, sharex=True)
-
-            ax[0].plot(xRange, rmsd[:, 0])
-            ax[0].set_ylabel(r'$RMSD \ along \ X \ (\AA)$')
-
-            ax[1].plot(xRange, rmsd[:, 1])
-            ax[1].set_ylabel(r'$RMSD \ along \ Y \ (\AA)$')
-
-            ax[2].plot(xRange, rmsd[:, 2])
-            ax[2].set_ylabel(r'$RMSD \ along \ Z \ (\AA)$')
-
-        plt.xlabel('Residue')
-
-        plt.tight_layout()
-        return plt.show(block=False)
-
-
-
-
-
-
-    def plotRMSDperFrame(self, selection="all", alignCOM=True, align=False,
-                         frames=slice(0, None)):
-        """ Plot the RMSD along the axis 1 of dataset.
-            This makes use of the :func:`getRMSDperFrame` method.
-
-        """
-
-        rmsd = self.getRMSDperFrame(selection, alignCOM, align, frames)
-        xRange = self.timestep * np.cumsum(self.dcdFreq[frames])
-
-        plt.plot(xRange, rmsd)
-        plt.ylabel(r'$RMSD \ (\AA)$')
-
-        plt.xlabel(r'Time (s)')
-
-        plt.tight_layout()
-        return plt.show(block=False)
-
-
-
-
 
     def plotAveragedDistances_parallelPlot(self, sel1, sel2=None, frames=None,
                                            startDist=None,
@@ -882,18 +482,14 @@ _UK/aminoacids/abbreviation.html#refs
                           linewidth being (maxDist / bin max edge) * lwStep
 
         """
-
         dist = self.getDistances(sel1, sel2, frames)
-
 
         if isinstance(sel1, str):
             sel1 = self.selection(sel1)
-
         if sel2 is None:
             sel2 = np.copy(sel1)
         elif isinstance(sel2, str):
             sel2 = self.selection(sel2)
-
 
         if startDist is None:
             startDist = step
@@ -904,7 +500,6 @@ _UK/aminoacids/abbreviation.html#refs
         norm = colors.Normalize(startDist, maxDist)
 
         fig, ax = plt.subplots(1, 2, gridspec_kw={'width_ratios': [1, 25]})
-
 
         for idx, r in enumerate(rList):
             keep = np.argwhere(dist < r)
@@ -923,15 +518,12 @@ _UK/aminoacids/abbreviation.html#refs
         ax[1].xaxis.set_ticks([], [])
         ax[1].tick_params(labelright=True, labelleft=True)
 
-        cb = colorbar.ColorbarBase(ax[0], cmap=cmap, norm=norm)
+        colorbar.ColorbarBase(ax[0], cmap=cmap, norm=norm)
         ax[0].yaxis.set_ticks_position('left')
         ax[0].yaxis.set_label_position('left')
         ax[0].set_ylabel('Distance [$\AA$]')
 
-
         return fig.show()
-
-
 
     def plotAveragedDistances_chordDiagram(self, sel1, sel2=None, frames=None,
                                            startDist=None, maxDist=10, step=2,
@@ -959,12 +551,9 @@ _UK/aminoacids/abbreviation.html#refs
                             (optional, default 5, each 5 residue are indicated)
 
         """
-
         matplotlib.interactive(False)
-
         chord = ChordDiag(self, sel1, sel2, frames, startDist,
                           maxDist, step, lwStep, resList, labelStep)
-
         chord.process()
 
         return chord

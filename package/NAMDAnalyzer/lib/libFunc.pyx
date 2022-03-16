@@ -10,11 +10,13 @@ np.import_array()
 
 cdef extern from "libFunc.h":
 
+
     int getDCDCoor(char *fileName, int *frames, int nbrFrames, int nbrAtoms, int *selAtoms, 
                     int selAtomsSize, int *dims, int nbrDims, int cell, long long *startPos, float *outArr,
                     char byteorder);
 
     int getDCDCell(char *fileName, int *frames, int nbrFrames, long long *startPos, double *outArr, char byteorder);
+
 
 
     void getHBCorr(float *acceptors, int size_acceptors, int nbrFrames,
@@ -35,7 +37,7 @@ cdef extern from "libFunc.h":
     void compIntScatFunc(float *atomPos, int atomPos_dim0, int atomPos_dim1, int atomPos_dim2, 
                          float *qVecs, int qVecs_dim0, int qVecs_dim1, int qVecs_dim2, 
                          float *out, int out_dim0, int out_dim1, 
-                         int nbrTS, int nbrTimeOri);
+                         int nbrTS, int nbrTimeOri, float *scatLength);
 
 
     void getDistances(float *sel1, int sel1_size, float *sel2, int sel2_size, 
@@ -60,6 +62,7 @@ cdef extern from "libFunc.h":
 
 
 def py_getDCDCoor( fileName, 
+
                 np.ndarray[int, ndim=1, mode="c"] frames not None, nbrAtoms,
                 np.ndarray[int, ndim=1, mode="c"] selAtoms not None, 
                 np.ndarray[int, ndim=1, mode="c"] dims not None, cell,
@@ -67,6 +70,7 @@ def py_getDCDCoor( fileName,
                 np.ndarray[float, ndim=3, mode="c"] outArr not None, byteorder): 
 
     res = getDCDCoor( fileName,
+
                 <int*> np.PyArray_DATA(frames), len(frames), nbrAtoms, 
                 <int*> np.PyArray_DATA(selAtoms), len(selAtoms),  
                 <int*> np.PyArray_DATA(dims), len(dims), cell,
@@ -99,12 +103,13 @@ def py_getDCDCell( fileName,
 def py_compIntScatFunc( np.ndarray[float, ndim=3, mode="c"] atomPos not None,
                         np.ndarray[float, ndim=3, mode="c"] qVecs not None,
                         np.ndarray[float, ndim=2, mode="c"] out not None,
-                        int nbrTS, int nbrTimeOri ):
+                        int nbrTS, int nbrTimeOri,
+                        np.ndarray[float, ndim=1, mode="c"] scatLength not None):
 
     compIntScatFunc(<float*> np.PyArray_DATA(atomPos), atomPos.shape[0], atomPos.shape[1], atomPos.shape[2],
                     <float*> np.PyArray_DATA(qVecs), qVecs.shape[0], qVecs.shape[1], qVecs.shape[2], 
                     <float*> np.PyArray_DATA(out), out.shape[0], out.shape[1],
-                    nbrTS, nbrTimeOri )
+                    nbrTS, nbrTimeOri, <float*> np.PyArray_DATA(scatLength) )
 
 
 

@@ -34,11 +34,11 @@ void d_waterOrientAtSurface(float *waterO, int sizeO, float *watVec, float *prot
     float cD_y = cellDims[3*frame + 1];
     float cD_z = cellDims[3*frame + 2];
 
-    for(int i=0; i < maxN; ++i)
-        closest[closeId + 5*i + 1] = 1000;
-
     if(idx < sizeO)
     { 
+        for(int i=0; i < maxN; ++i)
+            closest[closeId + 5*i + 1] = 1000;
+
         float wat_x = waterO[3*nbrFrames*idx + 3*frame];
         float wat_y = waterO[3*nbrFrames*idx + 3*frame + 1];
         float wat_z = waterO[3*nbrFrames*idx + 3*frame + 2];
@@ -122,9 +122,9 @@ void d_waterOrientAtSurface(float *waterO, int sizeO, float *watVec, float *prot
 
 
 
-void cu_waterOrientAtSurface_wrapper(float *waterO, int sizeO, float *watVec, float *prot, int sizeP, 
-                                     float *out, float *cellDims, int nbrFrames, 
-                                     float minR, float maxR, int maxN)
+void cu_waterOrientAtSurface_wrapper(
+        float *waterO, int sizeO, float *watVec, float *prot, int sizeP, 
+        float *cellDims, int nbrFrames, float minR, float maxR, int maxN)
 {
     // Copying waterO matrix on GPU memory
     float *cu_waterO;
@@ -166,8 +166,6 @@ void cu_waterOrientAtSurface_wrapper(float *waterO, int sizeO, float *watVec, fl
 
     for(int frame=0; frame < nbrFrames; ++frame)
     {
-        printf("Processing frame %i of %i...     \r", frame+1, nbrFrames);
-
         d_waterOrientAtSurface<<<dimGrid, dimBlock>>>(cu_waterO, sizeO, cu_watVec, cu_prot, sizeP, 
                                                       cu_closest, cu_cellDims, nbrFrames, 
                                                       minR, maxR, maxN, frame);
@@ -185,6 +183,7 @@ void cu_waterOrientAtSurface_wrapper(float *waterO, int sizeO, float *watVec, fl
     cudaFree(cu_watVec);
     cudaFree(cu_prot);
     cudaFree(cu_cellDims);
+    cudaFree(cu_closest);
 
 }
 

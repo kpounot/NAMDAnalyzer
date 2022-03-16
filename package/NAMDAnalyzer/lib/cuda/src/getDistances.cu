@@ -55,7 +55,8 @@ void d_getDistances(float *sel1, int sel1_size, float *sel2, int sel2_size, floa
 
 
 void cu_getDistances_wrapper(float *sel1, int sel1_size, float *sel2, 
-                             int sel2_size, float *out, float *cellDims, int nbrFrames, int sameSel)
+                             int sel2_size, float *out, float *cellDims, 
+                             int nbrFrames, int sameSel)
 {
     // Copying sel1 matrix on GPU memory
     float *cu_sel1;

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <omp.h>
 
 #include "../../libFunc.h"
 #include "getEndian.h"
@@ -23,6 +24,7 @@ enum DCDREADER_ERRORS
 };
 
 
+
 int getDCDCoor(
         char *fileName, 
         int *frames, 
@@ -42,6 +44,7 @@ int getDCDCoor(
     char *record = (char*) malloc(nbrAtoms * 4);
     char sysbyteorder = getEndian();
     int seek;
+
     long long pos;
     float res;
 
@@ -52,6 +55,7 @@ int getDCDCoor(
         return error_code;
     }
 
+
     fseek(dcdFile, 0, SEEK_END);
     long long fileSize = ftell(dcdFile);
     for(int frameId=0; frameId < nbrFrames; ++frameId)
@@ -60,6 +64,7 @@ int getDCDCoor(
 
         for(int dimId=0; dimId < nbrDims; ++dimId)
         {
+
             pos = startPos[frame] + dims[dimId] * (4 * nbrAtoms + 8);
             pos += cell ? 60 : 4;
             seek = _fseeki64(dcdFile, pos, SEEK_SET);
@@ -70,16 +75,17 @@ int getDCDCoor(
                 return error_code;
             }
 
-            fread(record, 4, selAtoms[selAtomsSize - 1] + 1, dcdFile);
+            fread(record, 4, lastAtomIdx, dcdFile);
 
             // Copy coordinates in 'out' array
+            #pragma omp parallel for 
             for(int atomId=0; atomId < selAtomsSize; ++atomId)
             {
                 if(sysbyteorder != byteorder)
                     swapBytes(*record);
 
-                res = *(float*) &record[4 * selAtoms[atomId]];
-                outArr[nbrDims*nbrFrames*atomId + nbrDims*frameId + dimId] = res;
+                outArr[nbrDims*nbrFrames*atomId + nbrDims*frameId + dimId] =
+                    *(float*) &record[4 * selAtoms[atomId]];
             }
         }
     }

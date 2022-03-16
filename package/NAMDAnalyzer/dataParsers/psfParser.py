@@ -85,6 +85,7 @@ class NAMDPSF(PSFReader):
                                "OD2", "SG", "OE1", "OE2", "ND1", "NE2",
                                "SD", "OG", "OG1", "OH"]
 
+        
 
 
 # --------------------------------------------
@@ -120,6 +121,7 @@ class NAMDPSF(PSFReader):
                               - protein
                               - backbone
                               - protH or proteinH
+                              - protExchH (exchangeable hydrogens)
                               - protNonExchH (non exchangable hydrogens,
                                 useful for neutron scattering)
                               - water
@@ -213,12 +215,23 @@ class NAMDPSF(PSFReader):
             keepList = np.isin(self.psfData.atoms[:, 4], self.protH)
             for key, value in self.protExchH.items():
                 resArray      = np.isin(self.psfData.atoms[:, 3], key)
-                exchHArray    = np.isin(self.psfData.atoms[:, 4], value)
+                exchHArray    = np.isin(self.psfData.atoms[:, 4], value,
+                                        invert=invert)
                 nonExchHArray = np.invert(np.bitwise_and(resArray, exchHArray))
                 keepList      = np.bitwise_and(keepList, nonExchHArray)
 
             keepIdxList.append(keepList)
 
+        if selText == "protExchH":
+            keepList = np.isin(self.psfData.atoms[:, 4], self.protH)
+            for key, value in self.protExchH.items():
+                resArray      = np.isin(self.psfData.atoms[:, 3], key)
+                exchHArray    = np.isin(self.psfData.atoms[:, 4], value,
+                                        invert=invert)
+                exchHArray    = np.bitwise_and(resArray, exchHArray)
+                keepList      = np.bitwise_and(keepList, exchHArray)
+
+            keepIdxList.append(keepList)
 
 
         # Parsing the segment list if not None

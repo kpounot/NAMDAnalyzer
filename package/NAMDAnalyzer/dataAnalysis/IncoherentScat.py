@@ -12,9 +12,8 @@ import matplotlib.pyplot as plt
 from matplotlib import cm, colors
 from mpl_toolkits.mplot3d.axes3d import Axes3D
 
-from scipy.fftpack import fft, fftfreq, fftshift
-
-from threading import Thread
+from scipy.fft import fft, fftfreq, fftshift
+from scipy.interpolate import interp2d
 
 from NAMDAnalyzer.helpersFunctions import ConstantsAndModels as CM
 
@@ -39,9 +38,6 @@ class IncoherentScat:
                       trajectories data.
 
     """
-
-
-
     def __init__(self, dataset):
 
         self.dataset = dataset
@@ -51,7 +47,6 @@ class IncoherentScat:
         self.scatFunc   = None
         self.qVals      = None
         self.MSD        = None
-
 
 # --------------------------------------------
 # Computation methods
@@ -107,27 +102,33 @@ class IncoherentScat:
         qArray = np.ascontiguousarray(qArray, dtype=np.float32)
 
 
+        scatLength = self.dataset.psfData.nScatLength_inc[selection]
+        scatLength = scatLength.astype('float32')
+
+
         corr = np.zeros((qArray.shape[0], 2 * nbrTS), dtype=np.float32)
 
 
         # Get timestep array
-        timestep = []
-        for i in range(nbrTS):
-            timestep.append(i * frames.step * self.dataset.timestep
-                            * self.dataset.dcdFreq[0])
+        step = frames.step if frames.step is not None else 1
 
+        step *= ((atomPos.shape[1] - nbrTimeOri) / nbrTS)
+
+        timestep = np.arange(nbrTS) * step 
+        timestep *= self.dataset.timestep 
+        timestep *= self.dataset.dcdFreq[0]
 
         print("Computing intermediate scattering function...\n")
 
-        py_compIntScatFunc(atomPos, qArray, corr, nbrTS, nbrTimeOri)
+        py_compIntScatFunc(atomPos, qArray, corr, nbrTS, 
+                           nbrTimeOri, scatLength)
 
         # Convert to complex array
         corr = corr[:, ::2] + 1j * corr[:, 1::2]
 
-        self.interFunc = corr, np.array(timestep)
+        self.interFunc = corr, timestep
 
         print("\nDone\n")
-
 
 
     def compDSF(self, qValList, nbrTimeOri=50, resFunc=None,
@@ -135,7 +136,8 @@ class IncoherentScat:
                 frames=slice(0, None, 1), norm=True, nbrTS=200):
         """ This method performs a multiplication of the inverse Fourier
             transform given resolution function with the computed
-            intermediate function to get the instrumental signal.
+            intermediate function to get the instrumental dynamic
+            structure factor.
 
             :arg qValList:   list of q-values to be used
             :arg nbrTimeOri: number of time origins to be averaged over
@@ -157,14 +159,10 @@ class IncoherentScat:
                 - **ts**   timesteps as calculated from selected frames
 
         """
-
-        if resFunc is None:
-            resFunc = CM.FTresFuncSPHERES
-
-
         # Computes intermediate scattering function if None
-        self.compIntermediateFunc(qValList, nbrTimeOri, selection,
-                                  alignCOM, frames, nbrTS)
+        if self.interFunc is None:
+            self.compIntermediateFunc(qValList, nbrTimeOri, selection,
+                                      alignCOM, frames, nbrTS)
 
         print("Using given resolution function to compute elastic "
               "incoherent structure factors.\n")
@@ -172,16 +170,13 @@ class IncoherentScat:
         intFunc, timesteps = self.interFunc
 
         # Gets resolution function
-        resolution = resFunc(timesteps)
-
-        dsf = resolution * intFunc  # Computes the DSF
+        if resFunc is not None:
+            dsf = resFunc(timesteps) * np.absolute(intFunc) ** 2
 
         if norm:
             dsf /= dsf[:, 0][:, np.newaxis]
 
         self.DSF = dsf, timesteps  # Returns the DSF and time
-
-
 
 
     def compScatteringFunc(self, qValList, nbrTimeOri=50, resFunc=None,
@@ -200,6 +195,8 @@ class IncoherentScat:
                              or a slice object
             :arg nbrTS:      number of time steps to be used
                              (number of points ni the x-axis output)
+            :arg window:     1D window function to apply to the time series
+                             prior to performing the Fourier transform.
 
             Result is stored in *scatFunc* attribute as the following tuple:
                 - **scatFunc** spectra as a
@@ -207,19 +204,18 @@ class IncoherentScat:
                 - **energies** energies in ueV obtained from timesteps
 
         """
-
-
-        self.compDSF(qValList, nbrTimeOri, resFunc, selection,
-                     alignCOM, frames, nbrTS)
+        if self.DSF is None:
+            self.compDSF(qValList, nbrTimeOri, resFunc, selection,
+                         alignCOM, frames, norm, nbrTS)
 
         print("Using Fourier transform on all DSF to obtain "
               "full scattering function.\n")
 
-        eisf, timesteps = self.DSF
+        dsf, timesteps = self.DSF
 
         # Performs the Fourier transform
-        scatFunc = fftshift(fft(eisf, axis=1), axes=1)
-        scatFunc = np.absolute(scatFunc)**2 / scatFunc.shape[1]
+        scatFunc = fftshift(fft(dsf, axis=1), axes=1)
+        scatFunc = np.absolute(scatFunc) ** 2 / scatFunc.shape[1]
 
         # Convert time to energies in micro-electron volts
         timeIncr = timesteps[1] - timesteps[0]
@@ -227,7 +223,6 @@ class IncoherentScat:
             fftfreq(timesteps.size, d=timeIncr)) * 1e6
 
         self.scatFunc = scatFunc, energies
-
 
 
     def compMSD(self, nbrFrames=20, selection='protNonExchH',
@@ -252,7 +247,6 @@ class IncoherentScat:
             Result is stored in *MSD* attribute
 
         """
-
         # Get the indices corresponding to the selection
         if type(selection) == str:
             selection = self.dataset.selection(selection)
@@ -279,9 +273,7 @@ class IncoherentScat:
             raise TypeError('The argument `frames` should be either None '
                             'or a `slice` object')
 
-
         frames = np.arange(start, stop - nbrFrames, step)
-
 
         # Computes intermediate scattering function for one timestep,
         # averaged over time origins
@@ -298,7 +290,6 @@ class IncoherentScat:
         self.MSD = tmpMSD.mean(), tmpMSD.std()
 
 
-
 # --------------------------------------------
 # Conversion methods (for nPDyn)
 # --------------------------------------------
@@ -308,7 +299,6 @@ class IncoherentScat:
             Then returns an array containing the intensity for each q-value.
 
         """
-
         # Get the zero energy transfer index
         elasticIdx = np.argwhere(self.scatFunc[0] == np.max(
             self.scatFunc[0]))[0][1]
@@ -342,7 +332,6 @@ class IncoherentScat:
         return plt.show(block=False)
 
 
-
     def plotDSF(self):
         """ Plots the DSF for each q-value.
 
@@ -366,8 +355,6 @@ class IncoherentScat:
 
         plt.tight_layout()
         return plt.show(block=False)
-
-
 
 
     def plotScatteringFunc(self):

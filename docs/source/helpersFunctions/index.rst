@@ -6,3 +6,4 @@ Helpers functions
 
    ConstantsAndModels
    DistanceChordDiagram
+   BlockAverage

@@ -7,11 +7,12 @@ exclude=
     old,
     build,
     dist,
-    deprecated/
-    tests/
-    NAMDAnalyzer/kdTree
-    NAMDAnalyzer/dataManipulation/deprecated
-    setup.py
-    conf.py
-    __main__.py
-    *__init__.py
+    deprecated,
+    tests,
+    NAMDAnalyzer/kdTree,
+    NAMDAnalyzer/dataManipulation/deprecated,
+    setup.py,
+    conf.py,
+    __main__.py,
+    *__init__.py,
+    venv*

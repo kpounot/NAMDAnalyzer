@@ -17,6 +17,31 @@ class PSFReader:
 
         self.psfData = None
 
+        # neutron incoherent scattering cross-section 
+        # for most common isotopes in biophysics
+        self.dict_nScatLength_inc = {'H': 25.274,
+                                     '2H': 4.04,
+                                     'C': 0,
+                                     '13C': -0.52,
+                                     'N': 2.0,
+                                     '15N': -0.02,
+                                     'O': 0.0,
+                                     'P': 0.2,
+                                     'S': 0.0}
+                 
+
+        # neutron coherent scattering cross-section 
+        # for most common isotopes in biophysics
+        self.dict_nScatLength_coh = {'H': -3.7406,
+                                     '2H': 6.671,
+                                     'C': 6.6511,
+                                     '13C': 6.19,
+                                     'N': 9.37,
+                                     '15N': 6.44,
+                                     'O': 5.803,
+                                     'P': 5.13,
+                                     'S': 2.804}
+                          
 
     def importPSFFile(self, psfFile):
         """ Imports a new file and store the result in self.psfData.
@@ -31,7 +56,9 @@ class PSFReader:
 
         dataTuple = namedtuple('dataTuple', 'atoms bonds angles dihedrals '
                                             'impropers donors acceptors '
-                                            'nonBonded xterms')
+                                            'nonBonded xterms '
+                                            'nScatLength_inc '
+                                            'nScatLength_coh')
 
         # Initialize the temporary lists
         atomList        = []
@@ -93,6 +120,39 @@ class PSFReader:
                          in data[i + 1:i + 1 + int(nbrEntries / 2)]])
                     xTermsList = xTermsList.astype(int)
 
+
+        nScatLength_inc, nScatLength_coh = self._setScatLength(atomList)
+        
+
+
         self.psfData = dataTuple(
             atomList, bondList, thetaList, phiList, imprpList,
-            donorsList, acceptorsList, nonBondedList, xTermsList)
+            donorsList, acceptorsList, nonBondedList, xTermsList,
+            nScatLength_inc, nScatLength_coh)
+
+
+
+    def _setScatLength(self, atomList):
+        """ This method aims at setting two arrays which
+            contain the scattering length for each atom in the psf file.
+
+            The value is the one for the most common isotope by default,
+            but it can be changed later using a selection (see
+            :class:`selText`)
+
+        """
+
+        nScatLength_inc = np.zeros(atomList.shape[0])
+        nScatLength_coh = np.zeros(atomList.shape[0])
+
+        for idx, atom in enumerate(atomList):
+            try:
+                nScatLength_inc[idx] = self.dict_nScatLength_inc[atom[4][0]]
+                nScatLength_coh[idx] = self.dict_nScatLength_coh[atom[4][0]]
+            except KeyError:
+                print("Atom %s at index %i could not be assigned a scattering "
+                      "length." % (atom, idx))
+                
+
+
+        return nScatLength_inc, nScatLength_coh

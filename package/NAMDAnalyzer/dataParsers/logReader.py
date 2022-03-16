@@ -103,7 +103,7 @@ class LOGReader:
                                          * (self.timestep
                                          / old_tstep))
 
-        for i, etitle in enumerate(self.logData.etitle):
-            self.logData.dataSet = self.logData.dataSet._replace(
-                **{etitle: np.append(self.logData.dataSet[i],
-                                     tempData.dataSet[i])})
+        for i, etitle in enumerate(self.etitle):
+            self.logData = self.logData._replace(
+                **{etitle: np.append(self.logData[i],
+                                     tempData[i])})

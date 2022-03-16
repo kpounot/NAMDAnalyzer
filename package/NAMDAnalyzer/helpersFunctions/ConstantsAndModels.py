@@ -7,17 +7,33 @@ fMaxBoltzDist = lambda x, T: (2 / np.sqrt(np.pi * (T * kB_kcal)**3)
 fgaussianModel = lambda x, a, b, c: (a / (np.sqrt(2 * np.pi) * c)
                                      * np.exp(-(x - b)**2 / (2 * c**2)))
 
-# Ideal resolution for SHPERES instrument, FWHM of 0.66e-6 eV (single gaussian)
-FTresFuncSPHERES = lambda x: (np.exp(-x**2 * np.pi**2 * 0.66e-6 / 2)
-                              * np.sqrt(np.pi * 0.66e-6))
+# Ideal resolution for SPHERES instrument, FWHM of 0.66e-6 eV (single gaussian)
+FTresFuncSPHERES  = lambda x: (np.exp(-x**2 * np.pi**2 
+                              * (0.66e-6 / 4.135e-15)**2))
+
+FTresFuncGaussian = lambda x, width: np.exp(-x**2 * np.pi**2 * width**2)
 
 
-FTvoigtSPHERES   = lambda x: (0.05 * np.pi * np.exp(-x * 0.28e-6**2)
-                              + 0.95
-                              * np.exp(-x**2 * np.pi**2 * 0.28e6**2 / 2)
-                              * np.sqrt(np.pi * 0.28e-6))
+def getPseudoVoigtFTFunc(a, width):
+    """Fourier transform of a pseudo-Voigt profile
 
+    This returns a lambda function that takes time vector as input.
 
+    Parameters
+    ----------
+    a : float
+        A float between 0 and 1 giving the relative contribution of Lorentzian
+        and Gaussian.
+    width : float
+        A float gibing the width of the lineshapes in eV.
+
+    """
+    out = lambda x: (
+            a * np.exp(-x**2 * np.pi**2 * (width / 4.135e-15)**2)
+            + (1 - a) * np.exp(-x * (width / 4.135e-15))
+    )
+
+    return out
 
 
 def getRandomVec(q):

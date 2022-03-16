@@ -1,10 +1,10 @@
 #include "../../libFunc.h"
 
 void cu_waterOrientAtSurface_wrapper(float *waterO, int sizeO, float *watVec, float *prot, 
-                                     int sizeP, float *out, float *cellDims, int nbrFrames, 
+                                     int sizeP, float *cellDims, int nbrFrames, 
                                      float minR, float maxR, int maxN);
 
-void waterOrientAtSurface(float *waterO, int sizeO, float *watVec, float *prot, int sizeP, float *out, 
+void waterOrientAtSurface(float *waterO, int sizeO, float *watVec, float *prot, int sizeP, 
                           float *cellDims, int nbrFrames, float minR, float maxR, int maxN)
 {
     /*  The function computes, for each water oxygen in waterO, the orientation of water dipole moment
@@ -23,7 +23,7 @@ void waterOrientAtSurface(float *waterO, int sizeO, float *watVec, float *prot, 
      *          maxN          -> maximum distance to find nearby protein atoms
      */
 
-    cu_waterOrientAtSurface_wrapper(waterO, sizeO, watVec, prot, sizeP, out, cellDims, 
+    cu_waterOrientAtSurface_wrapper(waterO, sizeO, watVec, prot, sizeP, cellDims, 
                                     nbrFrames, minR, maxR, maxN);
 
 }

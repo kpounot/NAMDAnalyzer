@@ -11,6 +11,8 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 
+from NAMDAnalyzer.helpersFunctions.objectConverters import fromSliceToArange
+
 
 class ResidenceTime:
     """ This class defines methods to compute retention time of atoms
@@ -29,21 +31,19 @@ class ResidenceTime:
                          (optional, default 20)
 
     """
-
-    def __init__(self, data, sel, tMax=25, step=1, nbrTimeOri=20):
+    def __init__(self, data, sel, tMax=25, step=1, nbrTimeOri=20, frames=slice(0, None)):
 
         self.data       = data
         self.sel        = sel
         self.tMax       = tMax
         self.step       = step
         self.nbrTimeOri = nbrTimeOri
+        self.frames     = fromSliceToArange(frames, data.nbrFrames)
 
         self.resTime     = None
         self.times       = None
         self.residueWise = None
         self.residues    = None
-
-
 
 # --------------------------------------------
 # Computation methods
@@ -57,14 +57,12 @@ class ResidenceTime:
             The result is stored in *resTime* attribute.
 
         """
-
-
         self.times = (np.arange(0, self.tMax, self.step, dtype=int)
                       * self.data.dcdFreq[0] * self.data.timestep * 1e12)
         corr       = np.zeros_like(self.times)
 
-
-        oriList = ((self.data.nbrFrames - self.tMax)
+        deltaTime = self.frames[-1] - self.frames[0] 
+        oriList = self.frames[0] + ((deltaTime - self.tMax)
                    * np.random.random(self.nbrTimeOri)).astype(int)
 
         for idx, frame in enumerate(oriList):
@@ -105,12 +103,13 @@ class ResidenceTime:
         # Gets residue number list
         resSel = self.sel[self.sel.find('of ') + 3:]
         resSel = self.data.selection(resSel).getUniqueResidues()
+        resSel = np.array([val for val in resSel if val.isdecimal()])
 
         corr = np.zeros_like(resSel, dtype=float)
 
-        oriList = ((self.data.nbrFrames - dt)
+        deltaTime = self.frames[-1] - self.frames[0] + 1
+        oriList = self.frames[0] + ((deltaTime - self.tMax)
                    * np.random.random(self.nbrTimeOri)).astype(int)
-
 
         for resId, residue in enumerate(resSel):
             for idx, frame in enumerate(oriList):

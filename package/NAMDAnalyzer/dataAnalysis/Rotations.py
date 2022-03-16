@@ -224,7 +224,6 @@ class WaterAtProtSurface:
 
     def __init__(self, data, protSel='protein', minR=0, maxR=5, maxN=5,
                  frames=None, watVec='D', nbrVox=200, gaussianFiltSize=-1):
-
         self.data = data
 
         if isinstance(protSel, str):
@@ -248,7 +247,6 @@ class WaterAtProtSurface:
         self.gaussianFiltSize = gaussianFiltSize
 
         self.orientations = None
-
 
     def compOrientations(self):
         """ Computes, for all selected water oxygens, the orientation of
@@ -276,12 +274,9 @@ class WaterAtProtSurface:
 
         prot = self.data.dcdData[self.protSel, self.frames]
 
-        out = np.zeros((waterO.shape[0], waterO.shape[1]), dtype='float32')
-
         cellDims = self.data.cellDims[self.frames]
 
-
-        py_waterOrientAtSurface(waterO, watVec, prot, out, cellDims,
+        py_waterOrientAtSurface(waterO, watVec, prot, cellDims,
                                 self.minR, self.maxR, self.maxN)
 
         self.orientations = np.ascontiguousarray(waterO[:, :, 0],
@@ -290,8 +285,6 @@ class WaterAtProtSurface:
                                                  dtype=bool)
         self.distances    = np.ascontiguousarray(waterO[:, :, 2],
                                                  dtype='float32')
-
-
 
     def generateVolMap(self, align=False):
         """ Generates a volumetric map with water orientations relative
@@ -314,7 +307,7 @@ class WaterAtProtSurface:
 
         """
 
-        water   = self.data.selection('water')
+        water = self.data.selection('water')
         nbrWAtoms = water.getUniqueName().size
 
         fullSel = self.protSel + water
@@ -327,18 +320,13 @@ class WaterAtProtSurface:
                                                     fullSel,
                                                     frames=self.frames)
 
-
-        prot  = coor[fullSel.getSubSelection(self.protSel)]
-        water = coor[fullSel.getSubSelection(water)]
-
+        prot  = coor[fullSel['protein']]
+        water = coor[fullSel['water']]
 
         cellDims = self.data.cellDims[self.frames]
 
-
         # Moves water molecules to their nearest atom
         py_setWaterDistPBC(water, prot, cellDims, nbrWAtoms)
-
-
 
         # Getting minimum and maximum of all coordinates
         min_x = np.concatenate((prot, water))[:, :, 0].min()
@@ -355,30 +343,22 @@ class WaterAtProtSurface:
         max_z = np.concatenate((prot, water))[:, :, 2].max()
         maxCoor = np.array([max_x, max_y, max_z]) * 1.001
 
-
         self.volMap = np.zeros((self.nbrVox, self.nbrVox, self.nbrVox),
                                dtype='float32')
 
         # Get water indices on volMap based on coordinates
         indices = (water[::nbrWAtoms] / maxCoor * self.nbrVox).astype('int32')
 
-
         py_getWaterOrientVolMap(indices, self.orientations,
                                 self.keepWat.astype('int32'), self.volMap)
-
 
         self.volOri      = np.array([0.0, 0.0, 0.0])
         self.volDeltas   = maxCoor / self.nbrVox
         self.pCoor       = prot
         self.wCoor       = water
 
-
         if self.gaussianFiltSize > 0:
             self.volMap = gaussian_filter(self.volMap, self.gaussianFiltSize)
-
-
-
-
 
     def writeVolMap(self, fileName=None, frame=0, pFrames=None):
         """ Write the volumetric map containing averaged water orientations
@@ -410,7 +390,6 @@ class WaterAtProtSurface:
         for i in range(nbrWat):
             toKeep[i::nbrWat] = self.keepWat[:, frame]
 
-
         # Gets water and protein coordinates for selected frame
         wCoor = self.wCoor[toKeep, frame]
 
@@ -420,7 +399,6 @@ class WaterAtProtSurface:
             pCoor = np.mean(self.pCoor[:, pFrames], axis=1)
 
         coor = np.concatenate((pCoor, wCoor)).squeeze()
-
 
         # Write the volumetric map file
         with open(fileName + '.dx', 'w') as f:
@@ -447,14 +425,12 @@ class WaterAtProtSurface:
 
                 f.write('\n')
 
-
             f.write('attribute "dep" string "positions"\n')
             f.write('object "regular positions regular connections" '
                     'class field\n')
             f.write('component "positions" value 1\n')
             f.write('component "connections" value 2\n')
             f.write('component "data" value 3\n')
-
 
         # Write the PDB file
         wSel = self.data.selection(
@@ -463,8 +439,6 @@ class WaterAtProtSurface:
         sel = self.protSel + wSel
 
         sel.writePDB(fileName, coor=coor)
-
-
 
     def getOrientations(self, nbrBins=100, frames=None):
         """ Computes the distribution of orientations between -1 and 1
@@ -492,11 +466,7 @@ class WaterAtProtSurface:
 
         hist /= hist.sum()
 
-
         return edges, hist
-
-
-
 
     def getAutoCorr(self, dr=0.2, nbrBins=100):
         """ Computes the autocorrelation function of water orientation
@@ -526,9 +496,7 @@ class WaterAtProtSurface:
 
         dist = dist[:, np.argsort(dist, axis=1)[0]]
 
-
         bins = np.arange(self.minR, self.maxR, dr)
-
 
         rho_0 = np.zeros(nbrBins, dtype='float32')
 
@@ -537,7 +505,6 @@ class WaterAtProtSurface:
             rho_0 *= 0
             start += 1
             py_waterOrientHist(dist[1, dist[0] < bins[start]], rho_0, nbrBins)
-
 
         rho_0 /= rho_0.sum()
 
@@ -555,12 +522,7 @@ class WaterAtProtSurface:
 
                 dist = dist[:, dist[0] >= r]
 
-
         return bins[start:], corr[start:] / corr[start]
-
-
-
-
 
     def getDistEntropy(self, dr=0.2, nbrBins=100):
         """ Computes the entropy of water orientation distribution as a
@@ -585,9 +547,7 @@ class WaterAtProtSurface:
 
         dist = dist[:, np.argsort(dist, axis=1)[0]]
 
-
         bins = np.arange(self.minR, self.maxR, dr)
-
 
         ent = np.zeros_like(bins, dtype='float32')
 
@@ -599,7 +559,6 @@ class WaterAtProtSurface:
             start += 1
             py_waterOrientHist(dist[1, dist[0] < bins[start]],
                                rho, nbrBins)
-
 
         for idx, r in enumerate(bins):
             rho *= 0
@@ -615,12 +574,6 @@ class WaterAtProtSurface:
 
 
         return bins[start:], ent[start:]
-
-
-
-
-
-
 
 # --------------------------------------------
 # Plotting methods
@@ -651,9 +604,6 @@ class WaterAtProtSurface:
 
         plt.show()
 
-
-
-
     def plotAutoCorr(self, dr=0.2, nbrBins=100):
         """ Plot the auto-correlation function of water orientation
             distribution as a function of distance r.
@@ -669,9 +619,6 @@ class WaterAtProtSurface:
         plt.ylabel('auto-correlation')
 
         plt.show()
-
-
-
 
     def plotDistEntropy(self, dr=0.2, nbrBins=100):
         """ Plot the entropy of water orientation distribution as a

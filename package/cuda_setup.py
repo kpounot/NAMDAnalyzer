@@ -21,6 +21,9 @@ pyxPath = "NAMDAnalyzer/lib/"
 srcPath = "NAMDAnalyzer/lib/openmp/src/" 
 cudaSrcPath = "NAMDAnalyzer/lib/cuda/src/"
 
+filePath = os.path.abspath(__file__)
+dirPath = filePath[:filePath.find('cuda_setup.py')]
+
 
 try:
     if 'win32' in sys.platform:
@@ -47,6 +50,7 @@ except KeyError:
 
 
 #_The following is used to compile with openmp with both mingGW and msvc
+
 copt =  {'msvc'     : ['/openmp', '/Ox', '/fp:fast', '/MT',
                        '-D_FILE_OFFSET_BITS=64', '-D_LARGEFILE_SOURCE=1'],
          'mingw32'  : ['-fopenmp','-ffast-math', 
@@ -92,13 +96,14 @@ class build_ext_subclass( build_ext ):
 
 
 
-packagesList = [    'NAMDAnalyzer.dataManipulation',
-                    'NAMDAnalyzer.dataParsers',
-                    'NAMDAnalyzer.dataAnalysis',
-                    'NAMDAnalyzer.selection',
-                    'NAMDAnalyzer.lib',
-                    'NAMDAnalyzer.kdTree',
-                    'NAMDAnalyzer.helpersFunctions' ]
+packagesList = ['NAMDAnalyzer',    
+                'NAMDAnalyzer.dataManipulation',
+                'NAMDAnalyzer.dataParsers',
+                'NAMDAnalyzer.dataAnalysis',
+                'NAMDAnalyzer.selection',
+                'NAMDAnalyzer.lib',
+                'NAMDAnalyzer.kdTree',
+                'NAMDAnalyzer.helpersFunctions']
 
 
 #_Defines extensions
@@ -132,16 +137,13 @@ pylibFuncs_ext   = Extension(
         include_dirs=[cudaSrcPath, np.get_include(), cudaInclude,
                       "NAMDAnalyzer/lib/common/src"])
 
-
-
 setup(  name='NAMDAnalyzer',
         version='1.0',
         description=description,
         author='Kevin Pounot',
         author_email='kpounot@hotmail.fr',
         url='github.com/kpounot/NAMDAnalyzer',
-        py_modules=['NAMDAnalyzer.Dataset'],
         packages=packagesList,
-        ext_modules=cythonize( [pylibFuncs_ext] ),
+        package_dir={'NAMDAnalyzer': dirPath + 'NAMDAnalyzer'},
+        ext_modules=cythonize([pylibFuncs_ext]),
         cmdclass={'build_ext': build_ext_subclass})
-
