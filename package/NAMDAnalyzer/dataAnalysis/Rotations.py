@@ -274,11 +274,9 @@ class WaterAtProtSurface:
 
         prot = self.data.dcdData[self.protSel, self.frames]
 
-        out = np.zeros((waterO.shape[0], waterO.shape[1]), dtype='float32')
-
         cellDims = self.data.cellDims[self.frames]
 
-        py_waterOrientAtSurface(waterO, watVec, prot, out, cellDims,
+        py_waterOrientAtSurface(waterO, watVec, prot, cellDims,
                                 self.minR, self.maxR, self.maxN)
 
         self.orientations = np.ascontiguousarray(waterO[:, :, 0],

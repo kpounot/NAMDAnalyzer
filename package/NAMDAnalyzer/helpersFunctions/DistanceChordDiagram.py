@@ -40,8 +40,8 @@ class ChordDiag:
 
         self.data = data
 
-        self.sel1   = sel1
-        self.sel2   = sel2
+        self.sel1 = sel1
+        self.sel2 = sel2
 
         if frames is None:
             self.frames = slice(0, None)
@@ -53,10 +53,9 @@ class ChordDiag:
             self.sel1 = self.data.selection(sel1)
 
         if self.sel2 is None:
-            self.sel2 = np.copy(sel1)
+            self.sel2 = np.copy(self.sel1)
         elif isinstance(self.sel2, str):
             self.sel2 = self.data.selection(sel2)
-
 
         self.startDist  = startDist
         self.maxDist    = maxDist
@@ -64,13 +63,10 @@ class ChordDiag:
         if startDist is None:
             self.startDist = step
 
-
-
         # Define some variables
         self.dist         = None
         self.rList        = np.arange(self.maxDist, self.startDist, -self.step)
         self.resPairsList = []
-
 
         if resList is None:
             self.resList = self.data.selection('protein')
@@ -80,17 +76,10 @@ class ChordDiag:
         if isinstance(resList, list):
             self.resList = np.array(resList)
 
-
-
         self.lwStep = lwStep
         self.labelStep = labelStep
         self.cmap = cm.get_cmap('viridis')
         self.norm = colors.Normalize(self.startDist, self.maxDist)
-
-
-
-
-
 
     def _getDistMatrixAndPairs(self):
         """ Computes the distance matrix given the selection(s)
@@ -98,7 +87,6 @@ class ChordDiag:
             distance bin in self.resPairsList.
 
         """
-
         self.dist = self.data.getDistances(self.sel1, self.sel2, self.frames)
 
         for idx, r in enumerate(self.rList):

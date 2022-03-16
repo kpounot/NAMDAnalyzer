@@ -45,24 +45,14 @@ class ScatDiffusion(HydroproReader):
                            computes parameters
 
     """
-
     def __init__(self, dataset, hydroproFile=None):
-
         if hydroproFile:
             super().__init__(hydroproFile)
 
         self.dataset = dataset
-
         self.effPhi = None
-
         self.roots  = None
 
-
-
-
-# --------------------------------------------
-# Computation methods
-# --------------------------------------------
     def compEffVolFrac(self, massP, solventVol=1, compSpecVol=False,
                        selection='protein', frame=0):
         """ Computes the hydrodynamic radius based on translational diffusion
@@ -82,23 +72,16 @@ class ScatDiffusion(HydroproReader):
                               compute the specific volume
 
         """
-
         if compSpecVol:
             vol     = self.dataset.getProtVolume(selection, frame) * 1e-24
             specVol = self.dataset.getSpecVolume(selection, frame)
         else:
             vol     = self.params.vol
-            specVol = self.params.specVol
-
+            specVol = self.params.specVol 
 
         R = (3 / (4 * np.pi) * vol)**(1 / 3)
-
         phi = specVol * massP / (solventVol + specVol * massP)
-
         self.effPhi = phi * (self.params.rh / R)**3
-
-
-
 
     def _compCorrectedDt(self):
         """ Computes the translational diffusion coefficient in crowded
@@ -108,17 +91,11 @@ class ScatDiffusion(HydroproReader):
             See M.Tokuyama, I.Oppenheim, J. Korean Phys. 28, (1995)
 
         """
-
         b = np.sqrt(9 / 8 * self.effPhi)
         c = 11 / 16 * self.effPhi
-
         H = (2 * b**2 / (1 - b) - c / (1 + 2 * c)
              - b * c * (2 + c) / (1 + c) * (1 - b + c))
-
         self.Dt = self.params.dt0 / (1 + H)
-
-
-
 
     def _compCorrectedDr(self):
         """ Computes the rotational diffusion coefficient in crowded
@@ -126,14 +103,8 @@ class ScatDiffusion(HydroproReader):
             rotational diffusion coefficient in the dilute limit.
 
         """
-
         self.Dr = self.params.dr0 * (1 - 0.631 * self.effPhi
                                      - 0.726 * self.effPhi**2)
-
-
-
-
-
 
     def compAppDiffCoeff(self, qVals, maxN=100, density_dr=0.5,
                          maxDensityR=60, frame=-1, minMethod='lm'):
@@ -156,14 +127,26 @@ class ScatDiffusion(HydroproReader):
                               compute the radial density
 
         """
+        def fitFuncAppDiffCoeff(D, qVals, density, maxN=100):
+            """Fitting function to compute apparent diffusion coefficient. """
+            dist, density = density
+            dist = dist[:, np.newaxis] * 1e-8
+            density = density[:, np.newaxis]
 
+            res = np.zeros(qVals.size)
+            for n in range(maxN):
+                Bn = (2 * n + 1) * np.sum(
+                    density * spherical_jn(n, qVals * dist)**2, axis=0)
+                res += (Bn * (self.Dr * n * (n + 1) + (self.Dt - D) * qVals**2)
+                        / (self.Dr * n * (n + 1) + (self.Dt + D) * qVals**2)**2)
+
+            return res
 
         if self.effPhi is None:
             print("The effective volume fraction was not computed.\n"
                   "Use self.compEffVolFrac() method before calling "
                   "this method.\n")
             return
-
 
         # Pre-process q-values and diffusion coefficients
         qVals = np.array(qVals).astype('f') * 1e8  # Conversion to cm^(-1)
@@ -179,34 +162,12 @@ class ScatDiffusion(HydroproReader):
         density = (density.radii, density.density)
 
 
-        solRoot = root(self._fitFuncAppDiffCoeff, x0=self.Dt,
+        solRoot = root(self.fitFuncAppDiffCoeff, x0=self.Dt,
                        args=(qVals, density, maxN), method=minMethod)
 
         self.roots = solRoot
 
-
-
-
-    def _fitFuncAppDiffCoeff(self, D, qVals, density, maxN=100):
-        """ Fitting function to compute apparent diffusion coefficient. """
-
-        dist, density = density
-        dist = dist[:, np.newaxis] * 1e-8
-        density = density[:, np.newaxis]
-
-        res = np.zeros(qVals.size)
-        for n in range(maxN):
-            Bn = (2 * n + 1) * np.sum(
-                density * spherical_jn(n, qVals * dist)**2, axis=0)
-            res += (Bn * (self.Dr * n * (n + 1) + (self.Dt - D) * qVals**2)
-                    / (self.Dr * n * (n + 1) + (self.Dt + D) * qVals**2)**2)
-
-
-        return res
-
-
-
-    def compDt(self, qVals, D, Dr, maxN=100, density_dr=1, maxDensityR=60,
+    def compDt(self, qVals, D, Dr=None, maxN=100, density_dr=1, maxDensityR=60,
                frame=-1, init_Dt=None, minMethod='lm'):
         """ Computes coefficients Dt based on the apparent diffusion
             coefficient D and theoretical Dr.
@@ -217,8 +178,7 @@ class ScatDiffusion(HydroproReader):
                               compute D (in [angström])
             :arg D:           the apparent self-diffusion coefficient from
                               neutron scattering
-            :arg Dr:          the rotational diffusion coefficient from neutron
-                              scattering
+            :arg Dr:          the estimated rotational diffusion coefficient
             :arg maxN:        maximum number of spherical bessel function
                               to be used
             :arg density_dr:  increment value for the radius r used to compute
@@ -233,7 +193,20 @@ class ScatDiffusion(HydroproReader):
 
 
         """
+        def fitFunc_Dt(Dt, D, Dr, qVals, density, maxN=100):
+            """ Fitting function to compute apparent diffusion coefficient. """
+            dist, density = density
+            dist = dist[:, np.newaxis] * 1e-8
+            density = density[:, np.newaxis]
 
+            res = np.zeros(qVals.size)
+            for n in range(maxN):
+                Bn = (2 * n + 1) * np.sum(
+                    density * spherical_jn(n, qVals * dist)**2, axis=0)
+                res += (Bn * (Dr * n * (n + 1) + (Dt - D) * qVals**2)
+                        / (Dr * n * (n + 1) + (Dt + D) * qVals**2)**2)
+
+            return np.sum(res)
 
         if self.effPhi is None:
             print("The effective volume fraction was not computed.\n"
@@ -241,59 +214,28 @@ class ScatDiffusion(HydroproReader):
                   "this method.\n")
             return
 
-
-        if init_Dt is None:
-            self._compCorrectedDt()
-            init_Dt = self.Dt
-
+        if Dr is None:
+            self._compCorrectedDr()
+            Dr = self.Dr
 
         # Pre-process q-values and diffusion coefficients
         qVals = np.array(qVals).astype('f') * 1e8  # Conversion to cm^(-1)
 
-
         # Computes the density
-        density = COMRadialNumberDensity(
+        density = RadialNumberDensity(
             self.dataset, 'protH', dr=density_dr,
-            maxR=maxDensityR, frame=frame)
+            maxR=maxDensityR, frames=frame)
         density.compDensity()
         density = (density.radii, density.density)
 
+        solRoot = root(
+                fitFunc_Dt, D,
+                args=(D, Dr, qVals, density, maxN),
+                method=minMethod
+        )
 
-        solRoot = root(self._fitFunc_Dt, x0=init_Dt,
-                       args=(D, Dr, qVals, density, maxN),
-                       method=minMethod)
+        self.Dt_estimate = solRoot
 
-        self.Dt_estimate = solRoot.x[0]
-
-
-
-
-    def _fitFunc_Dt(self, Dt, D, Dr, qVals, density, maxN=100):
-        """ Fitting function to compute apparent diffusion coefficient. """
-
-        dist, density = density
-        dist = dist[:, np.newaxis] * 1e-8
-        density = density[:, np.newaxis]
-
-        res = np.zeros(qVals.size)
-        for n in range(maxN):
-            Bn = (2 * n + 1) * np.sum(
-                density * spherical_jn(n, qVals * dist)**2, axis=0)
-            res += (Bn * (Dr * n * (n + 1) + (Dt - D) * qVals**2)
-                    / (Dr * n * (n + 1) + (Dt + D) * qVals**2)**2)
-
-
-        return res
-
-
-
-
-
-
-
-# --------------------------------------------
-# Other physical parameters (D2O density and viscosity)
-# --------------------------------------------
     @classmethod
     def getViscosityD2O(self, T, dT=None):
         """ Calculates the viscosity of D2O in units of [Pa*s] for given
@@ -306,9 +248,7 @@ class ScatDiffusion(HydroproReader):
             eta(T) is valid from 280k up to 400K
 
         """
-
         T = float(T)
-
         if dT:
             dT = float(dT)
 
@@ -331,8 +271,6 @@ class ScatDiffusion(HydroproReader):
         else:
             return eta
 
-
-
     @classmethod
     def getDensityD2O(self, T):
         """ Calculates the density of D2O in units of [g/cm^3] for given
@@ -345,9 +283,7 @@ class ScatDiffusion(HydroproReader):
                   http://physchem.uni-graz.ac.at/sm/Service/Water/D2Odens.htm
 
         """
-
         T = float(T)
-
         table = np.array([[3.82, 1.1053],
                           [5, 1.1055],
                           [10, 1.1057],
@@ -370,7 +306,6 @@ class ScatDiffusion(HydroproReader):
                           [95, 1.0673],
                           [100, 1.0635],
                           [105, 1.0598]])
-
 
         table[:, 0] = table[:, 0] + 273.15
         densityD2O = interp1d(table[:, 0], table[:, 1])
