@@ -66,26 +66,31 @@ class DCDReader:
             stop  = slices.stop if slices.stop is not None else self.nbrAtoms
             step  = slices.step if slices.step is not None else 1
             atoms  = np.arange(start, stop, step)
+
         elif isinstance(
                 slices, 
                 (list, np.ndarray, SelText, int, np.int32, np.int64)
         ):
             atoms = np.array([slices]).flatten()
+
         #########################
         # 2D or 3D selection - atoms and frames (and dimensions)
         #########################
         elif len(slices) == 2 or len(slices) == 3:
             # atoms selection
+
             if isinstance(slices[0], (slice, range)):
                 start = slices[0].start if slices[0].start is not None else 0
                 stop  = (slices[0].stop if slices[0].stop is not None
                          else self.nbrAtoms)
                 step  = slices[0].step if slices[0].step is not None else 1
                 atoms  = np.arange(start, stop, step)
+
             else:
                 atoms = np.array([slices[0]]).flatten()
             
             # slices selection
+
             if isinstance(slices[1], (slice, range)):
                 start = slices[1].start if slices[1].start is not None else 0
                 stop  = (slices[1].stop if slices[1].stop is not None
@@ -95,7 +100,12 @@ class DCDReader:
             else:
                 frames = np.array([slices[1]]).flatten()
 
+
             # possibly axis selection
+            if isinstance(slices[1], (int, list, np.ndarray)):
+                frames = np.array(
+                    [slices[1]]) if isinstance(slices[1], int) else slices[1]
+
             if len(slices) == 3:
                 if isinstance(slices[2], (slice, range)):
                     start = (slices[2].start if slices[2].start
@@ -104,8 +114,10 @@ class DCDReader:
                     step  = slices[2].step if slices[2].step is not None else 1
 
                     dims = np.arange(start, stop, step)
+
                 else:
                     dims = np.array([slices[2]]).flatten()
+
 
         elif len(slices) > 3:
             print("Too many dimensions requested, maximum is 3.")
@@ -125,17 +137,19 @@ class DCDReader:
 
                 try:
                     self._processErrorCode(
-                        py_getDCDCoor(bytearray(f, 'utf-8'),
-                                      id1.astype('int64'),
-                                      self.nbrAtoms,
-                                      atoms.astype('int64'),
-                                      dims.astype('int64'),
-                                      self.cell,
-                                      self.startPos[idx].astype('int64'),
-                                      tmpOut,
-                                      ord(self.byteorder)))
+                        py_getDCDCoor(
+                            bytearray(f, 'utf-8'),
+                            id1.astype('int32'),
+                            self.nbrAtoms,
+                            atoms.astype('int32'),
+                            dims.astype('int32'),
+                            self.cell,
+                            self.startPos[idx].astype('int64'),
+                            tmpOut,
+                            ord(self.byteorder)
+                        )
+                    )
                 except Exception as e:
-                    print(e)
                     return
 
                 out[:, id2] = tmpOut
@@ -210,14 +224,15 @@ class DCDReader:
             if self.cell:
                 # Full size with cell dimensions and 3 coordinates
                 recSize = 12 * self.nbrAtoms + 80
-                self.startPos = [np.arange(self.nbrFrames, dtype=np.int64)
+
+                self.startPos = [np.arange(self.nbrFrames, dtype='int64')
                                  * recSize + 112 + titleSize]
             else:
                 # Full size with 3 coordinates
                 recSize = 12 * self.nbrAtoms + 24
-                self.startPos = [np.arange(self.nbrFrames, dtype=np.int)
-                                 * recSize + 112 + titleSize]
 
+                self.startPos = [np.arange(self.nbrFrames, dtype='int64')
+                                 * recSize + 112 + titleSize]
 
         # Converting dcdFreq to an array of size nbrFrames for handling
         # different dcdFreq during conversion to time

@@ -4,12 +4,13 @@
 
 
 
-int getDCDCoor(char *fileName, long *frames, int nbrFrames, long nbrAtoms, long *selAtoms, 
-                int selAtomsSize, long *dims, int nbrDims, int cell, long long *startPos, 
-                float *outArr, char byteorder);
 
-int getDCDCell(char *fileName, int *frames, int nbrFrames, long long *startPos, 
-               double *outArr, char byteorder);
+int getDCDCoor(char *fileName, int *frames, int nbrFrames, int nbrAtoms, int *selAtoms, 
+                int selAtomsSize, int *dims, int nbrDims, int cell, long long *startPos, float *outArr,
+                char byteorder);
+
+int getDCDCell(char *fileName, int *frames, int nbrFrames, long long *startPos, double *outArr, char byteorder);
+
 
 
 void getHBCorr(  float *acceptors, int size_acceptors, int nbrFrames,

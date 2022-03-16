@@ -50,9 +50,13 @@ except KeyError:
 
 
 #_The following is used to compile with openmp with both mingGW and msvc
-copt =  {'msvc'     : ['/openmp', '/Ox', '/fp:fast'], 
-         'mingw32'  : ['-fopenmp','-ffast-math','-march=native'],
-         'unix'     : ['-fopenmp','-ffast-math','-march=native']} 
+
+copt =  {'msvc'     : ['/openmp', '/Ox', '/fp:fast', '/MT',
+                       '-D_FILE_OFFSET_BITS=64', '-D_LARGEFILE_SOURCE=1'],
+         'mingw32'  : ['-fopenmp','-ffast-math', 
+                       '-D_FILE_OFFSET_BITS=64', '-D_LARGEFILE_SOURCE=1'], 
+         'unix'     : ['-fopenmp','-ffast-math', 
+                       '-D_FILE_OFFSET_BITS=64', '-D_LARGEFILE_SOURCE=1']}
 lopt =  {'mingw32'  : ['-fopenmp'],
          'unix'     : ['-fopenmp']}
 
@@ -64,12 +68,13 @@ def preprocessNVCC(path):
 
     for f in os.listdir(path):
        if f[-3:] == '.cu':
-            os.system("nvcc %s -lib -o %s%s%s %s" % (  Xcompiler,
-                                                        'NAMDAnalyzer/lib/cuda/' + libPrefix, 
-                                                        f[:-3],
-                                                        libExt, 
-                                                        path + f))
-
+            os.system("nvcc %s -lib -o %s%s%s %s" % ( 
+                Xcompiler,
+                'NAMDAnalyzer/lib/cuda/' + libPrefix, 
+                f[:-3],
+                libExt, 
+                path + f
+            ))
 
 
 #_Used by setup function to define compile and link extra arguments
@@ -102,32 +107,35 @@ packagesList = ['NAMDAnalyzer',
 
 
 #_Defines extensions
-pylibFuncs_ext   = Extension( "NAMDAnalyzer.lib.pylibFuncs", 
-                                   [cudaSrcPath + "compIntScatFunc.cpp", 
-                                    cudaSrcPath + "getDistances.cpp", 
-                                    cudaSrcPath + "getRadialNbrDensity.cpp", 
-                                    cudaSrcPath + "getHydrogenBonds.cpp", 
-                                    cudaSrcPath + "getWithin.cpp", 
-                                    cudaSrcPath + "getParallelBackend.cpp", 
-                                    cudaSrcPath + "waterOrientAtSurface.cpp", 
-                                    cudaSrcPath + "setWaterDistPBC.cpp", 
-                                    "NAMDAnalyzer/lib/common/src/" + "dcdReader.cpp", 
-                                    "NAMDAnalyzer/lib/common/src/" + "dcdCellReader.cpp", 
-                                    "NAMDAnalyzer/lib/common/src/" + "getEndian.cpp", 
-                                    "NAMDAnalyzer/lib/" + "libFunc.pyx"],
-                                   library_dirs=["NAMDAnalyzer/lib/cuda", cudaLib],
-                                   extra_objects=[
-                                        'NAMDAnalyzer/lib/cuda/%scompIntScatFunc%s' % (libPrefix, libExt),
-                                        'NAMDAnalyzer/lib/cuda/%sgetDistances%s' % (libPrefix, libExt),
-                                        'NAMDAnalyzer/lib/cuda/%sgetRadialNbrDensity%s' % (libPrefix, libExt),
-                                        'NAMDAnalyzer/lib/cuda/%sgetHydrogenBonds%s' % (libPrefix, libExt),
-                                        'NAMDAnalyzer/lib/cuda/%swaterOrientAtSurface%s' % (libPrefix, libExt),
-                                        'NAMDAnalyzer/lib/cuda/%ssetWaterDistPBC%s' % (libPrefix, libExt),
-                                        'NAMDAnalyzer/lib/cuda/%sgetWithin%s' % (libPrefix, libExt) ],
-                                   libraries=['cuda', 'cudart'],
-                                   language='c++',
-                                   include_dirs=[cudaSrcPath, np.get_include(), cudaInclude,
-                                                 "NAMDAnalyzer/lib/common/src"])
+pylibFuncs_ext   = Extension( 
+        "NAMDAnalyzer.lib.pylibFuncs", 
+        [
+            cudaSrcPath + "compIntScatFunc.cpp", 
+            cudaSrcPath + "getDistances.cpp", 
+            cudaSrcPath + "getRadialNbrDensity.cpp", 
+            cudaSrcPath + "getHydrogenBonds.cpp", 
+            cudaSrcPath + "getWithin.cpp", 
+            cudaSrcPath + "getParallelBackend.cpp", 
+            cudaSrcPath + "waterOrientAtSurface.cpp", 
+            cudaSrcPath + "setWaterDistPBC.cpp", 
+            "NAMDAnalyzer/lib/common/src/" + "dcdReader.cpp", 
+            "NAMDAnalyzer/lib/common/src/" + "dcdCellReader.cpp", 
+            "NAMDAnalyzer/lib/common/src/" + "getEndian.cpp", 
+            "NAMDAnalyzer/lib/" + "libFunc.pyx"
+        ],
+        library_dirs=["NAMDAnalyzer/lib/cuda", cudaLib],
+        extra_objects=[
+             'NAMDAnalyzer/lib/cuda/%scompIntScatFunc%s' % (libPrefix, libExt),
+             'NAMDAnalyzer/lib/cuda/%sgetDistances%s' % (libPrefix, libExt),
+             'NAMDAnalyzer/lib/cuda/%sgetRadialNbrDensity%s' % (libPrefix, libExt),
+             'NAMDAnalyzer/lib/cuda/%sgetHydrogenBonds%s' % (libPrefix, libExt),
+             'NAMDAnalyzer/lib/cuda/%swaterOrientAtSurface%s' % (libPrefix, libExt),
+             'NAMDAnalyzer/lib/cuda/%ssetWaterDistPBC%s' % (libPrefix, libExt),
+             'NAMDAnalyzer/lib/cuda/%sgetWithin%s' % (libPrefix, libExt) ],
+        libraries=['cuda', 'cudart'],
+        language='c++',
+        include_dirs=[cudaSrcPath, np.get_include(), cudaInclude,
+                      "NAMDAnalyzer/lib/common/src"])
 
 setup(  name='NAMDAnalyzer',
         version='1.0',

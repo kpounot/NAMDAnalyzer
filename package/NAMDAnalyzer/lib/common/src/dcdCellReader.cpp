@@ -18,20 +18,16 @@ enum DCDCELL_ERRORS
     SUCCESS         = 0,
     FILE_READ_ERR   = -1,
     OUT_OF_RANGE    = -2,
-    WRONG_OUT_DIMS  = -3
 };
 
 
 
-int getDCDCell(char *fileName, int *frames, int nbrFrames, long long *startPos, 
-               double *outArr, char byteorder)
+
+int getDCDCell(char *fileName, int *frames, int nbrFrames, long long *startPos, double *outArr, char byteorder)
 {
     FILE *dcdFile;
-
     char *record = (char*) malloc(6*sizeof(double)); // Used to store coordinates for each frame
-
     int seek;
-
     char sysbyteorder = getEndian();
 
     dcdFile = fopen(fileName, "rb");
@@ -45,7 +41,7 @@ int getDCDCell(char *fileName, int *frames, int nbrFrames, long long *startPos,
     {
         int frame = frames[frameId];
 
-        seek = fseeko64(dcdFile, startPos[frame] + 4, SEEK_SET);
+        seek = _fseeki64(dcdFile, startPos[frame] + 4, SEEK_SET);
 
         if(seek != 0)
         {
@@ -53,13 +49,8 @@ int getDCDCell(char *fileName, int *frames, int nbrFrames, long long *startPos,
             return error_code;
         }
 
-        // Reads the record, x, y and z coordinates for each atom, flanked by integers of 4 bytes.
+
         int read = fread(record, 8, 6, dcdFile);
-        if(read != 6)
-        {
-            enum DCDCELL_ERRORS error_code = WRONG_OUT_DIMS;
-            return error_code;
-        }
 
         if(sysbyteorder != byteorder)
         {
@@ -71,12 +62,9 @@ int getDCDCell(char *fileName, int *frames, int nbrFrames, long long *startPos,
             outArr[6*frameId + i] = *(double*) &record[8*i];
     }
 
-
     fclose(dcdFile);
     free(record);
 
     enum DCDCELL_ERRORS error_code = SUCCESS;
     return error_code;
 } 
-
-

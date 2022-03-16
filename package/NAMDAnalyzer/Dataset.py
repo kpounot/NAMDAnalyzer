@@ -9,6 +9,8 @@ from NAMDAnalyzer.dataParsers.logParser import NAMDLOG
 from NAMDAnalyzer.dataParsers.pdbParser import NAMDPDB
 from NAMDAnalyzer.dataParsers.velParser import NAMDVEL
 
+import numpy as np
+
 
 class Dataset(NAMDDCD):
     """ Main class for NAMDAnalyzer.
@@ -45,7 +47,6 @@ class Dataset(NAMDDCD):
 
         for f in self.fileList:
             self.importFile(f)
-
 
     def _getPSF(self, fileList):
         """ This method checks for a psf file in the file list given

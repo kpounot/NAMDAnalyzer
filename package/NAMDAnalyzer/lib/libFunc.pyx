@@ -10,12 +10,13 @@ np.import_array()
 
 cdef extern from "libFunc.h":
 
-    int getDCDCoor(char *fileName, long *frames, int nbrFrames, long nbrAtoms, long *selAtoms, 
-                    int selAtomsSize, long *dims, int nbrDims, int cell, long long *startPos, 
-                    float *outArr, char byteorder);
 
-    int getDCDCell(char *fileName, int *frames, int nbrFrames, long long *startPos,
-                   double *outArr, char byteorder);
+    int getDCDCoor(char *fileName, int *frames, int nbrFrames, int nbrAtoms, int *selAtoms, 
+                    int selAtomsSize, int *dims, int nbrDims, int cell, long long *startPos, float *outArr,
+                    char byteorder);
+
+    int getDCDCell(char *fileName, int *frames, int nbrFrames, long long *startPos, double *outArr, char byteorder);
+
 
 
     void getHBCorr(float *acceptors, int size_acceptors, int nbrFrames,
@@ -61,16 +62,18 @@ cdef extern from "libFunc.h":
 
 
 def py_getDCDCoor( fileName, 
-                np.ndarray[long, ndim=1, mode="c"] frames not None, nbrAtoms,
-                np.ndarray[long, ndim=1, mode="c"] selAtoms not None, 
-                np.ndarray[long, ndim=1, mode="c"] dims not None, cell,
+
+                np.ndarray[int, ndim=1, mode="c"] frames not None, nbrAtoms,
+                np.ndarray[int, ndim=1, mode="c"] selAtoms not None, 
+                np.ndarray[int, ndim=1, mode="c"] dims not None, cell,
                 np.ndarray[long long, ndim=1, mode="c"] startPos not None, 
                 np.ndarray[float, ndim=3, mode="c"] outArr not None, byteorder): 
 
     res = getDCDCoor( fileName,
-                <long*> np.PyArray_DATA(frames), len(frames), nbrAtoms, 
-                <long*> np.PyArray_DATA(selAtoms), len(selAtoms),  
-                <long*> np.PyArray_DATA(dims), len(dims), cell,
+
+                <int*> np.PyArray_DATA(frames), len(frames), nbrAtoms, 
+                <int*> np.PyArray_DATA(selAtoms), len(selAtoms),  
+                <int*> np.PyArray_DATA(dims), len(dims), cell,
                 <long long*> np.PyArray_DATA(startPos),
                 <float*> np.PyArray_DATA(outArr),
                 byteorder )

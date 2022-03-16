@@ -39,9 +39,11 @@ class DCDCell:
                      else self.data.nbrFrames)
             step  = frames.step if frames.step is not None else 1
             frameSel = np.arange(start, stop, step)
+
         elif isinstance(frames, (int, list, range,
                                  np.ndarray, np.int32, np.int64)):
                 frameSel = np.array([frames]).flatten()
+
         elif len(frames) == 2:
             if isinstance(frames[0], slice):
                 start = frames[0].start if frames[0].start is not None else 0
@@ -49,20 +51,24 @@ class DCDCell:
                          else self.data.nbrFrames)
                 step  = frames[0].step if frames[0].step is not None else 1
                 frameSel  = np.arange(start, stop, step)
+
             if isinstance(frames[0], (
                 int, np.int32, np.int64, list, np.ndarray)
             ):
                 frameSel = np.array([frames[0]]).flatten()
+
             if isinstance(frames[1], slice):
                 start = frames[1].start if frames[1].start is not None else 0
                 stop  = frames[1].stop if frames[1].stop is not None else 3
                 step  = frames[1].step if frames[1].step is not None else 1
 
                 coorSel = np.arange(start, stop, step)
+
             if isinstance(
                 frames[1], (int, np.int32, np.int64, list, np.ndarray)
             ):
                 coorSel = np.array([frames[1]]).flatten()
+
         elif len(frames) > 2:
             print("Too many dimensions requested, maximum is 2.")
             return
@@ -78,8 +84,10 @@ class DCDCell:
         # dimensions big enough so that it does not have any effect
         if self.data.cell == 0:
             out += 100000
+
             return np.ascontiguousarray(
                 out[:, [0, 2, 5]]).astype('float32')[:, coorSel]
+
 
         for idx, f in enumerate(self.data.dcdFiles):
             if isinstance(f, str):
@@ -98,18 +106,13 @@ class DCDCell:
                                   tmpOut,
                                   ord(self.data.byteorder)))
                 out[id2] = tmpOut
+
             elif isinstance(f, np.ndarray):
                 out += 100000
-                if out.shape[1] == 6:
-                    return np.ascontiguousarray(
-                        out[:, [0, 2, 5]]).astype('float32')[:, coorSel]
-                else:
-                    return np.ascontiguousarray(
-                        out).astype('float32')[:, coorSel]
 
-        out = out[:, [0, 2, 5]]
+        return np.ascontiguousarray(
+            out[:, [0, 2, 5]]).astype('float32')[:, coorSel]
 
-        return np.ascontiguousarray(out[:, coorSel], dtype='float32')
 
     def _processErrorCode(self, error_code):
         """ Used to process return value of py_getDCDCoor function. """
@@ -120,9 +123,4 @@ class DCDCell:
                           "Please check file path or access permissions.\n")
         if error_code == -2:
             raise IndexError("Out of range index. "
-                             "Please check again requested slices.\n")
-        if error_code == -3:
-            raise IndexError("Record size in trajectory file doesn't match "
-                             "the expected number of values.\n"
-                             "Trajectory file might have been modified "
-                             "or is incomplete.\n")
+
