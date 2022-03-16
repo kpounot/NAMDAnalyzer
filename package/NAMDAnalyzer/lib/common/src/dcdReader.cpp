@@ -23,23 +23,27 @@ enum DCDREADER_ERRORS
 };
 
 
-int getDCDCoor(char *fileName, long *frames, int nbrFrames, long nbrAtoms, long *selAtoms, 
-                int selAtomsSize, long *dims, int nbrDims, int cell, long *startPos, float *outArr,
-                char byteorder)
-{
+int getDCDCoor(
+        char *fileName, 
+        int *frames, 
+        int nbrFrames, 
+        int nbrAtoms, 
+        int *selAtoms, 
+        int selAtomsSize, 
+        int *dims, 
+        int nbrDims, 
+        int cell, 
+        long long *startPos, 
+        float *outArr,
+        char byteorder
+) {
     FILE *dcdFile;
-
     // Used to store coordinates for each frame
     char *record = (char*) malloc(nbrAtoms * 4);
-
     char sysbyteorder = getEndian();
-
     int seek;
-
-    long int pos;
-
+    long long pos;
     float res;
-
 
     dcdFile = fopen(fileName, "rb");
     if(dcdFile == NULL)
@@ -48,35 +52,17 @@ int getDCDCoor(char *fileName, long *frames, int nbrFrames, long nbrAtoms, long 
         return error_code;
     }
 
-
     fseek(dcdFile, 0, SEEK_END);
-    long int fileSize = ftell(dcdFile);
-
-
+    long long fileSize = ftell(dcdFile);
     for(int frameId=0; frameId < nbrFrames; ++frameId)
     {
-
         int frame = frames[frameId];
 
         for(int dimId=0; dimId < nbrDims; ++dimId)
         {
-
-            if(cell)
-            {
-                pos = startPos[frame] + dims[dimId] * (4 * nbrAtoms + 8) + 60;
-                seek = fseek(dcdFile, pos, SEEK_SET);
-            }
-            else
-            {
-                pos = startPos[frame] + dims[dimId] * (4 * nbrAtoms + 8) + 4;
-                seek = fseek(dcdFile, pos, SEEK_SET);
-            }
-
-            if(pos > fileSize)
-            {
-                enum DCDREADER_ERRORS error_code = OUT_OF_RANGE;
-                return error_code;
-            }
+            pos = startPos[frame] + dims[dimId] * (4 * nbrAtoms + 8);
+            pos += cell ? 60 : 4;
+            seek = _fseeki64(dcdFile, pos, SEEK_SET);
 
             if(seek != 0)
             {
@@ -97,7 +83,6 @@ int getDCDCoor(char *fileName, long *frames, int nbrFrames, long nbrAtoms, long 
             }
         }
     }
-
 
     fclose(dcdFile);
     free(record);

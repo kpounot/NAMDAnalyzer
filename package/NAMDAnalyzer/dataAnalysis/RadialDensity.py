@@ -70,8 +70,6 @@ class ResidueWiseWaterDensity:
 
         self.density = np.zeros((self.residues.size, self.radii.size))
 
-
-
     def compDensity(self):
         """ Computes the density given class attributes.
 

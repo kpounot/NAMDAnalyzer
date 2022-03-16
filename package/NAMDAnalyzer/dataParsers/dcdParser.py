@@ -153,7 +153,7 @@ class NAMDDCD(DCDReader, NAMDPSF):
 
         out = np.zeros((sel1.shape[0], sel2.shape[0]), dtype='float32')
 
-        cellDims = self.cellDims[frame]
+        cellDims = np.ascontiguousarray(self.cellDims[frame])
         sel1 = self.dcdData[sel1, frame]
         sel2 = self.dcdData[sel2, frame]
 
@@ -898,7 +898,7 @@ _UK/aminoacids/abbreviation.html#refs
         if startDist is None:
             startDist = step
 
-        rList  = np.arange(maxDist, startDist, -step
+        rList  = np.arange(maxDist, startDist, -step)
 
         cmap = cm.get_cmap('hot')
         norm = colors.Normalize(startDist, maxDist)

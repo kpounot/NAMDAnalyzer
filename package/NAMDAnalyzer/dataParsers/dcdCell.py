@@ -26,14 +26,10 @@ class DCDCell:
                     It can be a :class:`Dataset` instance.
 
     """
-
     def __init__(self, data):
-
         self.data = data
 
-
     def __getitem__(self, frames):
-
         frameSel = np.arange(self.data.nbrFrames, dtype=int)
         coorSel  = np.arange(3)
 
@@ -42,9 +38,7 @@ class DCDCell:
             stop  = (frames.stop if frames.stop is not None
                      else self.data.nbrFrames)
             step  = frames.step if frames.step is not None else 1
-
             frameSel = np.arange(start, stop, step)
-
 
         elif isinstance(frames, (int, list, range,
                                  np.ndarray, np.int32, np.int64)):
@@ -55,10 +49,7 @@ class DCDCell:
             else:
                 frameSel = frames
 
-
-
         elif len(frames) == 2:
-
             if isinstance(frames[0], slice):
                 start = frames[0].start if frames[0].start is not None else 0
                 stop  = (frames[0].stop if frames[0].stop is not None
@@ -71,7 +62,6 @@ class DCDCell:
                 frameSel = np.array(
                     [frames[0]]) if isinstance(frames[0], int) else frames[0]
 
-
             if isinstance(frames[1], slice):
                 start = frames[1].start if frames[1].start is not None else 0
                 stop  = frames[1].stop if frames[1].stop is not None else 3
@@ -83,8 +73,6 @@ class DCDCell:
                 coorSel = np.array(
                     [frames[1]]) if isinstance(frames[1], int) else frames[1]
 
-
-
         elif len(frames) > 2:
             print("Too many dimensions requested, maximum is 2.")
             return
@@ -94,18 +82,13 @@ class DCDCell:
                   "slicing to select cell dimensions.")
             return
 
-
         # Extract coordinates given selected atoms, frames and coordinates
         out = np.zeros((len(frameSel), 6), dtype='float64')
-
 
         # If no cell information is present, returns cell
         # dimensions big enough so that it does not have any effect
         if self.data.cell == 0:
             out += 100000
-            return np.ascontiguousarray(
-                out[:, [0, 2, 5]]).astype('float32')[:, coorSel]
-
 
         for idx, f in enumerate(self.data.dcdFiles):
             if isinstance(f, str):
@@ -120,33 +103,21 @@ class DCDCell:
                 self._processErrorCode(
                     py_getDCDCell(bytearray(f, 'utf-8'),
                                   id1.astype('int32'),
-                                  self.data.startPos[idx].astype('int32'),
+                                  self.data.startPos[idx].astype('int64'),
                                   tmpOut,
                                   ord(self.data.byteorder)))
 
                 out[id2] = tmpOut
 
-                out = out[:, [0, 2, 5]]
-
             elif isinstance(f, np.ndarray):
                 out += 100000
-                if out.shape[1] == 6:
-                    return np.ascontiguousarray(
-                        out[:, [0, 2, 5]]).astype('float32')[:, coorSel]
-                else:
-                    return np.ascontiguousarray(
-                        out).astype('float32')[:, coorSel]
 
-
-        return np.ascontiguousarray(out[:, coorSel], dtype='float32')
-
-
+        return np.ascontiguousarray(
+            out[:, [0, 2, 5]]).astype('float32')[:, coorSel]
 
 
     def _processErrorCode(self, error_code):
         """ Used to process return value of py_getDCDCoor function. """
-
-
         if error_code == 0:
             return
 
@@ -157,9 +128,3 @@ class DCDCell:
         if error_code == -2:
             raise IndexError("Out of range index. "
                              "Please check again requested slices.\n")
-
-        if error_code == -3:
-            raise IndexError("Record size in trajectory file doesn't match "
-                             "the expected number of values.\n"
-                             "Trajectory file might have been modified "
-                             "or is incomplete.\n")

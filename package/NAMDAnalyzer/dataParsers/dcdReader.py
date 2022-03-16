@@ -58,7 +58,6 @@ class DCDReader:
 
     def __getitem__(self, slices):
         """ Accessor that calls C function to get selected coordinates. """
-
         atoms   = np.arange(self.nbrAtoms, dtype=int)
         frames  = np.arange(self.nbrFrames, dtype=int)
         dims    = np.arange(3, dtype=int)
@@ -70,20 +69,15 @@ class DCDReader:
             start = slices.start if slices.start is not None else 0
             stop  = slices.stop if slices.stop is not None else self.nbrAtoms
             step  = slices.step if slices.step is not None else 1
-
             atoms  = np.arange(start, stop, step)
-
 
         elif isinstance(slices, (int, list, SelText, np.ndarray)):
             atoms = np.array([slices]) if isinstance(slices, int) else slices
-
-
 
         #########################
         # 2D or 3D selection - atoms and frames (and dimensions)
         #########################
         elif len(slices) == 2 or len(slices) == 3:
-
             if isinstance(slices[0], (slice, range)):
                 start = slices[0].start if slices[0].start is not None else 0
                 stop  = (slices[0].stop if slices[0].stop is not None
@@ -96,7 +90,6 @@ class DCDReader:
                 atoms = np.array(
                     [slices[0]]) if isinstance(slices[0], int) else slices[0]
 
-
             if isinstance(slices[1], (slice, range)):
                 start = slices[1].start if slices[1].start is not None else 0
                 stop  = (slices[1].stop if slices[1].stop is not None
@@ -108,8 +101,6 @@ class DCDReader:
             if isinstance(slices[1], (int, list, np.ndarray)):
                 frames = np.array(
                     [slices[1]]) if isinstance(slices[1], int) else slices[1]
-
-
 
             if len(slices) == 3:
                 if isinstance(slices[2], (slice, range)):
@@ -124,13 +115,9 @@ class DCDReader:
                     dims = (np.array([slices[2]])
                             if isinstance(slices[2], int) else slices[2])
 
-
-
-
         elif len(slices) > 3:
             print("Too many dimensions requested, maximum is 3.")
             return
-
 
         # Extract coordinates given selected atoms, frames and coordinates
         out = np.zeros((len(atoms), len(frames), len(dims)), dtype='float32')
@@ -146,17 +133,19 @@ class DCDReader:
 
                 try:
                     self._processErrorCode(
-                        py_getDCDCoor(bytearray(f, 'utf-8'),
-                                      id1.astype('int64'),
-                                      self.nbrAtoms,
-                                      atoms.astype('int64'),
-                                      dims.astype('int64'),
-                                      self.cell,
-                                      self.startPos[idx].astype('int64'),
-                                      tmpOut,
-                                      ord(self.byteorder)))
+                        py_getDCDCoor(
+                            bytearray(f, 'utf-8'),
+                            id1.astype('int32'),
+                            self.nbrAtoms,
+                            atoms.astype('int32'),
+                            dims.astype('int32'),
+                            self.cell,
+                            self.startPos[idx].astype('int64'),
+                            tmpOut,
+                            ord(self.byteorder)
+                        )
+                    )
                 except Exception as e:
-                    print(e)
                     return
 
                 out[:, id2] = tmpOut
@@ -169,8 +158,6 @@ class DCDReader:
 
                 out[:, id2] = f[atoms]
 
-
-
         # Check shape and resize if necessary
         if out.shape[0] > self.nbrAtoms:
             out = out[:self.nbrAtoms]
@@ -181,12 +168,7 @@ class DCDReader:
         if out.shape[2] > 3:
             out = out[:, :, :3]
 
-
         return np.ascontiguousarray(out)
-
-
-
-
 
     def importDCDFile(self, dcdFile):
         """Imports a new file and store the result in *dcdData* attribute.
@@ -195,7 +177,6 @@ class DCDReader:
             it will be deleted.
 
         """
-
         self.dcdFiles   = [os.path.abspath(dcdFile)]
         self.dcdFreq    = None
         self.nbrAtoms   = None
@@ -203,7 +184,6 @@ class DCDReader:
         self.nbrSteps   = None
 
         self.initFrame = [0]
-
 
         with open(dcdFile, 'rb') as f:
             data = f.read(92)
@@ -233,28 +213,23 @@ class DCDReader:
             data = f.read(12)
             self.nbrAtoms = unpack('%siii' % self.byteorder, data)[1]
 
-
             if self.cell:
                 # Full size with cell dimensions and 3 coordinates
                 recSize = 12 * self.nbrAtoms + 80
 
-                self.startPos = [np.arange(self.nbrFrames, dtype=int)
+                self.startPos = [np.arange(self.nbrFrames, dtype='int64')
                                  * recSize + 112 + titleSize]
 
             else:
                 # Full size with 3 coordinates
                 recSize = 12 * self.nbrAtoms + 24
 
-                self.startPos = [np.arange(self.nbrFrames, dtype=int)
+                self.startPos = [np.arange(self.nbrFrames, dtype='int64')
                                  * recSize + 112 + titleSize]
-
 
         # Converting dcdFreq to an array of size nbrFrames for handling
         # different dcdFreq during conversion to time
         self.dcdFreq = np.zeros(self.nbrFrames) + dcdFreq
-
-
-
 
     def appendDCD(self, dcdFile):
         """ Method to append trajectory data to the existing loaded data.
