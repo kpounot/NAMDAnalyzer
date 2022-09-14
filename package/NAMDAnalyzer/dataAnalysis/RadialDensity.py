@@ -66,7 +66,7 @@ class ResidueWiseWaterDensity:
             self.frames = frames
 
 
-        self.residues = sel.getUniqueResidues()
+        self.residues = np.sort(np.array(sel.getUniqueResidues()).astype(int))
 
         self.density = np.zeros((self.residues.size, self.radii.size))
 
@@ -82,20 +82,25 @@ class ResidueWiseWaterDensity:
         cellDims = self.data.cellDims[self.frames]
 
         for resId, residue in enumerate(self.residues):
-
             # Prints state, leaving space for verbosity
             # from py_getRadialNbrDensity
             print(50 * '  ' + "[Residue %i of %i]"
                   % (resId + 1, len(self.residues)), end='\r')
 
             sel = self.sel + ' and resid %s' % residue
+            sel = self.data.selection(sel).coordinates(self.frames)
 
             density = np.zeros(self.radii.size, dtype='float32')
 
-            sel = self.data.selection(sel).coordinates(self.frames)
-
-            py_getRadialNbrDensity(waters, sel, density, cellDims,
-                                   0, self.maxR, self.dr)
+            py_getRadialNbrDensity(
+                np.ascontiguousarray(waters), 
+                np.ascontiguousarray(sel), 
+                density, 
+                np.ascontiguousarray(cellDims),
+                0, 
+                self.maxR, 
+                self.dr
+            )
 
             density[0] -= density[0]
             density /= (4 * np.pi * self.radii**2 * self.dr)

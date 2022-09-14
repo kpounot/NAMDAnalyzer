@@ -48,7 +48,7 @@ void getWithin(float *allAtoms, int nbrAtoms, int nbrFrames,
                 int *out, float *cellDims, float distance);
 
 
-void waterOrientAtSurface(float *waterO, int sizeO, float *watVec, float *prot, int sizeP, float *out, 
+void waterOrientAtSurface(float *waterO, int sizeO, float *watVec, float *prot, int sizeP, 
                           float *cellDims, int nbrFrames, float minR, float maxR, int maxN);
 
 void setWaterDistPBC(float *water, int sizeW, float *prot, int sizeP, float *cellDims, int nbrFrames,

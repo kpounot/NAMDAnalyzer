@@ -122,5 +122,5 @@ class DCDCell:
             raise IOError("Error while reading the file. "
                           "Please check file path or access permissions.\n")
         if error_code == -2:
-            raise IndexError("Out of range index. "
+            raise IndexError("Out of range index.\n")
 

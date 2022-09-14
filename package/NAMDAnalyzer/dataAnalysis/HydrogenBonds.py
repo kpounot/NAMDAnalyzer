@@ -183,10 +183,11 @@ class HydrogenBonds:
 
 
             # Computes hydrogen bond autocorrelation for given frames
-            py_getHBCorr(allAtoms[acceptors],
+            py_getHBCorr(np.ascontiguousarray(allAtoms[acceptors]),
                          self.times.size,
-                         allAtoms[donors], allAtoms[hydrogens],
-                         cellDims,
+                         np.ascontiguousarray(allAtoms[donors]), 
+                         np.ascontiguousarray(allAtoms[hydrogens]),
+                         np.ascontiguousarray(cellDims),
                          corr, self.maxTime,
                          self.step, self.nbrTimeOri, self.maxR,
                          self.minAngle, continuous)

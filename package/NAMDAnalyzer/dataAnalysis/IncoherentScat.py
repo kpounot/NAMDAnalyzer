@@ -170,8 +170,9 @@ class IncoherentScat:
         intFunc, timesteps = self.interFunc
 
         # Gets resolution function
+        dsf = intFunc
         if resFunc is not None:
-            dsf = resFunc(timesteps) * np.absolute(intFunc) ** 2
+            dsf = resFunc(timesteps) * dsf
 
         if norm:
             dsf /= dsf[:, 0][:, np.newaxis]

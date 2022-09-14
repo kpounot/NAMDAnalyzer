@@ -69,9 +69,9 @@ class Structure:
         selAtoms = self.data.selection(selection)
 
         if align:
-            allCoor = self.data.getAlignedData(selAtoms, frames=frames)
+            coor = self.data.getAlignedData(selAtoms, frames=frames)
         elif alignCOM:
-            allCoor = self.data.getAlignedCenterOfMass(
+            coor = self.data.getAlignedCenterOfMass(
                 selAtoms, frames=frames
             )
         else:

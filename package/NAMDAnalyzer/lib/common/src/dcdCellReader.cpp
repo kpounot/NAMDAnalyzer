@@ -41,7 +41,7 @@ int getDCDCell(char *fileName, int *frames, int nbrFrames, long long *startPos, 
     {
         int frame = frames[frameId];
 
-        seek = _fseeki64(dcdFile, startPos[frame] + 4, SEEK_SET);
+        seek = fseeko64(dcdFile, startPos[frame] + 4, SEEK_SET);
 
         if(seek != 0)
         {

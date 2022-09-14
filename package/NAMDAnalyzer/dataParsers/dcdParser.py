@@ -170,9 +170,9 @@ class NAMDDCD(DCDReader, NAMDPSF):
         if type(outSel) == str:
             outSel = self.selection(outSel)
 
-        cellDims = self.cellDims[frame]
+        cellDims = np.ascontiguousarray(self.cellDims[frame])
 
-        allAtoms = self.dcdData[:, frame]
+        allAtoms = np.ascontiguousarray(self.dcdData[:, frame])
 
         # Initialize boolean array for atom selection
         keepIdx = np.zeros((allAtoms.shape[0], allAtoms.shape[1]),
@@ -357,13 +357,11 @@ class NAMDDCD(DCDReader, NAMDPSF):
         """
         if type(selection) == str:
             selection = self.selection(selection)
-        if isinstance(frames, slice):
-            frames = fromSliceToArange(frames, self.nbrFrames)
         if ref is not None:
             np.insert(frames, 0, ref)
 
         refData = self.getAlignedCenterOfMass(selection, None, frames)
-        q       = molFit_q.alignAllMol(refData)
+        q = molFit_q.alignAllMol(refData)
 
         if outSel is not None:
             alignData = self.getAlignedCenterOfMass(selection, outSel, frames)

@@ -67,7 +67,7 @@ int getDCDCoor(
 
             pos = startPos[frame] + dims[dimId] * (4 * nbrAtoms + 8);
             pos += cell ? 60 : 4;
-            seek = _fseeki64(dcdFile, pos, SEEK_SET);
+            seek = fseeko64(dcdFile, pos, SEEK_SET);
 
             if(seek != 0)
             {
@@ -75,7 +75,7 @@ int getDCDCoor(
                 return error_code;
             }
 
-            fread(record, 4, lastAtomIdx, dcdFile);
+            fread(record, 4, selAtoms[selAtomsSize - 1] + 1, dcdFile);
 
             // Copy coordinates in 'out' array
             #pragma omp parallel for 

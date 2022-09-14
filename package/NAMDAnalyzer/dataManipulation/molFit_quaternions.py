@@ -33,16 +33,6 @@ def qv_mult(v1, q1):
     return q_mult(q_mult(q1, q2), q_conjugate(q1))[1:]
 
 
-def get_bestMatrix(q):
-    w, x, y, z = q
-    qM = np.array([[w, -x, -y, -z],
-                   [x, w, z, -y],
-                   [y, -z, w, x],
-                   [z, y, -x, w]])
-
-    return qM
-
-
 def alignAllMol(dcdData):
     """ This function takes trajectories from :class:`.Dataset`
         *dcdData* attribute, and apply the following procedure
@@ -68,8 +58,7 @@ def alignAllMol(dcdData):
         .. [Theobald_2005] https://doi.org/10.1107/S0108767305015266
 
     """
-    qM = []
-
+    q = []
     # Determines the correct rotations to align the molecules
     for i in range(0, dcdData.shape[1]):
         # Here comes a long series of coefficient calculation
@@ -101,14 +90,14 @@ def alignAllMol(dcdData):
                       [zx__xz, xy_yx, -xx__yy_zz, yz_zy],
                       [xy__yx, zx_xz, yz_zy, -xx_yy__zz]])
 
-        eigval, eigvec = np.linalg.eig(M)
+        eigval, eigvec = np.linalg.eigh(M)
 
-        bestVec = eigvec[:, np.argmax(eigval)]
+        bestVec = eigvec[:, -1]
 
         # Obtain the rotation matrix
-        qM.append(get_bestMatrix(bestVec))
+        q.append(bestVec)
 
-    return qM
+    return q
 
 
 def applyRotation(dcdData, qM):
@@ -118,16 +107,50 @@ def applyRotation(dcdData, qM):
 
     """
     for i in range(0, dcdData.shape[1]):
+        # conversion to 3D rotation matrix
+        q = quaternion_rotation_matrix(qM[i])
 
-        # Generating a data matrix with extra column containing zeros
-        tempData = np.zeros((dcdData.shape[0], dcdData.shape[2] + 1),
-                            dtype='float32')
-        tempData[:, 1:] = dcdData[:, i, :]
-
-        # Applying the rotation
-        tempData = np.dot(qM[i], tempData.T).T
-
-        # Writing the data back in dcdData
-        dcdData[:, i, :] = tempData[:, 1:]
+        dcdData[:, i, :] = dcdData[:, i] @ q
 
     return dcdData
+
+
+def quaternion_rotation_matrix(Q):
+    """
+    Covert a quaternion into a full three-dimensional rotation matrix.
+ 
+    Input
+    :param Q: A 4 element array representing the quaternion (q0,q1,q2,q3) 
+ 
+    Output
+    :return: A 3x3 element matrix representing the full 3D rotation matrix. 
+             This rotation matrix converts a point in the local reference 
+             frame to a point in the global reference frame.
+    """
+    # Extract the values from Q
+    q0 = Q[0]
+    q1 = Q[1]
+    q2 = Q[2]
+    q3 = Q[3]
+     
+    # First row of the rotation matrix
+    r00 = 2 * (q0 * q0 + q1 * q1) - 1
+    r01 = 2 * (q1 * q2 - q0 * q3)
+    r02 = 2 * (q1 * q3 + q0 * q2)
+     
+    # Second row of the rotation matrix
+    r10 = 2 * (q1 * q2 + q0 * q3)
+    r11 = 2 * (q0 * q0 + q2 * q2) - 1
+    r12 = 2 * (q2 * q3 - q0 * q1)
+     
+    # Third row of the rotation matrix
+    r20 = 2 * (q1 * q3 - q0 * q2)
+    r21 = 2 * (q2 * q3 + q0 * q1)
+    r22 = 2 * (q0 * q0 + q3 * q3) - 1
+     
+    # 3x3 rotation matrix
+    rot_matrix = np.array([[r00, r01, r02],
+                           [r10, r11, r12],
+                           [r20, r21, r22]])
+                            
+    return rot_matrix

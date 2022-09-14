@@ -67,7 +67,7 @@ def preprocessNVCC(path):
     #_Used to process .cu file and create static libraries for GPU part of the program
 
     for f in os.listdir(path):
-       if f[-3:] == '.cu':
+        if f[-3:] == '.cu':
             os.system("nvcc %s -lib -o %s%s%s %s" % ( 
                 Xcompiler,
                 'NAMDAnalyzer/lib/cuda/' + libPrefix, 

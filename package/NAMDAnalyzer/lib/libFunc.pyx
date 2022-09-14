@@ -51,7 +51,7 @@ cdef extern from "libFunc.h":
                     int *refSel, int refSize, int *outSel, int outSelSize,
                     int *out, float *cellDims, float distance);
 
-    void waterOrientAtSurface(float *waterO, int sizeO, float *watVec, float *prot, int sizeP, float *out, 
+    void waterOrientAtSurface(float *waterO, int sizeO, float *watVec, float *prot, int sizeP, 
                               float *cellDims, int nbrFrames, float minR, float maxR, int maxN);
 
     void setWaterDistPBC(float *water, int sizeW, float *prot, int sizeP, float *cellDims, int nbrFrames,
@@ -190,14 +190,12 @@ def py_getWithin( np.ndarray[float, ndim=3, mode="c"] allAtoms not None,
 def py_waterOrientAtSurface( np.ndarray[float, ndim=3, mode="c"] waterO not None,
                              np.ndarray[float, ndim=3, mode="c"] watVec not None,
                              np.ndarray[float, ndim=3, mode="c"] prot not None,
-                             np.ndarray[float, ndim=2, mode="c"] out not None,
                              np.ndarray[float, ndim=2, mode="c"] cellDims not None,
                              minR, maxR, maxN ):
 
     waterOrientAtSurface(<float*> np.PyArray_DATA(waterO), waterO.shape[0], 
                          <float*> np.PyArray_DATA(watVec), 
                          <float*> np.PyArray_DATA(prot), prot.shape[0], 
-                         <float*> np.PyArray_DATA(out), 
                          <float*> np.PyArray_DATA(cellDims), 
                          waterO.shape[1], minR, maxR, maxN);
 
