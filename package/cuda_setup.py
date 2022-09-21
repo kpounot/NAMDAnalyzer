@@ -2,9 +2,7 @@ import os, sys
 
 from setuptools import setup
 from setuptools import Extension
-from setuptools import Command
 from setuptools.command.build_ext import build_ext
-import distutils
 
 from Cython.Build import cythonize
 from Cython.Compiler import Options
@@ -39,11 +37,13 @@ try:
         cudaInclude = cudaPath + "/include"
         cudaLib     = os.popen('locate libcuda.so').read().split()
         for libfile in cudaLib:
-            if '64'in libfile:
+            if '64' in libfile:
                 cudaLib = libfile[:libfile.find('/libcuda.so')]
         libPrefix   = 'lib'
         libExt      = '.a'
         Xcompiler   = "-Xcompiler '-fPIC'"
+
+    cudaLib = '' if len(cudaLib) < 1 else cudaLib
 except KeyError:
     print("\n\nError: Couldn't locate CUDA path, please intall it or add it to PATH variable\n\n")
     

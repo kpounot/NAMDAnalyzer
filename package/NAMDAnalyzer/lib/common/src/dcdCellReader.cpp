@@ -12,6 +12,12 @@
       (((val) << 40) & 0x00FF000000000000) | (((val) << 56) & 0xFF00000000000000) )
 
 
+#if __WIN32__
+    #define SEEK _fseeki64
+#else
+    #define SEEK fseeko64
+#endif
+
 
 enum DCDCELL_ERRORS
 {
@@ -41,7 +47,7 @@ int getDCDCell(char *fileName, int *frames, int nbrFrames, long long *startPos, 
     {
         int frame = frames[frameId];
 
-        seek = fseeko64(dcdFile, startPos[frame] + 4, SEEK_SET);
+        seek = SEEK(dcdFile, startPos[frame] + 4, SEEK_SET);
 
         if(seek != 0)
         {

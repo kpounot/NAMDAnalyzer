@@ -12,7 +12,11 @@
       (((val) <<  8) & 0x00FF0000) | (((val) << 24) & 0xFF000000) )
 
 
-
+#if __WIN32__
+    #define SEEK _fseeki64
+#else
+    #define SEEK fseeko64
+#endif
 
 
 enum DCDREADER_ERRORS
@@ -67,7 +71,7 @@ int getDCDCoor(
 
             pos = startPos[frame] + dims[dimId] * (4 * nbrAtoms + 8);
             pos += cell ? 60 : 4;
-            seek = fseeko64(dcdFile, pos, SEEK_SET);
+            seek = SEEK(dcdFile, pos, SEEK_SET);
 
             if(seek != 0)
             {
